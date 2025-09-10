@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Joguinho Clicador</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            background-color: #f0f8ff;
+        }
+        button {
+            padding: 20px 40px;
+            font-size: 24px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #score {
+            font-size: 32px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Joguinho do Clicador!</h1>
+    <button onclick="clicar()">Clique Aqui!</button>
+    <div id="score">Pontuação: 0</div>
+    <h2>Esse game é apenas um "objeto" para retornar para o view, apague ele todo para quando for fazer a sua task</h2>
+
+    <script>
+        let pontos = 0;
+
+        function clicar() {
+            pontos++;
+            document.getElementById('score').innerText = 'Pontuação: ' + pontos;
+        }
+    </script>
+</body>
+</html>
