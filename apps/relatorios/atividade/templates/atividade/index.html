@@ -1,47 +1,43 @@
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Joguinho Clicador</title>
+    <title>Relatório Mensal de Atividades</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
-            background-color: #f0f8ff;
-        }
-        button {
-            padding: 20px 40px;
-            font-size: 24px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #score {
-            font-size: 32px;
-            margin-top: 20px;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .total-col { font-weight: bold; background-color: #e9e9e9; }
     </style>
 </head>
 <body>
-    <h1>Joguinho do Clicador!</h1>
-    <button onclick="clicar()">Clique Aqui!</button>
-    <div id="score">Pontuação: 0</div>
-    <h2>Esse game é apenas um "objeto" para retornar para o view, apague ele todo para quando for fazer a sua task</h2>
+    <h1>Relatório de Horas por Projeto - {{ mes }}/{{ ano }}</h1>
 
-    <script>
-        let pontos = 0;
-
-        function clicar() {
-            pontos++;
-            document.getElementById('score').innerText = 'Pontuação: ' + pontos;
-        }
-    </script>
+    <table>
+        <thead>
+            <tr>
+                <th>Colaborador</th>
+                {% for projeto_nome in projetos %}
+                    <th>{{ projeto_nome }}</th>
+                {% endfor %}
+                <th class="total-col">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for linha in dados_relatorio %}
+            <tr>
+                <td>{{ linha.colaborador_nome }}</td>
+                {% for projeto_nome in projetos %}
+                    <td>{{ linha.horas_por_projeto|get_item:projeto_nome|default:"-" }}</td>
+                {% endfor %}
+                <td class="total-col">{{ linha.total_colaborador }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
 </html>
