@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'apps.usuarios',
     'apps.relatorios',
     'apps.dashboards',
+    'apps.relatorios.comparacao',
+    'apps.relatorios.atividade',
 ]
 
 MIDDLEWARE = [
