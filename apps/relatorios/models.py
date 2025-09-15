@@ -66,7 +66,7 @@ class ControleHorasEquipe(models.Model):
     )
 
     class Meta:
-        unique_together = ('mes', 'projeto', 'funcionario')
+        unique_together = ('mes', 'projeto_id', 'funcionario_id')
         db_table = 'controle_horas_equipe'
 
     def __str__(self):
