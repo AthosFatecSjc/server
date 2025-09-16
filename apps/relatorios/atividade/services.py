@@ -13,7 +13,7 @@ class AtividadeService:
         """
         Lista as horas de cada dev por projeto e o total por dev para um mês específico.
         :param mes: String no formato 'YYYY-MM'
-        :return: Lista de dicionários com 'funcionario', 'projeto', 'total_horas'
+        :return: Dicionário com duas listas: 'por_projeto' e 'total_por_dev'
         """
         try:
             mes_date = datetime.strptime(mes, '%Y-%m')
@@ -24,34 +24,35 @@ class AtividadeService:
         dados = (
             ControleHorasEquipe.objects
             .filter(mes__year=mes_date.year, mes__month=mes_date.month)
-            .values('funcionario__nome', 'projeto__nome')
+            .values('funcionario_id__nome', 'projeto_id__nome')
             .annotate(total_horas=Sum('horas'))
-            .order_by('funcionario__nome', 'projeto__nome')
+            .order_by('funcionario_id__nome', 'projeto_id__nome')
         )
 
         totais = defaultdict(float)
-        resultado = []
+        por_projeto = []
 
         for item in dados:
-            funcionario = item['funcionario__nome']
+            funcionario = item['funcionario_id__nome']
+            projeto = item['projeto_id__nome']
             total_horas = float(item['total_horas'])
-            totais[funcionario] += total_horas
-
-            resultado.append({
+            
+            por_projeto.append({
                 'funcionario': funcionario,
-                'projeto': item['projeto__nome'],
+                'projeto': projeto,
                 'total_horas': total_horas
             })
+            totais[funcionario] += total_horas
 
-        # Adiciona linhas de total por dev
-        for funcionario, total in totais.items():
-            resultado.append({
-                'funcionario': funcionario,
-                'projeto': 'TOTAL',
-                'total_horas': total
-            })
+        total_por_dev = [
+            {'funcionario': funcionario, 'total_horas': total}
+            for funcionario, total in totais.items()
+        ]
 
-        return resultado
+        return {
+            'por_projeto': por_projeto,
+            'total_por_dev': total_por_dev
+        }
 
     def soma_horas_por_dev_por_mes(self, mes: str):
         """
@@ -67,9 +68,9 @@ class AtividadeService:
         dados = (
             ControleHorasEquipe.objects
             .filter(mes__year=mes_date.year, mes__month=mes_date.month)
-            .values('funcionario__nome')
+            .values('funcionario_id__nome')
             .annotate(total_horas=Sum('horas'))
-            .order_by('funcionario__nome')
+            .order_by('funcionario_id__nome')
         )
 
         return list(dados)

@@ -55,8 +55,8 @@ class ControleHorasEquipeResumo(models.Model):
 
 class ControleHorasEquipe(models.Model):
     mes = models.DateField()
-    projeto_id = models.ForeignKey(Projeto, on_delete=models.CASCADE)
-    funcionario_id = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
+    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
+    funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
     horas = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     resumo = models.ForeignKey(
         ControleHorasEquipeResumo,
@@ -66,7 +66,7 @@ class ControleHorasEquipe(models.Model):
     )
 
     class Meta:
-        unique_together = ('mes', 'projeto_id', 'funcionario_id')
+        unique_together = ('mes', 'projeto', 'funcionario')
         db_table = 'controle_horas_equipe'
 
     def __str__(self):
@@ -88,7 +88,7 @@ class TempoGastoEquipe(models.Model):
     dia_semana = models.CharField(max_length=10)
     dia_mes = models.PositiveIntegerField()
     mes = models.DateField()
-    funcionario_id = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
+    funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
     tempo_gasto = models.DecimalField(max_digits=6, decimal_places=2)
     meta = models.ForeignKey(MetaTempoControle, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -100,7 +100,7 @@ class TempoGastoEquipe(models.Model):
 
 
 class TempoControleValores(models.Model):
-    controle_tempo_equipe_id = models.ForeignKey(TempoGastoEquipe, on_delete=models.CASCADE)
+    controle_tempo_equipe = models.ForeignKey(TempoGastoEquipe, on_delete=models.CASCADE)
     realizado_equipe = models.DecimalField(max_digits=6, decimal_places=2)
     total_real = models.DecimalField(max_digits=6, decimal_places=2)
     total_meta = models.DecimalField(max_digits=6, decimal_places=2)

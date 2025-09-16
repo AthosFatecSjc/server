@@ -10,7 +10,7 @@ def relatorio_horas_por_dev(request):
 
     service = AtividadeService()
     dados = service.soma_horas_por_dev_por_mes(mes)
-    return JsonResponse({'resultado': dados}, safe=False)
+    return JsonResponse(dados, safe=False)
 
 
 def relatorio_horas_por_projeto(request):
@@ -21,4 +21,4 @@ def relatorio_horas_por_projeto(request):
 
     service = AtividadeService()
     dados = service.horas_por_dev_e_projeto_por_mes(mes)
-    return JsonResponse({'resultado': dados}, safe=False)
+    return JsonResponse(dados, safe=False)
