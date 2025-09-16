@@ -1,6 +1,9 @@
+from django.shortcuts import render
 from django.http import JsonResponse
 from apps.relatorios.atividade.services import AtividadeService
 
+def index(request):
+    return render(request, 'atividade/index.html')
 
 def relatorio_horas_por_dev(request):
     mes = request.GET.get('mes')
@@ -11,7 +14,6 @@ def relatorio_horas_por_dev(request):
     service = AtividadeService()
     dados = service.soma_horas_por_dev_por_mes(mes)
     return JsonResponse(dados, safe=False)
-
 
 def relatorio_horas_por_projeto(request):
     mes = request.GET.get('mes')
