@@ -1,116 +1,119 @@
 {% load static %}
-{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Relatório Mensal de Atividades</title>
+    <title>Controle de Horas - Projeto / Equipe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 10px;
-            font-size: 14px;
-        }
-        
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-            margin-bottom: 15px;
-        }
-
-        .header-container img {
-            height: 60px;
-        }
-
-        .header-container h1 {
+        body { font-family: "Noto Sans", sans-serif; margin: 20px; background-color: #f4f7f9; }
+        .container { 
+            max-width: 840px; 
             margin: 0;
         }
-
-        h2 { 
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 10px; 
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 {
+            font-weight: 400;
+            color: #0000FF;
         }
-        
-        .relatorio-container {
+        .filters { margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 4px solid #0000FF; }
+        .htmx-indicator{ display: none; }
+        .filter-header {
             display: flex;
-            justify-content: flex-start;
+            flex-direction: column;
             align-items: flex-start;
-            flex-wrap: wrap;
+            margin-bottom: 15px;
         }
-        .tabela-wrapper {
-            margin: 0 15px;
+        .filter-header .filter-title {
+            display: flex;
+            align-items: center;
+            color: #0000FF;
+            font-weight: 600;
+            font-size: 1rem;
+            font-family: "Noto Sans", sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        table {
-            border-collapse: collapse;
+        .filter-header .filter-title .filter-icon {
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        th, td { 
-            border: 1px solid #ddd; 
-            padding: 5px;
-            text-align: left; 
+        .filter-subtitle {
+            margin-left: 28px;
+            margin-top: 2px;
+            font-size: 0.85rem;
+            color: #3b4b61;
+            font-family: "Noto Sans", sans-serif;
         }
-        th { background-color: #f2f2f2; font-weight: bold; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .total-col { font-weight: bold; background-color: #e9e9e9; }
+        .filter-form { display: flex; align-items: center; gap: 20px; }
+        .filter-form select { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccd4e0; font-size: 1em; background-color: #fdfdfd; transition: border 0.2s; font-family: "Noto Sans", sans-serif; }
+        .filter-form select:focus { border-color: #0000FF; outline: none; }
     </style>
 </head>
 <body>
 
-    <div class="header-container">
-        <h1>Relatório de Horas por Projeto - {{ mes }}/{{ ano }}</h1>
-        <img src="{% static 'atividade/images/LogoKairosData.jpg' %}" alt="Logo KairosData">
-    </div>
+    <div class="container">
+        <div class="header">
+            <h1>Controle de Horas - Projeto / Equipe</h1>
+        </div>
 
-    <div class="relatorio-container">
+        <div class="filters">
+            <div class="filter-header">
+                <div class="filter-title">
+                    <span class="filter-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#0000FF" viewBox="0 0 16 16">
+                            <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2z"/>
+                        </svg>
+                    </span>
+                    <label>Filtros</label>
+                </div>
+                <div class="filter-subtitle">Mês / Ano</div>
+            </div>
+            <form class="filter-form"
+                  hx-get="{% url 'relatorio_tabela_e_cards' %}"
+                  hx-target="#relatorio-content"
+                  hx-trigger="change"
+                  hx-indicator="#loading">
+                
+                <select name="mes" aria-label="Mês">
+                    <option value="1" {% if mes_atual == 1 %}selected{% endif %}>Janeiro</option>
+                    <option value="2" {% if mes_atual == 2 %}selected{% endif %}>Fevereiro</option>
+                    <option value="3" {% if mes_atual == 3 %}selected{% endif %}>Março</option>
+                    <option value="4" {% if mes_atual == 4 %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if mes_atual == 5 %}selected{% endif %}>Maio</option>
+                    <option value="6" {% if mes_atual == 6 %}selected{% endif %}>Junho</option>
+                    <option value="7" {% if mes_atual == 7 %}selected{% endif %}>Julho</option>
+                    <option value="8" {% if mes_atual == 8 %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if mes_atual == 9 %}selected{% endif %}>Setembro</option>
+                    <option value="10" {% if mes_atual == 10 %}selected{% endif %}>Outubro</option>
+                    <option value="11" {% if mes_atual == 11 %}selected{% endif %}>Novembro</option>
+                    <option value="12" {% if mes_atual == 12 %}selected{% endif %}>Dezembro</option>
+                </select>
+
+                <select name="ano" aria-label="Ano">
+                    {% for ano in anos_disponiveis %}
+                        <option value="{{ ano }}" {% if ano == ano_atual %}selected{% endif %}>{{ ano }}</option>
+                    {% endfor %}
+                </select>
+
+            </form>
+        </div>
         
-        <div class="tabela-wrapper">
-            <h2>Horas Projeto</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Colaborador</th>
-                        {% for projeto_nome in projetos %}
-                            <th>{{ projeto_nome }}</th>
-                        {% endfor %}
-                        <th class="total-col">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for linha in dados_relatorio %}
-                    <tr>
-                        <td>{{ linha.colaborador_nome }}</td>
-                        {% for projeto_nome in projetos %}
-                            <td>{{ linha.horas_por_projeto|get_item:projeto_nome|default:"-" }}</td>
-                        {% endfor %}
-                        <td class="total-col">{{ linha.total_colaborador }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div id="loading" class="htmx-indicator">
+            Carregando dados...
         </div>
 
-        <div class="tabela-wrapper">
-            <h2>Horas por Dev</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Colaborador</th>
-                        <th>Total Horas</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for dev in dados_resumo_dev %}
-                    <tr>
-                        <td>{{ dev.nome }}</td>
-                        <td>{{ dev.total }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div id="relatorio-content"
+             hx-get="{% url 'relatorio_tabela_e_cards' %}"
+             hx-trigger="load"
+             hx-indicator="#loading">
         </div>
-
     </div>
+
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </body>
 </html>
