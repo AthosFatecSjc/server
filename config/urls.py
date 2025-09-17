@@ -22,10 +22,9 @@ urlpatterns = [
     path('', index),  
     path('admin/', admin.site.urls),
     path('usuarios/', include('apps.usuarios.urls')),
-    path('relatorios/', include('apps.relatorios.urls')),
+    path('relatorios/', include('apps.relatorios.urls')), # Esta linha já cuida de tudo
     path('dashboards/', include('apps.dashboards.urls')),
     path('produtividade/', include('apps.relatorios.produtividade.urls')),
     path('comparacao/', include('apps.relatorios.comparacao.urls')),
-    path('atividade/', include('apps.relatorios.atividade.urls')),
 ]
 
