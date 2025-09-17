@@ -19,12 +19,12 @@ from django.urls import path, include
 from .views import index 
 
 urlpatterns = [
-    path('', index),  
+    path('', index),
     path('admin/', admin.site.urls),
     path('usuarios/', include('apps.usuarios.urls')),
-    path('relatorios/', include('apps.relatorios.urls')), # Esta linha já cuida de tudo
+    path('relatorios/', include('apps.relatorios.urls')), 
     path('dashboards/', include('apps.dashboards.urls')),
     path('produtividade/', include('apps.relatorios.produtividade.urls')),
     path('comparacao/', include('apps.relatorios.comparacao.urls')),
+    path('api/atividade/', include('apps.relatorios.atividade.urls')), 
 ]
-
