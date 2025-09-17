@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.views.decorators.http import require_GET
 from apps.relatorios.models import ControleHorasEquipe, Projeto
 from django.db.models import Sum, Count
 from collections import defaultdict
@@ -15,6 +16,7 @@ def index(request):
     }
     return render(request, 'atividade/index.html', context)
 
+@require_GET
 def relatorio_tabela_e_cards(request):
     hoje = datetime.date.today()
     
