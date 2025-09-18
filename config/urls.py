@@ -27,5 +27,6 @@ urlpatterns = [
     path('produtividade/', include('apps.relatorios.produtividade.urls')),
     path('comparacao/', include('apps.relatorios.comparacao.urls')),
     path('atividade/', include('apps.relatorios.atividade.urls')),
+    path('api/atividade/', include('apps.relatorios.atividade.urls')),
 ]
 
