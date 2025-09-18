@@ -37,6 +37,8 @@ jobs:
           bandit -r . -f json -o bandit-report.json
 
       - name: Run Tests and Generate Coverage
+        env:
+            SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: |
           pip install coverage
           coverage run --source='.' manage.py test
