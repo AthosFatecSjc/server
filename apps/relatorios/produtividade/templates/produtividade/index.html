@@ -1,0 +1,43 @@
+{% load dict_filters %}
+
+<main class="card">
+  <h1>Produtividade - {{ mes }}/{{ ano }}</h1>
+
+  <table style="width:100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;">
+    <thead>
+      <tr style="background:#3b82f6; color:white; text-align:center;">
+        <th style="padding:6px; border:1px solid #ccc;">Desenvolvedor</th>
+        {% for dia in dias %}
+        <th style="padding:6px; border:1px solid #ccc;">{{ dia }}</th>
+        {% endfor %}
+        <th style="padding:6px; border:1px solid #ccc;">Total</th>
+        <th style="padding:6px; border:1px solid #ccc;">Meta</th>
+        <th style="padding:6px; border:1px solid #ccc;">%</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for r in resultados %}
+      <tr style="text-align:center;">
+        <td style="padding:6px; border:1px solid #ccc; text-align:left;">{{ r.funcionario }}</td>
+
+        {% for dia in dias %}
+        <td style="padding:6px; border:1px solid #ccc;">
+            {{ r.dias|get_item:dia|default:"-" }}
+        </td>
+        {% endfor %}
+
+        <td style="padding:6px; border:1px solid #ccc;">{{ r.real }}</td>
+        <td style="padding:6px; border:1px solid #ccc;">{{ r.meta }}</td>
+        <td style="padding:6px; border:1px solid #ccc;">
+          {% if r.meta > 0 %}
+            {{ r.percentual }}%
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</main>
