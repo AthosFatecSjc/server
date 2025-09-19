@@ -1,6 +1,3 @@
-#
-# Arquivo: apps/relatorios/atividade/services.py
-#
 from collections import defaultdict
 from django.db.models import Sum, Count
 from apps.relatorios.models import ControleHorasEquipe

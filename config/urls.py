@@ -23,8 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('usuarios/', include('apps.usuarios.urls')),
     path('dashboards/', include('apps.dashboards.urls')),
-
-    # URLs de relatórios registradas diretamente
+    path('api/atividade/', include('apps.relatorios.atividade.urls')),
     path('relatorios/atividade/', include('apps.relatorios.atividade.urls')),
     path('relatorios/comparacao/', include('apps.relatorios.comparacao.urls')),
     path('relatorios/produtividade/', include('apps.relatorios.produtividade.urls')),
