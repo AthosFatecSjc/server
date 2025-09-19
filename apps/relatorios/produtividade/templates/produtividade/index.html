@@ -8,7 +8,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão à Vista - Operacional</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="{% static 'js/lucide.js' %}"></script>
     <style>
         .bg-primary { background-color: #3b82f6; }
         .text-primary { color: #3b82f6; }
@@ -81,6 +80,16 @@
         .select-content.show {
             display: block;
         }
+        
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
     </style>
 </head>
 <body class="bg-gray-50 p-4 md:p-6">
@@ -93,7 +102,9 @@
         </div>
         <div class="bg-white rounded-lg shadow p-4 md:p-6">
             <div class="flex items-center gap-2 mb-4">
-                <i data-lucide="filter" class="w-5 h-5 text-primary"></i>
+                <svg class="icon w-5 h-5 text-primary">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
                 <h3 class="text-lg font-semibold">Filtros</h3>
             </div>
             <div class="flex flex-col md:flex-row gap-4">
@@ -102,10 +113,17 @@
                     <div class="select-container">
                         <div class="select-trigger" id="monthTrigger">
                             <div class="flex items-center">
-                                <i data-lucide="calendar" class="w-4 h-4 mr-2"></i>
+                                <svg class="icon w-4 h-4 mr-2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
                                 <span id="monthValue">{{ mes }}/{{ ano }}</span>
                             </div>
-                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            <svg class="icon w-4 h-4">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
                         </div>
                         <div class="select-content" id="monthSelect">
                             {% for mes_option in meses_disponiveis %}
@@ -215,8 +233,6 @@
     </div>
 
     <script>
-        lucide.createIcons();
-        
         document.querySelectorAll('.select-trigger').forEach(trigger => {
             trigger.addEventListener('click', function() {
                 const selectId = this.id.replace('Trigger', 'Select');
@@ -233,19 +249,19 @@
             }
         });
         
-            document.querySelectorAll('.select-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const selectId = this.parentElement.id;
-                    const valueId = selectId.replace('Select', 'Value');
-                    
-                    document.getElementById(valueId).textContent = this.textContent;
-                    document.getElementById(selectId).classList.remove('show');
-                    
-                    const mesAno = this.dataset.value;
-                    const [mes, ano] = mesAno.split('-');
-                    window.location.href = `?mes=${mes}&ano=${ano}`;
-                });
+        document.querySelectorAll('.select-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const selectId = this.parentElement.id;
+                const valueId = selectId.replace('Select', 'Value');
+                
+                document.getElementById(valueId).textContent = this.textContent;
+                document.getElementById(selectId).classList.remove('show');
+                
+                const mesAno = this.dataset.value;
+                const [mes, ano] = mesAno.split('-');
+                window.location.href = `?mes=${mes}&ano=${ano}`;
             });
+        });
     </script>
 </body>
 </html>
