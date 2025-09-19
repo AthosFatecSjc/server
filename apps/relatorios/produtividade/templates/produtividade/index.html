@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão à Vista - Operacional</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="{% static 'js/lucide.js' %}"></script>
     <style>
         .bg-primary { background-color: #3b82f6; }
         .text-primary { color: #3b82f6; }
@@ -241,7 +241,6 @@
                     document.getElementById(valueId).textContent = this.textContent;
                     document.getElementById(selectId).classList.remove('show');
                     
-                    // Redirecionar para o mês selecionado
                     const mesAno = this.dataset.value;
                     const [mes, ano] = mesAno.split('-');
                     window.location.href = `?mes=${mes}&ano=${ano}`;
