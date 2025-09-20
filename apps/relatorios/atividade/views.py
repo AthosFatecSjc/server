@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 import datetime
-from .services import gerar_dados_relatorio_atividade
+from .services import AtividadeService
 
 def index(request):
     hoje = datetime.date.today()
@@ -24,6 +24,6 @@ def relatorio_tabela_e_cards(request):
     except (ValueError, TypeError):
         ano, mes = hoje.year, hoje.month
 
-    context = gerar_dados_relatorio_atividade(ano, mes)
+    context = AtividadeService.gerar_dados_relatorio_atividade(ano, mes)
     
     return render(request, 'atividade/partials/_tabela_e_cards.html', context)
