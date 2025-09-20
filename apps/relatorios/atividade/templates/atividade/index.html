@@ -1,47 +1,120 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Joguinho Clicador</title>
+    <title>Controle de Horas - Projeto / Equipe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
-            background-color: #f0f8ff;
+        body { font-family: "Noto Sans", sans-serif; margin: 20px; background-color: #f4f7f9; }
+        .container { 
+            max-width: 840px; 
+            margin: 0;
         }
-        button {
-            padding: 20px 40px;
-            font-size: 24px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            transition: background-color 0.3s;
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 {
+            font-weight: 400;
+            color: #0000FF;
         }
-        button:hover {
-            background-color: #45a049;
+        .filters { margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 4px solid #0000FF; }
+        .htmx-indicator{ display: none; }
+        .filter-header {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 15px;
         }
-        #score {
-            font-size: 32px;
-            margin-top: 20px;
+        .filter-header .filter-title {
+            display: flex;
+            align-items: center;
+            color: #0000FF;
+            font-weight: 600;
+            font-size: 1rem;
+            font-family: "Noto Sans", sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
+        .filter-header .filter-title .filter-icon {
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .filter-subtitle {
+            margin-left: 28px;
+            margin-top: 2px;
+            font-size: 0.85rem;
+            color: #3b4b61;
+            font-family: "Noto Sans", sans-serif;
+        }
+        .filter-form { display: flex; align-items: center; gap: 20px; }
+        .filter-form select { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccd4e0; font-size: 1em; background-color: #fdfdfd; transition: border 0.2s; font-family: "Noto Sans", sans-serif; }
+        .filter-form select:focus { border-color: #0000FF; outline: none; }
     </style>
 </head>
 <body>
-    <h1>Joguinho do Clicador!</h1>
-    <button onclick="clicar()">Clique Aqui!</button>
-    <div id="score">Pontuação: 0</div>
-    <h2>Esse game é apenas um "objeto" para retornar para o view, apague ele todo para quando for fazer a sua task</h2>
 
-    <script>
-        let pontos = 0;
+    <div class="container">
+        <div class="header">
+            <h1>Controle de Horas - Projeto / Equipe</h1>
+        </div>
 
-        function clicar() {
-            pontos++;
-            document.getElementById('score').innerText = 'Pontuação: ' + pontos;
-        }
-    </script>
+        <div class="filters">
+            <div class="filter-header">
+                <div class="filter-title">
+                    <span class="filter-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#0000FF" viewBox="0 0 16 16">
+                            <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2z"/>
+                        </svg>
+                    </span>
+                    <span>Filtros</span>
+                </div>
+                <div class="filter-subtitle">Mês / Ano</div>
+            </div>
+            <form class="filter-form"
+                  hx-get="{% url 'relatorio_tabela_e_cards' %}"
+                  hx-target="#relatorio-content"
+                  hx-trigger="change"
+                  hx-indicator="#loading">
+                
+                <select name="mes" aria-label="Mês">
+                    <option value="1" {% if mes_atual == 1 %}selected{% endif %}>Janeiro</option>
+                    <option value="2" {% if mes_atual == 2 %}selected{% endif %}>Fevereiro</option>
+                    <option value="3" {% if mes_atual == 3 %}selected{% endif %}>Março</option>
+                    <option value="4" {% if mes_atual == 4 %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if mes_atual == 5 %}selected{% endif %}>Maio</option>
+                    <option value="6" {% if mes_atual == 6 %}selected{% endif %}>Junho</option>
+                    <option value="7" {% if mes_atual == 7 %}selected{% endif %}>Julho</option>
+                    <option value="8" {% if mes_atual == 8 %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if mes_atual == 9 %}selected{% endif %}>Setembro</option>
+                    <option value="10" {% if mes_atual == 10 %}selected{% endif %}>Outubro</option>
+                    <option value="11" {% if mes_atual == 11 %}selected{% endif %}>Novembro</option>
+                    <option value="12" {% if mes_atual == 12 %}selected{% endif %}>Dezembro</option>
+                </select>
+
+                <select name="ano" aria-label="Ano">
+                    {% for ano in anos_disponiveis %}
+                        <option value="{{ ano }}" {% if ano == ano_atual %}selected{% endif %}>{{ ano }}</option>
+                    {% endfor %}
+                </select>
+
+            </form>
+        </div>
+        
+        <div id="loading" class="htmx-indicator">
+            Carregando dados...
+        </div>
+
+        <div id="relatorio-content"
+             hx-get="{% url 'relatorio_tabela_e_cards' %}"
+             hx-trigger="load"
+             hx-indicator="#loading">
+        </div>
+    </div>
+    
+    <script src="{% static 'atividade/js/htmx.min.js' %}"></script>
+
 </body>
 </html>
