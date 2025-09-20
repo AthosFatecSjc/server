@@ -8,22 +8,24 @@ class AtividadeService:
     """
     Service para gerar relatórios de horas trabalhadas.
     """
+
     @staticmethod
-    def horas_por_dev_e_projeto_por_mes(mes: str):
+    def horas_por_dev_e_projeto_por_mes(ano: int, mes: int) -> dict[list, list]:
         """
         Lista as horas de cada dev por projeto e o total por dev para um mês específico.
-        :param mes: String no formato 'YYYY-MM'
-        :return: Dicionário com duas listas: 'por_projeto' e 'total_por_dev'
+
+        Parameters:
+            ano (int): Ano para geração do relatório
+            mes (int): Mes para geração do relatório
+        
+        Returns:
+            dict: Dicionário com duas listas: 'por_projeto' e 'total_por_dev'
         """
-        try:
-            mes_date = datetime.strptime(mes, '%Y-%m')
-        except ValueError:
-            raise ValueError("Formato de mês inválido. Use o formato 'YYYY-MM'.")
 
         # Horas por projeto
         dados = (
             ControleHorasEquipe.objects
-            .filter(mes__year=mes_date.year, mes__month=mes_date.month)
+            .filter(mes__year=ano, mes__month=mes)
             .values('funcionario_id__nome', 'projeto_id__nome')
             .annotate(total_horas=Sum('horas'))
             .order_by('funcionario_id__nome', 'projeto_id__nome')
@@ -55,20 +57,21 @@ class AtividadeService:
         }
 
     @staticmethod
-    def soma_horas_por_dev_por_mes(mes: str):
+    def soma_horas_por_dev_por_mes(ano: int, mes: int) -> list[dict[str, float]]:
         """
         Soma as horas agrupadas por desenvolvedor em um mês.
-        :param mes: String no formato 'YYYY-MM'
-        :return: Lista de dicionários com 'funcionario', 'total_horas'
+
+        Parameters:
+            ano (int): Ano para geração do relatório
+            mes (int): Mes para geração do relatório
+        
+        Returns:
+            List: Lista de dicionários com 'funcionario', 'total_horas'
         """
-        try:
-            mes_date = datetime.strptime(mes, '%Y-%m')
-        except ValueError:
-            raise ValueError("Formato de mês inválido. Use o formato 'YYYY-MM'.")
 
         dados = (
             ControleHorasEquipe.objects
-            .filter(mes__year=mes_date.year, mes__month=mes_date.month)
+            .filter(mes__year=ano, mes__month=mes)
             .values('funcionario_id__nome')
             .annotate(total_horas=Sum('horas'))
             .order_by('funcionario_id__nome')
