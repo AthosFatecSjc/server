@@ -110,7 +110,7 @@ def exportar_produtividade_pdf(mes, ano, resultados):
             if isinstance(dia_data, dict):
                 cell_value = dia_data.get("value", "-")
             else:
-                if dia_data == 0 or dia_data == 0.0:
+                if abs(dia_data - 0) < 1e-9:
                     cell_value = "-"
                 else:
                     cell_value = f"{dia_data:.1f}".replace('.0', '') if dia_data % 1 == 0 else f"{dia_data:.1f}"
