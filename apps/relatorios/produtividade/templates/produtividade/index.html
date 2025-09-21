@@ -1,43 +1,148 @@
 {% load dict_filters %}
 
-<main class="card">
-  <h1>Produtividade - {{ mes }}/{{ ano }}</h1>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Produtividade</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .bg-primary { background-color: #3b82f6; }
+        .bg-green-100 { background-color: #dcfce7; }
+        .text-green-800 { color: #166534; }
+        .bg-yellow-100 { background-color: #fef9c3; }
+        .text-yellow-800 { color: #854d0e; }
+        .bg-red-100 { background-color: #fee2e2; }
+        .text-red-800 { color: #991b1b; }
+        .bg-gray-100 { background-color: #f3f4f6; }
+        .text-gray-400 { color: #9ca3af; }
+        .bg-gray-200 { background-color: #e5e7eb; }
+        .text-gray-600 { color: #4b5563; }
+        .bg-purple-50 { background-color: #faf5ff; }
+        .progress-bar { width: 100%; height: 0.5rem; background-color: #e5e7eb; border-radius: 0.25rem; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 0.25rem; }
+    </style>
+</head>
+<body class="bg-gray-50 p-4">
+    <div class="space-y-4">
+        <div class="text-center">
+            <h1 class="text-2xl font-bold text-gray-800">Relatório de Produtividade - {{ mes }}/{{ ano }}</h1>
+            <p class="text-gray-600">Horas lançadas por desenvolvedor por dia do mês</p>
+        </div>
 
-  <table style="width:100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;">
-    <thead>
-      <tr style="background:#3b82f6; color:white; text-align:center;">
-        <th style="padding:6px; border:1px solid #ccc;">Desenvolvedor</th>
-        {% for dia in dias %}
-        <th style="padding:6px; border:1px solid #ccc;">{{ dia }}</th>
-        {% endfor %}
-        <th style="padding:6px; border:1px solid #ccc;">Total</th>
-        <th style="padding:6px; border:1px solid #ccc;">Meta</th>
-        <th style="padding:6px; border:1px solid #ccc;">%</th>
-      </tr>
-    </thead>
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-primary text-white">
+                            <th class="border border-gray-300 p-2 text-left font-medium">Desenvolvedor</th>
+                            {% for dia in dias %}
+                            <th class="border border-gray-300 p-2 text-center font-medium min-w-[40px]">{{ dia }}</th>
+                            {% endfor %}
+                            <th class="border border-gray-300 p-2 text-center font-medium">Total</th>
+                            <th class="border border-gray-300 p-2 text-center font-medium">Meta</th>
+                            <th class="border border-gray-300 p-2 text-center font-medium">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in resultados %}
+                        <tr class="{% if r.funcionario == 'REALIZADO' %}font-bold{% endif %}">
+                            <td class="border border-gray-300 p-2 font-medium {% if r.funcionario == 'REALIZADO' %}bg-purple-50{% endif %}">
+                                {{ r.funcionario }}
+                            </td>
+                            {% for dia in dias %}
+                            {% with dia_data=r.dias|get_item:dia %}
+                            <td class="border border-gray-300 p-1 text-center text-sm 
+                                {% if r.funcionario == 'REALIZADO' %}bg-purple-50 font-medium
+                                {% elif dia_data.type == 'weekend' or dia_data == 'weekend' %}bg-gray-100 text-gray-400
+                                {% elif dia_data.type == 'leave' or dia_data == 'leave' %}bg-gray-200 text-gray-600 font-medium
+                                {% elif dia_data.hours >= 8 or dia_data >= 8 %}bg-green-100 text-green-800
+                                {% elif dia_data.hours >= 6 or dia_data >= 6 %}bg-yellow-100 text-yellow-800
+                                {% elif dia_data.hours or dia_data %}bg-red-100 text-red-800
+                                {% endif %}">
+                                {% if dia_data.type %}
+                                    {{ dia_data.value|default:"-" }}
+                                {% else %}
+                                    {% if dia_data == 0 or dia_data == 0.0 %}
+                                        -
+                                    {% else %}
+                                        {% if dia_data|floatformat:0 == dia_data|floatformat:1 %}
+                                            {{ dia_data|floatformat:0 }}
+                                        {% else %}
+                                            {{ dia_data|floatformat:1 }}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            {% endwith %}
+                            {% endfor %}
+                            <td class="border border-gray-300 p-2 text-center font-medium">
+                                {{ r.real }}h
+                            </td>
+                            <td class="border border-gray-300 p-2 text-center">
+                                {{ r.meta }}h
+                            </td>
+                            <td class="border border-gray-300 p-2 text-center">
+                                <div class="flex items-center gap-2">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill 
+                                            {% if r.percentual >= 90 %}bg-green-500
+                                            {% elif r.percentual >= 75 %}bg-yellow-500
+                                            {% else %}bg-red-500{% endif %}" 
+                                            style="width: {% if r.percentual > 100 %}100{% else %}{{ r.percentual }}{% endif %}%">
+                                        </div>
+                                    </div>
+                                    <span class="text-sm font-medium 
+                                        {% if r.percentual >= 90 %}text-green-600
+                                        {% elif r.percentual >= 75 %}text-yellow-600
+                                        {% else %}text-red-600{% endif %}">
+                                        {{ r.percentual }}%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-    <tbody>
-      {% for r in resultados %}
-      <tr style="text-align:center;">
-        <td style="padding:6px; border:1px solid #ccc; text-align:left;">{{ r.funcionario }}</td>
-
-        {% for dia in dias %}
-        <td style="padding:6px; border:1px solid #ccc;">
-            {{ r.dias|get_item:dia|default:"-" }}
-        </td>
-        {% endfor %}
-
-        <td style="padding:6px; border:1px solid #ccc;">{{ r.real }}</td>
-        <td style="padding:6px; border:1px solid #ccc;">{{ r.meta }}</td>
-        <td style="padding:6px; border:1px solid #ccc;">
-          {% if r.meta > 0 %}
-            {{ r.percentual }}%
-          {% else %}
-            -
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</main>
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-lg font-semibold mb-4 text-center">Legenda</h3>
+            <div class="flex flex-col md:flex-row flex-wrap gap-4 justify-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-green-100 border border-green-200 rounded flex items-center justify-center">
+                        <span class="text-xs text-green-800">8</span>
+                    </div>
+                    <span class="text-sm">8+ horas (Meta atingida)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-yellow-100 border border-yellow-200 rounded flex items-center justify-center">
+                        <span class="text-xs text-yellow-800">6</span>
+                    </div>
+                    <span class="text-sm">6-7 horas (Abaixo da meta)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-red-100 border border-red-200 rounded flex items-center justify-center">
+                        <span class="text-xs text-red-800">4</span>
+                    </div>
+                    <span class="text-sm">Menos de 6 horas</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
+                        <span class="text-xs text-gray-600">FO</span>
+                    </div>
+                    <span class="text-sm">FO (Folga), FÉ (Férias), LI (Licença)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-purple-50 border border-gray-300 rounded flex items-center justify-center">
+                        <span class="text-xs">R</span>
+                    </div>
+                    <span class="text-sm">REALIZADO - soma diária dos funcionários</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
