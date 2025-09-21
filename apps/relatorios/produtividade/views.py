@@ -1,6 +1,9 @@
 from django.shortcuts import render
-from apps.relatorios.produtividade.services import calcular_spends_por_dev
+from django.db.models import Min
+from apps.relatorios.produtividade.services import calcular_spends_por_dev, exportar_produtividade_pdf
 from datetime import datetime
+from django.http import HttpResponse
+
 from apps.relatorios.models import TempoGastoEquipe
 
 def index(request):
@@ -47,3 +50,32 @@ def index(request):
         'meses_disponiveis': meses_disponiveis,
         'mes_nome': MESES_PORTUGUES.get(mes, f'Mês {mes}')  
     })
+
+def exportar_pdf(request):
+    mes_param = request.GET.get('mes')
+    ano_param = request.GET.get('ano')
+    
+    if mes_param and ano_param:
+        mes = int(mes_param)
+        ano = int(ano_param)
+    else:
+        hoje = datetime.now()
+        mes = hoje.month
+        ano = hoje.year
+    
+    resultados = calcular_spends_por_dev(mes, ano)
+    pdf = exportar_produtividade_pdf(mes, ano, resultados)
+    
+    MESES_PORTUGUES = {
+        1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+        5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+        9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+    }
+    
+    filename = f"produtividade_{MESES_PORTUGUES.get(mes)}_{ano}.pdf"
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response.write(pdf)
+    
+    return response  

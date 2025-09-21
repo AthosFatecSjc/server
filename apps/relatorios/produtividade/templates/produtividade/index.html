@@ -91,15 +91,73 @@
             stroke-linejoin: round;
             fill: none;
         }
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 400px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body class="bg-gray-50 p-4 md:p-6">
+    <div id="pdfModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold text-primary">Confirmar Exportação</h3>
+                <p class="text-muted-foreground mt-1">Deseja exportar o relatório de produtividade para PDF?</p>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="cancelExport" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+                    Cancelar
+                </button>
+                <button id="confirmExport" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="space-y-6">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <h2 class="text-2xl font-semibold text-primary">Gestão à Vista - Operacional</h2>
                 <p class="text-muted-foreground">Relatório de Produtividade Diária/Mensal</p>
             </div>
+            <button id="exportPdfButton" class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                <svg class="icon w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Exportar PDF
+            </button>
         </div>
         <div class="bg-white rounded-lg shadow p-4 md:p-6">
             <div class="flex items-center gap-2 mb-4">
@@ -140,7 +198,7 @@
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="p-4 md:p-6 border-b">
                 <h3 class="text-lg font-semibold">Tabela de Produtividade - {{ mes }}/{{ ano }}</h3>
-                <p class="text-muted-foreground">Horas lançadas por desenvolvedor por dia do mês</p>
+                <p class="text-muted-foreground">Horas lançadas por desenvolvedor por día do mês</p>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse">
@@ -255,6 +313,38 @@
     </div>
 
     <script>
+        const modal = document.getElementById('pdfModal');
+        const exportButton = document.getElementById('exportPdfButton');
+        const confirmButton = document.getElementById('confirmExport');
+        const cancelButton = document.getElementById('cancelExport');
+        
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+        
+        exportButton.addEventListener('click', function() {
+            modal.classList.add('active');
+        });
+        
+        cancelButton.addEventListener('click', closeModal);
+        
+        confirmButton.addEventListener('click', function() {
+            closeModal(); 
+            window.location.href = "{% url 'exportar_produtividade_pdf' %}?mes={{ mes }}&ano={{ ano }}";
+        });
+        
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+        
         document.querySelectorAll('.select-trigger').forEach(trigger => {
             trigger.addEventListener('click', function() {
                 const selectId = this.id.replace('Trigger', 'Select');
