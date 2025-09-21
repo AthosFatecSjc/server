@@ -44,15 +44,11 @@ def calcular_spends_por_dev(mes, ano):
 
     percentual_total = (total_real / total_meta * 100) if total_meta > 0 else 0
     
-
-    soma_diaria_total_arredondada = {}
-    for dia, valor in soma_diaria_total.items():
-        soma_diaria_total_arredondada[dia] = round(valor, 1)
+    soma_diaria_total_arredondada = {dia: round(valor, 1) for dia, valor in soma_diaria_total.items()}
     
-
     resultados.append({
         "funcionario": "REALIZADO",
-        "dias": soma_diaria_total_arredondada, 
+        "dias": soma_diaria_total_arredondada,
         "real": round(total_real, 1),
         "meta": total_meta,
         "percentual": round(percentual_total, 1)
