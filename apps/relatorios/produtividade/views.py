@@ -3,6 +3,7 @@ from django.db.models import Min
 from apps.relatorios.produtividade.services import calcular_spends_por_dev, exportar_produtividade_pdf
 from datetime import datetime
 from django.http import HttpResponse
+from django.views.decorators.http import require_GET 
 
 from apps.relatorios.models import TempoGastoEquipe
 
@@ -51,6 +52,7 @@ def index(request):
         'mes_nome': MESES_PORTUGUES.get(mes, f'Mês {mes}')  
     })
 
+@require_GET  
 def exportar_pdf(request):
     mes_param = request.GET.get('mes')
     ano_param = request.GET.get('ano')
@@ -78,4 +80,4 @@ def exportar_pdf(request):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     response.write(pdf)
     
-    return response  
+    return response
