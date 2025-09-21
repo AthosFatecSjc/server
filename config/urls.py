@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import index 
+from .views import index
 
 urlpatterns = [
     path('', index),  
@@ -27,6 +27,6 @@ urlpatterns = [
     path('produtividade/', include('apps.relatorios.produtividade.urls')),
     path('comparacao/', include('apps.relatorios.comparacao.urls')),
     path('atividade/', include('apps.relatorios.atividade.urls')),
+    path('relatorios/atividade/', include('apps.relatorios.atividade.urls')),
     path('api/atividade/', include('apps.relatorios.atividade.urls')),
 ]
-
