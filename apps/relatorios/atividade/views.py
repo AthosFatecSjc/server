@@ -6,11 +6,14 @@ from .services import AtividadeService
 def index(request):
     hoje = datetime.date.today()
     anos_disponiveis = range(hoje.year - 5, hoje.year + 2)
+
+    dados_iniciais = AtividadeService.gerar_dados_relatorio_atividade(hoje.year, hoje.month)
     
     context = {
         'ano_atual': hoje.year,
         'mes_atual': hoje.month,
         'anos_disponiveis': anos_disponiveis,
+        'dados_cards': dados_iniciais.get('dados_cards', []),
     }
     return render(request, 'atividade/index.html', context)
 

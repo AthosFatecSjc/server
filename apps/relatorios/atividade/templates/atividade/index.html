@@ -7,11 +7,26 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
         body { font-family: "Noto Sans", sans-serif; margin: 20px; background-color: #f4f7f9; }
         .container { 
-            max-width: 840px; 
+            max-width: 1500px; 
             margin: 0;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 500px;
+            gap: 20px;
+            align-items: start;
+        }
+        .relatorio-section {
+            min-width: 0; /* Permite que a tabela seja responsiva */
+        }
+        .chart-section {
+            position: sticky;
+            top: 20px;
         }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .header h1 {
@@ -107,10 +122,18 @@
             Carregando dados...
         </div>
 
-        <div id="relatorio-content"
-             hx-get="{% url 'relatorio_tabela_e_cards' %}"
-             hx-trigger="load"
-             hx-indicator="#loading">
+        <div class="main-content">
+            <div class="relatorio-section">
+                <div id="relatorio-content"
+                     hx-get="{% url 'relatorio_tabela_e_cards' %}"
+                     hx-trigger="load"
+                     hx-indicator="#loading">
+                </div>
+            </div>
+            
+            <div class="chart-section">
+                {% include 'atividade/partials/_grafico_pizza.html' %}
+            </div>
         </div>
     </div>
     

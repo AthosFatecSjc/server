@@ -24,6 +24,7 @@ staticfiles/
 venv/
 ENV/
 .env
+.venv
 
 # OS
 .DS_Store
