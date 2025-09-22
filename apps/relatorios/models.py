@@ -75,13 +75,13 @@ class ControleHorasEquipe(models.Model):
 
 class MetaTempoControle(models.Model):
     objetivo_clt = models.CharField(max_length=100, blank=True)
-    objetivo_estagirario = models.CharField(max_length=100, blank=True)
+    objetivo_estagiario = models.CharField(max_length=100, blank=True)
 
     class Meta:
         db_table = 'meta_tempo_controle'
 
     def __str__(self):
-        return f"objetivo clt: {self.objetivo_clt} | objetivo estagiario: {self.objetivo_estagirario}"
+        return f"objetivo clt: {self.objetivo_clt} | objetivo estagiario: {self.objetivo_estagiario}"
 
 
 class TempoGastoEquipe(models.Model):
