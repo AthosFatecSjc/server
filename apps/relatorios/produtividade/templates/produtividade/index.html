@@ -126,6 +126,89 @@
         .modal-overlay.active .modal-content {
             transform: translateY(0);
         }
+        
+        .cell-selectable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .cell-selectable:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        
+        .cell-selected {
+            background-color: #dbeafe !important;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        
+        .legenda-option {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .legenda-option:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .meta-option {
+            padding: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .meta-option:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .btn-legenda {
+            position: sticky;
+            top: 10px;
+            background-color: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            z-index: 40;
+            display: none;
+            margin-bottom: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .btn-legenda.show {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-legenda:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        .btn-legenda:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .selection-info {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 0.375rem;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        
+        .selection-info.show {
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-gray-50 p-4 md:p-6">
@@ -140,6 +223,88 @@
                     Cancelar
                 </button>
                 <button id="confirmExport" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="legendaModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold text-primary">Registrar Ausência</h3>
+                <p class="text-muted-foreground mt-1" id="legendaInfo">Selecione o tipo de ausência para os dias selecionados</p>
+            </div>
+            <div class="space-y-2 mb-4">
+                <div class="legenda-option" data-value="FE">
+                    <span class="font-medium">FE - FÉRIAS</span>
+                </div>
+                <div class="legenda-option" data-value="AT">
+                    <span class="font-medium">AT - ATESTADO</span>
+                </div>
+                <div class="legenda-option" data-value="FO">
+                    <span class="font-medium">FO - FOLGA</span>
+                </div>
+                <div class="legenda-option" data-value="FA">
+                    <span class="font-medium">FA - FALTA</span>
+                </div>
+                <div class="legenda-option" data-value="LI">
+                    <span class="font-medium">LI - LICENÇA</span>
+                </div>
+                <div class="legenda-option" data-value="CO">
+                    <span class="font-medium">CO - COMPENSAR</span>
+                </div>
+                <div class="legenda-option" data-value="NONE">
+                    <span class="font-medium text-gray-500">REMOVER REGISTRO</span>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="cancelLegenda" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+                    Cancelar
+                </button>
+                <button id="confirmLegenda" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="metaModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold text-primary">Alterar Meta</h3>
+                <p class="text-muted-foreground mt-1" id="metaInfo">Selecione a nova meta de horas</p>
+            </div>
+            <div class="space-y-2 mb-4">
+                <div class="meta-option" data-value="154">
+                    <span class="font-medium">154 horas</span>
+                </div>
+                <div class="meta-option" data-value="132">
+                    <span class="font-medium">132 horas</span>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="cancelMeta" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+                    Cancelar
+                </button>
+                <button id="confirmMeta" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold text-primary">Confirmar Alterações</h3>
+                <p class="text-muted-foreground mt-1" id="confirmMessage"></p>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="cancelConfirm" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+                    Cancelar
+                </button>
+                <button id="finalConfirm" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
                     Confirmar
                 </button>
             </div>
@@ -195,11 +360,32 @@
                 </div>
             </div>
         </div>
+        
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="p-4 md:p-6 border-b">
-                <h3 class="text-lg font-semibold">Tabela de Produtividade - {{ mes }}/{{ ano }}</h3>
-                <p class="text-muted-foreground">Horas lançadas por desenvolvedor por día do mês</p>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold">Tabela de Produtividade - {{ mes }}/{{ ano }}</h3>
+                        <p class="text-muted-foreground">Horas lançadas por desenvolvedor por día do mês</p>
+                    </div>
+                    <button id="btnAbrirLegenda" class="btn-legenda" title="Registrar ausência para dias selecionados">
+                        <svg class="icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Registrar Ausência
+                    </button>
+                </div>
+                
+                <div id="selectionInfo" class="selection-info">
+                    <div class="flex items-center gap-2 text-sm">
+                        <svg class="icon w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span id="selectionText"></span>
+                    </div>
+                </div>
             </div>
+            
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse">
                     <thead>
@@ -215,24 +401,41 @@
                     </thead>
                     <tbody>
                         {% for r in resultados %}
-                        <tr class="{% if r.funcionario == 'REALIZADO' %}font-bold{% endif %}">
+                        <tr class="{% if r.funcionario == 'REALIZADO' %}font-bold{% endif %}" data-funcionario-id="{{ r.funcionario_id }}">
                             <td class="border border-gray-300 p-2 font-medium {% if r.funcionario == 'REALIZADO' %}bg-purple-50{% endif %}">
+                                {% if r.funcionario != 'REALIZADO' %}
+                                <span class="funcionario-name" data-funcionario-id="{{ r.funcionario_id }}">{{ r.funcionario }}</span>
+                                {% else %}
                                 {{ r.funcionario }}
+                                {% endif %}
                             </td>
                             {% for dia in dias %}
                             {% with dia_data=r.dias|get_item:dia %}
-                            <td class="border border-gray-300 p-1 text-center text-sm 
+                            <td class="border border-gray-300 p-1 text-center text-sm cell-selectable
                                 {% if r.funcionario == 'REALIZADO' %}bg-purple-50 font-medium
-                                {% elif dia_data.type == 'weekend' or dia_data == 'weekend' %}bg-gray-100 text-gray-400
-                                {% elif dia_data.type == 'leave' or dia_data == 'leave' %}bg-gray-200 text-gray-600 font-medium
-                                {% elif dia_data.hours >= 8 or dia_data >= 8 %}bg-green-100 text-green-800
-                                {% elif dia_data.hours >= 6 or dia_data >= 6 %}bg-yellow-100 text-yellow-800
-                                {% elif dia_data.hours or dia_data %}bg-red-100 text-red-800
-                                {% endif %}">
-                                {% if dia_data.type %}
+                                {% elif dia_data.type == 'leave' %}bg-gray-200 text-gray-600 font-medium
+                                {% elif dia_data >= 8 %}bg-green-100 text-green-800
+                                {% elif dia_data >= 6 %}bg-yellow-100 text-yellow-800
+                                {% elif dia_data > 0 %}bg-red-100 text-red-800
+                                {% endif %}"
+                                data-dia="{{ dia }}"
+                                data-funcionario-id="{{ r.funcionario_id }}"
+                                data-funcionario="{{ r.funcionario }}">
+                                
+                                {# LÓGICA CORRIGIDA PARA EXIBIÇÃO DOS CÓDIGOS #}
+                                {% if dia_data.type == 'leave' %}
                                     {{ dia_data.value|default:"-" }}
                                 {% else %}
-                                    {% if dia_data == 0 or dia_data == 0.0 %}
+                                    {% if dia_data < 0 %}
+                                        {# Converter valor negativo para sigla #}
+                                        {% if dia_data == -1 %}FE
+                                        {% elif dia_data == -2 %}AT
+                                        {% elif dia_data == -3 %}FO
+                                        {% elif dia_data == -4 %}FA
+                                        {% elif dia_data == -5 %}LI
+                                        {% elif dia_data == -6 %}CO
+                                        {% else %}-{% endif %}
+                                    {% elif dia_data == 0 or dia_data == 0.0 %}
                                         -
                                     {% else %}
                                         {% if dia_data|floatformat:0 == dia_data|floatformat:1 %}
@@ -248,7 +451,9 @@
                             <td class="border border-gray-300 p-2 text-center font-medium {% if r.funcionario == 'REALIZADO' %}{% endif %}">
                                 {{ r.real }}h
                             </td>
-                            <td class="border border-gray-300 p-2 text-center {% if r.funcionario == 'REALIZADO' %}{% endif %}">
+                            <td class="border border-gray-300 p-2 text-center {% if r.funcionario == 'REALIZADO' %}{% endif %} meta-cell
+                                {% if r.funcionario != 'REALIZADO' %}cursor-pointer hover:bg-gray-100{% endif %}"
+                                {% if r.funcionario != 'REALIZADO' %}data-funcionario-id="{{ r.funcionario_id }}" data-funcionario="{{ r.funcionario }}"{% endif %}>
                                 {{ r.meta }}h
                             </td>
                             <td class="border border-gray-300 p-2 text-center">
@@ -275,6 +480,7 @@
                 </table>
             </div>
         </div>
+        
         <div class="bg-white rounded-lg shadow p-4 md:p-6">
             <h3 class="text-lg font-semibold mb-4">Legenda</h3>
             <div class="flex flex-col md:flex-row flex-wrap gap-4">
@@ -298,9 +504,39 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
+                        <span class="text-xs text-gray-600">FE</span>
+                    </div>
+                    <span class="text-sm">FE (Férias)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
+                        <span class="text-xs text-gray-600">AT</span>
+                    </div>
+                    <span class="text-sm">AT (Atestado)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
                         <span class="text-xs text-gray-600">FO</span>
                     </div>
-                    <span class="text-sm">FO (Folga), FÉ (Férias), LI (Licença)</span>
+                    <span class="text-sm">FO (Folga)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
+                        <span class="text-xs text-gray-600">FA</span>
+                    </div>
+                    <span class="text-sm">FA (Falta)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
+                        <span class="text-xs text-gray-600">LI</span>
+                    </div>
+                    <span class="text-sm">LI (Licença)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
+                        <span class="text-xs text-gray-600">CO</span>
+                    </div>
+                    <span class="text-sm">CO (Compensar)</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="w-6 h-6 bg-purple-50 border border-gray-300 rounded flex items-center justify-center">
@@ -313,38 +549,317 @@
     </div>
 
     <script>
-        const modal = document.getElementById('pdfModal');
+        let selectedCells = [];
+        let currentFuncionarioId = null;
+        let currentFuncionarioName = null;
+        let currentAction = null;
+        let legendaSelecionada = null;
+
+        const pdfModal = document.getElementById('pdfModal');
+        const legendaModal = document.getElementById('legendaModal');
+        const metaModal = document.getElementById('metaModal');
+        const confirmModal = document.getElementById('confirmModal');
+        const btnAbrirLegenda = document.getElementById('btnAbrirLegenda');
+        const selectionInfo = document.getElementById('selectionInfo');
+        const selectionText = document.getElementById('selectionText');
+
+        function openModal(modal) {
+            modal.classList.add('active');
+        }
+
+        function closeModal(modal) {
+            modal.classList.remove('active');
+        }
+
+        function atualizarInterfaceSelecao() {
+            if (selectedCells.length > 0) {
+                btnAbrirLegenda.classList.add('show');
+                selectionInfo.classList.add('show');
+                
+                const funcionariosUnicos = [...new Set(selectedCells.map(cell => cell.funcionarioId))];
+                const diasSelecionados = selectedCells.length;
+                
+                if (funcionariosUnicos.length === 1) {
+                    selectionText.textContent = `${diasSelecionados} dia(s) selecionado(s) para ${currentFuncionarioName}`;
+                    btnAbrirLegenda.disabled = false;
+                    btnAbrirLegenda.style.opacity = '1';
+                    btnAbrirLegenda.style.cursor = 'pointer';
+                } else {
+                    selectionText.textContent = `${diasSelecionados} dia(s) selecionado(s) em ${funcionariosUnicos.length} funcionário(s) - Selecione apenas um funcionário por vez`;
+                    btnAbrirLegenda.disabled = true;
+                    btnAbrirLegenda.style.opacity = '0.6';
+                    btnAbrirLegenda.style.cursor = 'not-allowed';
+                }
+            } else {
+                btnAbrirLegenda.classList.remove('show');
+                selectionInfo.classList.remove('show');
+                btnAbrirLegenda.disabled = false;
+                btnAbrirLegenda.style.opacity = '1';
+                btnAbrirLegenda.style.cursor = 'pointer';
+            }
+        }
+
+        function limparSelecaoDeOutrosFuncionarios(funcionarioIdAtual) {
+            const outrasCelulasSelecionadas = document.querySelectorAll(
+                `.cell-selectable.cell-selected[data-funcionario-id!="${funcionarioIdAtual}"]`
+            );
+            
+            outrasCelulasSelecionadas.forEach(cell => {
+                const funcionarioId = cell.dataset.funcionarioId;
+                const dia = parseInt(cell.dataset.dia);
+
+                cell.classList.remove('cell-selected');
+
+                selectedCells = selectedCells.filter(cellInfo => 
+                    !(cellInfo.funcionarioId === funcionarioId && cellInfo.dia === dia)
+                );
+            });
+        }
+
+        document.querySelectorAll('.cell-selectable').forEach(cell => {
+            cell.addEventListener('click', function(event) {
+                event.stopPropagation();
+                
+                const funcionarioId = this.dataset.funcionarioId;
+                const dia = parseInt(this.dataset.dia);
+                
+                if (!funcionarioId || !this.closest('tr').querySelector('.funcionario-name')) {
+                    return;
+                }
+
+                if (selectedCells.length > 0 && selectedCells[0].funcionarioId !== funcionarioId) {
+                    limparSelecaoDeOutrosFuncionarios(funcionarioId);
+                }
+
+                const estaSelecionada = this.classList.contains('cell-selected');
+                
+                if (estaSelecionada) {
+                    this.classList.remove('cell-selected');
+                    selectedCells = selectedCells.filter(cellInfo => 
+                        !(cellInfo.funcionarioId === funcionarioId && cellInfo.dia === dia)
+                    );
+                } else {
+
+                    this.classList.add('cell-selected');
+
+                    const jaExiste = selectedCells.some(cellInfo => 
+                        cellInfo.funcionarioId === funcionarioId && cellInfo.dia === dia
+                    );
+                    
+                    if (!jaExiste) {
+                        selectedCells.push({
+                            dia: dia,
+                            funcionarioId: funcionarioId,
+                            element: this,
+                            funcionarioName: this.dataset.funcionario
+                        });
+                    }
+                }
+                
+                if (selectedCells.length > 0) {
+                    currentFuncionarioId = selectedCells[0].funcionarioId;
+                    currentFuncionarioName = selectedCells[0].funcionarioName;
+                } else {
+                    currentFuncionarioId = null;
+                    currentFuncionarioName = null;
+                }
+                
+                atualizarInterfaceSelecao();
+            });
+        });
+
+        btnAbrirLegenda.addEventListener('click', function() {
+            if (selectedCells.length > 0 && !this.disabled) {
+                currentAction = 'legenda';
+                document.getElementById('legendaInfo').textContent = 
+                    `Selecionar tipo de ausência para ${selectedCells.length} dias de ${currentFuncionarioName}`;
+                
+                legendaSelecionada = null;
+                document.querySelectorAll('.legenda-option').forEach(opt => 
+                    opt.style.backgroundColor = ''
+                );
+                
+                openModal(legendaModal);
+            }
+        });
+
+        document.querySelectorAll('.meta-cell').forEach(cell => {
+            if (cell.dataset.funcionarioId) {
+                cell.addEventListener('click', function() {
+                    currentFuncionarioId = this.dataset.funcionarioId;
+                    currentFuncionarioName = this.dataset.funcionario;
+                    currentAction = 'meta';
+                    
+                    document.getElementById('metaInfo').textContent = 
+                        `Alterar meta para ${currentFuncionarioName}`;
+                    openModal(metaModal);
+                });
+            }
+        });
+
+        document.querySelectorAll('.legenda-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.legenda-option').forEach(opt => 
+                    opt.style.backgroundColor = '');
+                this.style.backgroundColor = '#e5e7eb';
+                legendaSelecionada = this.dataset.value;
+            });
+        });
+
+        document.getElementById('confirmLegenda').addEventListener('click', function() {
+            if (legendaSelecionada && selectedCells.length > 0) {
+                closeModal(legendaModal);
+                
+                document.getElementById('confirmMessage').textContent = 
+                    `Deseja registrar ${getLegendaName(legendaSelecionada)} para ${selectedCells.length} dias de ${currentFuncionarioName}?`;
+                
+                document.getElementById('finalConfirm').onclick = function() {
+                    aplicarLegenda(legendaSelecionada);
+                    closeModal(confirmModal);
+                };
+                
+                openModal(confirmModal);
+            } else {
+                alert('Por favor, selecione um tipo de ausência e pelo menos um dia.');
+            }
+        });
+
+        document.querySelectorAll('.meta-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.meta-option').forEach(opt => 
+                    opt.style.backgroundColor = '');
+                this.style.backgroundColor = '#e5e7eb';
+                document.getElementById('confirmMeta').dataset.value = this.dataset.value;
+            });
+        });
+
+        document.getElementById('confirmMeta').addEventListener('click', function() {
+            const metaValue = this.dataset.value;
+            if (metaValue) {
+                closeModal(metaModal);
+                
+                document.getElementById('confirmMessage').textContent = 
+                    `Deseja alterar a meta de ${currentFuncionarioName} para ${metaValue} horas?`;
+                
+                document.getElementById('finalConfirm').onclick = function() {
+                    aplicarMeta(metaValue);
+                    closeModal(confirmModal);
+                };
+                
+                openModal(confirmModal);
+            }
+        });
+
+        function aplicarLegenda(legendaValue) {
+            const dias = selectedCells.map(cell => cell.dia);
+            fetch('{% url "atualizar_legenda" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    funcionario_id: currentFuncionarioId,
+                    mes: {{ mes }},
+                    ano: {{ ano }},
+                    dias: dias,
+                    codigo: legendaValue
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro na resposta do servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao registrar ausência: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                alert('Erro ao registrar ausência: ' + error.message);
+            });
+        }
+
+        function aplicarMeta(metaValue) {
+            fetch('{% url "atualizar_meta" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    funcionario_id: currentFuncionarioId,
+                    mes: {{ mes }},
+                    ano: {{ ano }},
+                    meta: parseFloat(metaValue)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao alterar meta: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                alert('Erro ao alterar meta: ' + error);
+            });
+        }
+
+        function getLegendaName(value) {
+            const legendas = {
+                'FE': 'FÉRIAS', 'AT': 'ATESTADO', 'FO': 'FOLGA', 
+                'FA': 'FALTA', 'LI': 'LICENÇA', 'CO': 'COMPENSAR',
+                'NONE': 'REMOVER REGISTRO'
+            };
+            return legendas[value] || value;
+        }
+
+        function getCSRFToken() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            return csrfToken ? csrfToken.value : '';
+        }
+
+        document.getElementById('cancelLegenda').addEventListener('click', () => {
+            closeModal(legendaModal);
+            legendaSelecionada = null;
+            document.querySelectorAll('.legenda-option').forEach(opt => 
+                opt.style.backgroundColor = '');
+        });
+        
+        document.getElementById('cancelMeta').addEventListener('click', () => closeModal(metaModal));
+        document.getElementById('cancelConfirm').addEventListener('click', () => closeModal(confirmModal));
+
         const exportButton = document.getElementById('exportPdfButton');
         const confirmButton = document.getElementById('confirmExport');
         const cancelButton = document.getElementById('cancelExport');
         
-        function closeModal() {
-            modal.classList.remove('active');
+        function closePdfModal() {
+            pdfModal.classList.remove('active');
         }
         
         exportButton.addEventListener('click', function() {
-            modal.classList.add('active');
+            openModal(pdfModal);
         });
         
-        cancelButton.addEventListener('click', closeModal);
+        cancelButton.addEventListener('click', closePdfModal);
         
         confirmButton.addEventListener('click', function() {
-            closeModal(); 
+            closePdfModal(); 
             window.location.href = "{% url 'exportar_produtividade_pdf' %}?mes={{ mes }}&ano={{ ano }}";
         });
         
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeModal();
+        pdfModal.addEventListener('click', function(e) {
+            if (e.target === pdfModal) {
+                closePdfModal();
             }
         });
-        
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modal.classList.contains('active')) {
-                closeModal();
-            }
-        });
-        
+
         document.querySelectorAll('.select-trigger').forEach(trigger => {
             trigger.addEventListener('click', function() {
                 const selectId = this.id.replace('Trigger', 'Select');
@@ -373,6 +888,25 @@
                 const [mes, ano] = mesAno.split('-');
                 window.location.href = `?mes=${mes}&ano=${ano}`;
             });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal(pdfModal);
+                closeModal(legendaModal);
+                closeModal(metaModal);
+                closeModal(confirmModal);
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.cell-selectable') && !e.target.closest('#btnAbrirLegenda') && !e.target.closest('.modal-overlay')) {
+                document.querySelectorAll('.cell-selectable').forEach(cell => {
+                    cell.classList.remove('cell-selected');
+                });
+                selectedCells = [];
+                atualizarInterfaceSelecao();
+            }
         });
     </script>
 </body>
