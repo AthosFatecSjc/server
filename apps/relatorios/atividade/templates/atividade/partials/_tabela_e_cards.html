@@ -1,4 +1,58 @@
 {# Template partial/parcial é para tabela e os cards. É carregado dinamicamente via HTMX, por isso deve ser mantido separado do index. #}
+<div id="tabela_e_cards">
+    <div class="table-wrapper">
+        <h2>Horas por Desenvolvedor e Projeto</h2>
+        <p style="margin-top: -10px; color: #666;">Distribuição de horas trabalhadas</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Desenvolvedor</th>
+                    {% for projeto in projetos_nomes %}
+                    <th>{{ projeto }}</th>
+                    {% endfor %}
+                    <th class="total-col">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for linha in dados_tabela %}
+                <tr>
+                    <td>{{ linha.colaborador_nome }}</td>
+                    {% for hora in linha.horas %}
+                    <td>{{ hora|floatformat:2|default:"0.00" }}h</td>
+                    {% endfor %}
+                    <td class="total-col">{{ linha.total_colaborador|floatformat:2 }}h</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{{ projetos_nomes|length|add:2 }}">Nenhum dado encontrado para o período selecionado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>TOTAL GERAL</td>
+                    {% for total in totais_por_projeto %}
+                    <td>{{ total|floatformat:2 }}h</td>
+                    {% endfor %}
+                    <td class="total-col">{{ total_geral|floatformat:2 }}h</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="cards-container" id="cards-resumo">
+        {% for card in dados_cards %}
+        {% cycle 'color-1' 'color-2' 'color-3' 'color-4' as card_color silent %}
+        <div class="card {{ card_color }}">
+            <h3>{{ card.projeto_nome }}</h3>
+            <p>{{ card.total_horas|floatformat:2 }}h</p>
+            <span>{{ card.percentual }}% do total do mês</span><br>
+            <span>{{ card.desenvolvedores }} desenvolvedor(es)</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
 <style>
     h2 { 
         font-weight: 500; 
@@ -63,55 +117,3 @@
     .card.color-3 { border-top-color: #f59e0b; }
     .card.color-4 { border-top-color: #ef4444; }
 </style>
-
-<div class="table-wrapper">
-    <h2>Horas por Desenvolvedor e Projeto</h2>
-    <p style="margin-top: -10px; color: #666;">Distribuição de horas trabalhadas</p>
-    <table>
-        <thead>
-            <tr>
-                <th>Desenvolvedor</th>
-                {% for projeto in projetos_nomes %}
-                    <th>{{ projeto }}</th>
-                {% endfor %}
-                <th class="total-col">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for linha in dados_tabela %}
-            <tr>
-                <td>{{ linha.colaborador_nome }}</td>
-                {% for hora in linha.horas %}
-                    <td>{{ hora|floatformat:2|default:"0.00" }}h</td>
-                {% endfor %}
-                <td class="total-col">{{ linha.total_colaborador|floatformat:2 }}h</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="{{ projetos_nomes|length|add:2 }}">Nenhum dado encontrado para o período selecionado.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr>
-                <td>TOTAL GERAL</td>
-                {% for total in totais_por_projeto %}
-                    <td>{{ total|floatformat:2 }}h</td>
-                {% endfor %}
-                <td class="total-col">{{ total_geral|floatformat:2 }}h</td>
-            </tr>
-        </tfoot>
-    </table>
-</div>
-
-<div class="cards-container" id="cards-resumo">
-    {% for card in dados_cards %}
-    {% cycle 'color-1' 'color-2' 'color-3' 'color-4' as card_color silent %}
-    <div class="card {{ card_color }}">
-        <h3>{{ card.projeto_nome }}</h3>
-        <p>{{ card.total_horas|floatformat:2 }}h</p>
-        <span>{{ card.percentual }}% do total do mês</span><br>
-        <span>{{ card.desenvolvedores }} desenvolvedor(es)</span>
-    </div>
-    {% endfor %}
-</div>
