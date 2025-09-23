@@ -28,8 +28,14 @@ def relatorio_tabela_e_cards(request):
 
     context = AtividadeService.gerar_dados_relatorio_atividade(ano, mes)
 
-    response = ""
+    response = '<div id="horas_projeto" class="conteudo">'
     response += render_to_string("atividade/partials/_tabela_e_cards.html", context, request=request)
     response += render_to_string("atividade/partials/_grafico_pizza.html", context, request=request)
+    response += '</div>'
+    response += '<div id="horas_por_dev" class="conteudo" style="margin-top: 15px">'
+    # response += render_to_string("atividade/partials/_tabela_e_cards.html", context, request=request)
+    response += render_to_string("atividade/partials/_grafico_pizza.html", context, request=request)
+    response += '</div>'
+
     
     return HttpResponse(response)
