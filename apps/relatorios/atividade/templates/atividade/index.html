@@ -12,21 +12,14 @@
     <style>
         body { font-family: "Noto Sans", sans-serif; margin: 20px; background-color: #f4f7f9; }
         .container { 
-            max-width: 1500px; 
             margin: 0;
         }
-        .main-content {
+        .conteudo {
             display: grid;
             grid-template-columns: 1fr 500px;
             gap: 20px;
             align-items: start;
-        }
-        .relatorio-section {
             min-width: 0; /* Permite que a tabela seja responsiva */
-        }
-        .chart-section {
-            position: sticky;
-            top: 20px;
         }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .header h1 {
@@ -90,8 +83,8 @@
             </div>
             <form class="filter-form"
                   hx-get="{% url 'relatorio_tabela_e_cards' %}"
-                  hx-target="#relatorio-content"
-                  hx-trigger="change"
+                  hx-target="#horas_projeto"
+                  hx-trigger="load, change"
                   hx-indicator="#loading">
                 
                 <select name="mes" aria-label="Mês">
@@ -122,19 +115,8 @@
             Carregando dados...
         </div>
 
-        <div class="main-content">
-            <div class="relatorio-section">
-                <div id="relatorio-content"
-                     hx-get="{% url 'relatorio_tabela_e_cards' %}"
-                     hx-trigger="load"
-                     hx-indicator="#loading">
-                </div>
-            </div>
-            
-            <div class="chart-section">
-                {% include 'atividade/partials/_grafico_pizza.html' %}
-            </div>
-        </div>
+        <div id="horas_projeto" class="conteudo"></div>
+        
     </div>
     
     <script src="{% static 'atividade/js/htmx.min.js' %}"></script>
