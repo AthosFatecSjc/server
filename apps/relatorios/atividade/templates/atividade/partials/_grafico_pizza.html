@@ -1,0 +1,242 @@
+{# Template parcial para o gráfico de pizza #}
+<div id="grafico_pizza">
+    <div class="chart-container">
+        <div class="chart-header">
+            <h2>Distribuição de Horas por Projeto</h2>
+            <p>Visualização percentual das horas trabalhadas</p>
+        </div>
+    
+        {% if dados_cards %}
+        <div class="chart-wrapper">
+            <canvas id="grafico-pizza"></canvas>
+        </div>
+        
+        {{ dados_cards|json_script:"dados-cards" }}
+        <script>
+            // Função para criar gráfico (compatível com HTMX)
+            function criarGraficoPizza() {
+                console.log('Tentando criar gráfico de pizza...');
+                
+                // Verificar se Chart.js está disponível
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js não foi carregado!');
+                    return;
+                }
+                
+                const dadosCardsElement = document.getElementById('dados-cards');
+                if (!dadosCardsElement) {
+                    console.error('Elemento dados-cards não encontrado!');
+                    return;
+                }
+                
+                let dadosCards;
+                try {
+                    dadosCards = JSON.parse(dadosCardsElement.textContent);
+                    console.log('Dados recebidos:', dadosCards);
+                } catch (e) {
+                    console.error('Erro ao parsear dados JSON:', e);
+                    return;
+                }
+                
+                if (!dadosCards || dadosCards.length === 0) {
+                    console.warn('Nenhum dado encontrado para o gráfico');
+                    document.querySelector('.chart-wrapper').innerHTML = '<div class="no-data-message"><p>Nenhum dado disponível para gerar o gráfico</p></div>';
+                    return;
+                }
+                
+                // Preparar dados para o gráfico
+                const labels = dadosCards.map(card => card.projeto_nome);
+                const data = dadosCards.map(card => parseFloat(card.total_horas));
+                
+                console.log('Labels:', labels);
+                console.log('Data:', data);
+
+                const dadosGrafico = {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#3b82f6', // Azul
+                            '#10b981', // Verde
+                            '#f59e0b', // Amarelo/Laranja
+                            '#ef4444', // Vermelho
+                            '#8b5cf6', // Roxo
+                            '#06b6d4', // Ciano
+                            '#f97316', // Laranja
+                            '#84cc16', // Verde lima
+                            '#ec4899', // Rosa
+                            '#6b7280'  // Cinza
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                };
+
+                const configuracao = {
+                    type: 'pie',
+                    data: dadosGrafico,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                left: 50,
+                                right: 100,
+                                top: 50,
+                                bottom: 50
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false // Desabilitar legenda para usar só as linhas
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#ffffff',
+                                bodyColor: '#ffffff',
+                                borderColor: '#ffffff',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return label + ': ' + value.toFixed(2) + 'h (' + percentage + '%)';
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                display: true,
+                                backgroundColor: function(context) {
+                                    return context.dataset.backgroundColor[context.dataIndex];
+                                },
+                                borderColor: '#ffffff',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                color: '#ffffff',
+                                font: {
+                                    family: '"Noto Sans", sans-serif',
+                                    size: 10,
+                                    weight: 'bold'
+                                },
+                                padding: {
+                                    left: 8,
+                                    right: 8,
+                                    top: 4,
+                                    bottom: 4
+                                },
+                                formatter: function(value, context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    const label = context.chart.data.labels[context.dataIndex];
+                                    return label + '\n' + percentage + '%';
+                                },
+                                textAlign: 'center',
+                                anchor: 'end',
+                                align: 'end',
+                                offset: 20,
+                                clamp: false,
+                                clip: false
+                            }
+                        }
+                    }
+                };
+
+                // Destruir gráfico anterior se existir
+                if (window.graficoPizzaInstance) {
+                    console.log('Destruindo gráfico anterior');
+                    window.graficoPizzaInstance.destroy();
+                    window.graficoPizzaInstance = null;
+                }
+
+                // Criar novo gráfico
+                const ctx = document.getElementById('grafico-pizza');
+                if (ctx) {
+                    console.log('Criando novo gráfico');
+                    try {
+                        // Registrar o plugin DataLabels
+                        Chart.register(ChartDataLabels);
+                        
+                        window.graficoPizzaInstance = new Chart(ctx, configuracao);
+                        console.log('Gráfico criado com sucesso');
+                    } catch (e) {
+                        console.error('Erro ao criar gráfico:', e);
+                    }
+                } else {
+                    console.error('Canvas grafico-pizza não encontrado!');
+                }
+            }
+            
+            // Executar quando o DOM estiver carregado
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', criarGraficoPizza);
+            } else {
+                // DOM já carregado (caso de HTMX)
+                criarGraficoPizza();
+            }
+            
+            // Escutar eventos do HTMX para recriar gráfico quando conteúdo for atualizado
+            document.body.addEventListener('htmx:afterSettle', function(evt) {
+                if (evt.target.id === 'relatorio-content') {
+                    console.log('Conteúdo HTMX atualizado, recriando gráfico...');
+                    setTimeout(criarGraficoPizza, 100); // Pequeno delay para garantir que o DOM foi atualizado
+                }
+            });
+        </script>
+        {% else %}
+        <div class="no-data-message">
+            <p>Nenhum dado disponível para gerar o gráfico</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .chart-container {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .chart-header {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .chart-header h2 {
+        font-weight: 500;
+        font-size: 1.2em;
+        margin: 0 0 5px 0;
+        color: #0f172a;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 10px;
+    }
+    
+    .chart-header p {
+        margin: 10px 0 0 0;
+        color: #666;
+        font-size: 0.9em;
+    }
+    
+    .chart-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        height: 500px;
+
+    }
+    
+    .no-data-message {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 400px;
+        color: #666;
+        font-style: italic;
+    }
+</style>
