@@ -51,6 +51,8 @@
         </div>
         {% endfor %}
     </div>
+
+    {% include "atividade/partials/_tabela_horas_dev.html" %}
 </div>
 
 <style>
@@ -116,4 +118,28 @@
     .card.color-2 { border-top-color: #10b981; }
     .card.color-3 { border-top-color: #f59e0b; }
     .card.color-4 { border-top-color: #ef4444; }
+
+    .horas-dev-wrapper {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        max-width: 600px;
+        margin-top: 20px;
+        border-top: 4px solid #3b82f6;
+        overflow: hidden;
+    }
+
+    .horas-dev-wrapper h2 {
+        margin-top: 0;
+        font-size: 1.4em;
+        font-weight: 600;
+    }
+
+    .horas-dev-content {
+        padding: 20px;
+    }
+
+    .horas-dev-wrapper table thead th:first-child {
+        border-right: 1px solid rgba(255, 255, 255, 0.3);
+    }
 </style>

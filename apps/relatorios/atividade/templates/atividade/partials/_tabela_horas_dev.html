@@ -1,0 +1,26 @@
+<div class="horas-dev-wrapper">
+    <div class="horas-dev-content">
+        <h2>Horas por Dev</h2>
+        <p style="margin-top: -10px; color: #666;">Total de horas por desenvolvedor</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Desenvolvedor</th>
+                    <th class="total-col">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for linha in dados_tabela %}
+                <tr>
+                    <td>{{ linha.colaborador_nome }}</td>
+                    <td class="total-col">{{ linha.total_colaborador|floatformat:2 }}h</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2">Nenhum dado encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
