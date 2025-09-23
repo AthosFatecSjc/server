@@ -2,16 +2,16 @@
 <div id="grafico_pizza">
     <div class="chart-container">
         <div class="chart-header">
-            <h2>Distribuição de Horas por Projeto</h2>
-            <p>Visualização percentual das horas trabalhadas</p>
+            <h2>{{ cabecalho.titulo }}</h2>
+            <p>{{ cabecalho.subtitulo }}</p>
         </div>
     
-        {% if dados_cards %}
+        {% if dados.dados_cards %}
         <div class="chart-wrapper">
             <canvas id="grafico-pizza"></canvas>
         </div>
         
-        {{ dados_cards|json_script:"dados-cards" }}
+        {{ dados.dados_cards|json_script:"dados-cards" }}
         <script>
             // Função para criar gráfico (compatível com HTMX)
             function criarGraficoPizza() {
