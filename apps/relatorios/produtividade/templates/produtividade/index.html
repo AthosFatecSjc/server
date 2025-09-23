@@ -1,43 +1,379 @@
+{% load static %}
 {% load dict_filters %}
 
-<main class="card">
-  <h1>Produtividade - {{ mes }}/{{ ano }}</h1>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão à Vista - Operacional</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .bg-primary { background-color: #3b82f6; }
+        .text-primary { color: #3b82f6; }
+        .border-primary { border-color: #3b82f6; }
+        .bg-green-100 { background-color: #dcfce7; }
+        .text-green-800 { color: #166534; }
+        .bg-yellow-100 { background-color: #fef9c3; }
+        .text-yellow-800 { color: #854d0e; }
+        .bg-red-100 { background-color: #fee2e2; }
+        .text-red-800 { color: #991b1b; }
+        .bg-gray-100 { background-color: #f3f4f6; }
+        .text-gray-400 { color: #9ca3af; }
+        .bg-gray-200 { background-color: #e5e7eb; }
+        .text-gray-600 { color: #4b5563; }
+        .text-muted-foreground { color: #6b7280; }
+        .bg-purple-50 { background-color: #faf5ff; } 
+        
+        .progress-bar {
+            width: 100%;
+            height: 0.5rem;
+            background-color: #e5e7eb;
+            border-radius: 0.25rem;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 0.25rem;
+        }
+        
+        .select-container {
+            position: relative;
+        }
+        
+        .select-trigger {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+        
+        .select-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .select-item {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+        }
+        
+        .select-item:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .select-content.show {
+            display: block;
+        }
+        
+        .icon {
+            width: 1.75rem;
+            height: 1.75rem;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 400px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-4 md:p-6">
+    <div id="pdfModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold text-primary">Confirmar Exportação</h3>
+                <p class="text-muted-foreground mt-1">Deseja exportar o relatório de produtividade para PDF?</p>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="cancelExport" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+                    Cancelar
+                </button>
+                <button id="confirmExport" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
 
-  <table style="width:100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;">
-    <thead>
-      <tr style="background:#3b82f6; color:white; text-align:center;">
-        <th style="padding:6px; border:1px solid #ccc;">Desenvolvedor</th>
-        {% for dia in dias %}
-        <th style="padding:6px; border:1px solid #ccc;">{{ dia }}</th>
-        {% endfor %}
-        <th style="padding:6px; border:1px solid #ccc;">Total</th>
-        <th style="padding:6px; border:1px solid #ccc;">Meta</th>
-        <th style="padding:6px; border:1px solid #ccc;">%</th>
-      </tr>
-    </thead>
+    <div class="space-y-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="text-2xl font-semibold text-primary">Gestão à Vista - Operacional</h2>
+                <p class="text-muted-foreground">Relatório de Produtividade Diária/Mensal</p>
+            </div>
+            <button id="exportPdfButton" class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                <svg class="icon w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Exportar PDF
+            </button>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 md:p-6">
+            <div class="flex items-center gap-2 mb-4">
+                <svg class="icon w-5 h-5 text-primary">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                <h3 class="text-lg font-semibold">Filtros</h3>
+            </div>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium mb-2">Mês/Ano</label>
+                    <div class="select-container">
+                        <div class="select-trigger" id="monthTrigger">
+                            <div class="flex items-center">
+                                <svg class="icon w-4 h-4 mr-2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                <span id="monthValue">{{ mes }}/{{ ano }}</span>
+                            </div>
+                            <svg class="icon w-4 h-4">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="select-content" id="monthSelect">
+                            {% for mes_option in meses_disponiveis %}
+                            <div class="select-item" data-value="{{ mes_option.mes }}-{{ mes_option.ano }}">
+                                {{ mes_option.mes_nome }} {{ mes_option.ano }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="p-4 md:p-6 border-b">
+                <h3 class="text-lg font-semibold">Tabela de Produtividade - {{ mes }}/{{ ano }}</h3>
+                <p class="text-muted-foreground">Horas lançadas por desenvolvedor por día do mês</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-primary text-white">
+                            <th class="border border-gray-300 p-2 text-left font-medium">Desenvolvedor</th>
+                            {% for dia in dias %}
+                            <th class="border border-gray-300 p-2 text-center font-medium min-w-[40px]">{{ dia }}</th>
+                            {% endfor %}
+                            <th class="border border-gray-300 p-2 text-center font-medium">Total</th>
+                            <th class="border border-gray-300 p-2 text-center font-medium">Meta</th>
+                            <th class="border border-gray-300 p-2 text-center font-medium">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in resultados %}
+                        <tr class="{% if r.funcionario == 'REALIZADO' %}font-bold{% endif %}">
+                            <td class="border border-gray-300 p-2 font-medium {% if r.funcionario == 'REALIZADO' %}bg-purple-50{% endif %}">
+                                {{ r.funcionario }}
+                            </td>
+                            {% for dia in dias %}
+                            {% with dia_data=r.dias|get_item:dia %}
+                            <td class="border border-gray-300 p-1 text-center text-sm 
+                                {% if r.funcionario == 'REALIZADO' %}bg-purple-50 font-medium
+                                {% elif dia_data.type == 'weekend' or dia_data == 'weekend' %}bg-gray-100 text-gray-400
+                                {% elif dia_data.type == 'leave' or dia_data == 'leave' %}bg-gray-200 text-gray-600 font-medium
+                                {% elif dia_data.hours >= 8 or dia_data >= 8 %}bg-green-100 text-green-800
+                                {% elif dia_data.hours >= 6 or dia_data >= 6 %}bg-yellow-100 text-yellow-800
+                                {% elif dia_data.hours or dia_data %}bg-red-100 text-red-800
+                                {% endif %}">
+                                {% if dia_data.type %}
+                                    {{ dia_data.value|default:"-" }}
+                                {% else %}
+                                    {% if dia_data == 0 or dia_data == 0.0 %}
+                                        -
+                                    {% else %}
+                                        {% if dia_data|floatformat:0 == dia_data|floatformat:1 %}
+                                            {{ dia_data|floatformat:0 }}
+                                        {% else %}
+                                            {{ dia_data|floatformat:1 }}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            {% endwith %}
+                            {% endfor %}
+                            <td class="border border-gray-300 p-2 text-center font-medium {% if r.funcionario == 'REALIZADO' %}{% endif %}">
+                                {{ r.real }}h
+                            </td>
+                            <td class="border border-gray-300 p-2 text-center {% if r.funcionario == 'REALIZADO' %}{% endif %}">
+                                {{ r.meta }}h
+                            </td>
+                            <td class="border border-gray-300 p-2 text-center">
+                                <div class="flex items-center gap-2">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill 
+                                            {% if r.percentual >= 90 %}bg-green-500
+                                            {% elif r.percentual >= 75 %}bg-yellow-500
+                                            {% else %}bg-red-500{% endif %}" 
+                                            style="width: {% if r.percentual > 100 %}100{% else %}{{ r.percentual }}{% endif %}%">
+                                        </div>
+                                    </div>
+                                    <span class="text-sm font-medium 
+                                        {% if r.percentual >= 90 %}text-green-600
+                                        {% elif r.percentual >= 75 %}text-yellow-600
+                                        {% else %}text-red-600{% endif %}">
+                                        {{ r.percentual }}%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 md:p-6">
+            <h3 class="text-lg font-semibold mb-4">Legenda</h3>
+            <div class="flex flex-col md:flex-row flex-wrap gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-green-100 border border-green-200 rounded flex items-center justify-center">
+                        <span class="text-xs text-green-800">8</span>
+                    </div>
+                    <span class="text-sm">8+ horas (Meta atingida)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-yellow-100 border border-yellow-200 rounded flex items-center justify-center">
+                        <span class="text-xs text-yellow-800">6</span>
+                    </div>
+                    <span class="text-sm">6-7 horas (Abaixo da meta)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-red-100 border border-red-200 rounded flex items-center justify-center">
+                        <span class="text-xs text-red-800">4</span>
+                    </div>
+                    <span class="text-sm">Menos de 6 horas</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
+                        <span class="text-xs text-gray-600">FO</span>
+                    </div>
+                    <span class="text-sm">FO (Folga), FÉ (Férias), LI (Licença)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-purple-50 border border-gray-300 rounded flex items-center justify-center">
+                        <span class="text-xs">R</span>
+                    </div>
+                    <span class="text-sm">REALIZADO - soma diária dos funcionários</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <tbody>
-      {% for r in resultados %}
-      <tr style="text-align:center;">
-        <td style="padding:6px; border:1px solid #ccc; text-align:left;">{{ r.funcionario }}</td>
-
-        {% for dia in dias %}
-        <td style="padding:6px; border:1px solid #ccc;">
-            {{ r.dias|get_item:dia|default:"-" }}
-        </td>
-        {% endfor %}
-
-        <td style="padding:6px; border:1px solid #ccc;">{{ r.real }}</td>
-        <td style="padding:6px; border:1px solid #ccc;">{{ r.meta }}</td>
-        <td style="padding:6px; border:1px solid #ccc;">
-          {% if r.meta > 0 %}
-            {{ r.percentual }}%
-          {% else %}
-            -
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</main>
+    <script>
+        const modal = document.getElementById('pdfModal');
+        const exportButton = document.getElementById('exportPdfButton');
+        const confirmButton = document.getElementById('confirmExport');
+        const cancelButton = document.getElementById('cancelExport');
+        
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+        
+        exportButton.addEventListener('click', function() {
+            modal.classList.add('active');
+        });
+        
+        cancelButton.addEventListener('click', closeModal);
+        
+        confirmButton.addEventListener('click', function() {
+            closeModal(); 
+            window.location.href = "{% url 'exportar_produtividade_pdf' %}?mes={{ mes }}&ano={{ ano }}";
+        });
+        
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+        
+        document.querySelectorAll('.select-trigger').forEach(trigger => {
+            trigger.addEventListener('click', function() {
+                const selectId = this.id.replace('Trigger', 'Select');
+                const selectContent = document.getElementById(selectId);
+                selectContent.classList.toggle('show');
+            });
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.select-container')) {
+                document.querySelectorAll('.select-content').forEach(select => {
+                    select.classList.remove('show');
+                });
+            }
+        });
+        
+        document.querySelectorAll('.select-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const selectId = this.parentElement.id;
+                const valueId = selectId.replace('Select', 'Value');
+                
+                document.getElementById(valueId).textContent = this.textContent;
+                document.getElementById(selectId).classList.remove('show');
+                
+                const mesAno = this.dataset.value;
+                const [mes, ano] = mesAno.split('-');
+                window.location.href = `?mes=${mes}&ano=${ano}`;
+            });
+        });
+    </script>
+</body>
+</html>
