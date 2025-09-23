@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'apps.relatorios',
     'apps.dashboards',
     'apps.relatorios.produtividade',
-    'apps.relatorios.comparacao',
+    'apps.relatorios.comparacao.apps.ComparacaoConfig',
     'apps.relatorios.atividade',
 ]
 
