@@ -14,6 +14,7 @@ def index(request):
         'mes_atual': hoje.month,
         'anos_disponiveis': anos_disponiveis,
     }
+
     return render(request, 'atividade/index.html', context)
 
 @require_GET
