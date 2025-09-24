@@ -134,12 +134,12 @@
         
         .cell-selectable:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 0 2px #3b82f6;
+            box-shadow: 0 0 0 2px #40b114d3;
         }
         
         .cell-selected {
-            background-color: #dbeafe !important;
-            box-shadow: 0 0 0 2px #3b82f6;
+            background-color: #bbfdb3 !important;
+            box-shadow: 0 0 0 2px #5cf32eab;
         }
         
         .legenda-option {
@@ -212,6 +212,7 @@
     </style>
 </head>
 <body class="bg-gray-50 p-4 md:p-6">
+    {% csrf_token %}
     <div id="pdfModal" class="modal-overlay">
         <div class="modal-content">
             <div class="mb-4">

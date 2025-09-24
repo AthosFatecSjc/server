@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_GET, require_POST
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_protect
 import json
 
 from apps.relatorios.produtividade.services import (
@@ -91,7 +91,6 @@ def exportar_pdf(request):
     
     return response
 
-@csrf_exempt
 @require_POST
 def atualizar_legenda(request):
     try:
@@ -111,7 +110,6 @@ def atualizar_legenda(request):
         print(f"Erro na view atualizar_legenda: {e}")
         return JsonResponse({'success': False, 'error': str(e)})
 
-@csrf_exempt
 @require_POST
 def atualizar_meta(request):
     try:
