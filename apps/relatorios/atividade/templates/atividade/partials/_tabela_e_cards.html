@@ -1,20 +1,22 @@
 {# Template partial/parcial é para tabela e os cards. É carregado dinamicamente via HTMX, por isso deve ser mantido separado do index. #}
 <div id="tabela_e_cards">
-    <div class="table-wrapper">
-        <h2>Horas por Desenvolvedor e Projeto</h2>
-        <p style="margin-top: -10px; color: #666;">Distribuição de horas trabalhadas</p>
+    <div class="container-tabela">
+        <div class="cabecalho">
+            <h2>{{ cabecalho.titulo }}</h2>
+            <p>{{ cabecalho.subtitulo }}</p>
+        </div>
         <table>
             <thead>
                 <tr>
                     <th>Desenvolvedor</th>
-                    {% for projeto in projetos_nomes %}
+                    {% for projeto in dados.projetos_nomes %}
                     <th>{{ projeto }}</th>
                     {% endfor %}
                     <th class="total-col">Total</th>
                 </tr>
             </thead>
             <tbody>
-                {% for linha in dados_tabela %}
+                {% for linha in dados.dados_tabela %}
                 <tr>
                     <td>{{ linha.colaborador_nome }}</td>
                     {% for hora in linha.horas %}
@@ -31,17 +33,17 @@
             <tfoot>
                 <tr>
                     <td>TOTAL GERAL</td>
-                    {% for total in totais_por_projeto %}
+                    {% for total in dados.totais_por_projeto %}
                     <td>{{ total|floatformat:2 }}h</td>
                     {% endfor %}
-                    <td class="total-col">{{ total_geral|floatformat:2 }}h</td>
+                    <td class="total-col">{{ dados.total_geral|floatformat:2 }}h</td>
                 </tr>
             </tfoot>
         </table>
     </div>
 
     <div class="cards-container" id="cards-resumo">
-        {% for card in dados_cards %}
+        {% for card in dados.dados_cards %}
         {% cycle 'color-1' 'color-2' 'color-3' 'color-4' as card_color silent %}
         <div class="card {{ card_color }}">
             <h3>{{ card.projeto_nome }}</h3>
@@ -54,19 +56,31 @@
 </div>
 
 <style>
-    h2 { 
-        font-weight: 500; 
-        font-size: 1.2em;
-        margin-top: 30px; 
-        margin-bottom: 15px;
-        padding-bottom: 10px; 
-        border-bottom: 1px solid #e0e0e0;
+    .cabecalho {
+        width: 100%;
+        margin-bottom: 20px;
     }
-    .table-wrapper {
+    .cabecalho h2 {
+        font-weight: 500;
+        font-size: 1.2em;
+        margin: 0 0 5px 0;
+        color: #0f172a;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 10px;
+    }
+    .cabecalho p {
+        margin: 10px 0 0 0;
+        color: #666;
+        font-size: 0.9em;
+    }
+    .container-tabela {
         background-color: #fff;
         border-radius: 8px;
         padding: 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
     table { 
         width: 100%; 

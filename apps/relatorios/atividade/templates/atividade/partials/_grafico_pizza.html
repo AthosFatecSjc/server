@@ -1,55 +1,50 @@
 {# Template parcial para o gráfico de pizza #}
-<div id="grafico_pizza">
+{% with chart_id="grafico-pizza-"|add:cabecalho.titulo|slugify data_id="dados-cards-"|add:cabecalho.titulo|slugify %}
+<div id="{{ chart_id }}">
     <div class="chart-container">
         <div class="chart-header">
-            <h2>Distribuição de Horas por Projeto</h2>
-            <p>Visualização percentual das horas trabalhadas</p>
+            <h2>{{ cabecalho.titulo }}</h2>
+            <p>{{ cabecalho.subtitulo }}</p>
         </div>
-    
-        {% if dados_cards %}
+
+        {% if dados.dados_grafico_pizza %}
         <div class="chart-wrapper">
-            <canvas id="grafico-pizza"></canvas>
+            <canvas id="{{ chart_id }}-canvas"></canvas>
         </div>
-        
-        {{ dados_cards|json_script:"dados-cards" }}
+
+        {{ dados.dados_grafico_pizza|json_script:data_id }}
+
         <script>
-            // Função para criar gráfico (compatível com HTMX)
+        (function() {
             function criarGraficoPizza() {
-                console.log('Tentando criar gráfico de pizza...');
-                
-                // Verificar se Chart.js está disponível
+                // Verifica se Chart.js está disponível
                 if (typeof Chart === 'undefined') {
                     console.error('Chart.js não foi carregado!');
                     return;
                 }
-                
-                const dadosCardsElement = document.getElementById('dados-cards');
+
+                const dadosCardsElement = document.getElementById('{{ data_id }}');
                 if (!dadosCardsElement) {
-                    console.error('Elemento dados-cards não encontrado!');
+                    console.error('Elemento {{ data_id }} não encontrado!');
                     return;
                 }
-                
+
                 let dadosCards;
                 try {
                     dadosCards = JSON.parse(dadosCardsElement.textContent);
-                    console.log('Dados recebidos:', dadosCards);
                 } catch (e) {
                     console.error('Erro ao parsear dados JSON:', e);
                     return;
                 }
-                
+
                 if (!dadosCards || dadosCards.length === 0) {
-                    console.warn('Nenhum dado encontrado para o gráfico');
-                    document.querySelector('.chart-wrapper').innerHTML = '<div class="no-data-message"><p>Nenhum dado disponível para gerar o gráfico</p></div>';
+                    document.querySelector('#{{ chart_id }} .chart-wrapper').innerHTML =
+                        '<div class="no-data-message"><p>Nenhum dado disponível para gerar o gráfico</p></div>';
                     return;
                 }
-                
-                // Preparar dados para o gráfico
-                const labels = dadosCards.map(card => card.projeto_nome);
-                const data = dadosCards.map(card => parseFloat(card.total_horas));
-                
-                console.log('Labels:', labels);
-                console.log('Data:', data);
+
+                const labels = dadosCards.map(card => card.label);
+                const data = dadosCards.map(card => parseFloat(card.data));
 
                 const dadosGrafico = {
                     labels: labels,
@@ -79,17 +74,10 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         layout: {
-                            padding: {
-                                left: 50,
-                                right: 100,
-                                top: 50,
-                                bottom: 50
-                            }
+                            padding: { left: 0, right: 0, top: 20, bottom: 20 }
                         },
                         plugins: {
-                            legend: {
-                                display: false // Desabilitar legenda para usar só as linhas
-                            },
+                            legend: { display: false },
                             tooltip: {
                                 backgroundColor: 'rgba(0, 0, 0, 0.8)',
                                 titleColor: '#ffffff',
@@ -115,17 +103,8 @@
                                 borderWidth: 1,
                                 borderRadius: 4,
                                 color: '#ffffff',
-                                font: {
-                                    family: '"Noto Sans", sans-serif',
-                                    size: 10,
-                                    weight: 'bold'
-                                },
-                                padding: {
-                                    left: 8,
-                                    right: 8,
-                                    top: 4,
-                                    bottom: 4
-                                },
+                                font: { family: '"Noto Sans", sans-serif', size: 10, weight: 'bold' },
+                                padding: { left: 8, right: 8, top: 4, bottom: 4 },
                                 formatter: function(value, context) {
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = ((value / total) * 100).toFixed(1);
@@ -139,50 +118,34 @@
                                 clamp: false,
                                 clip: false
                             }
-                        }
+                        },
+                        radius: '80%',
                     }
                 };
 
-                // Destruir gráfico anterior se existir
-                if (window.graficoPizzaInstance) {
-                    console.log('Destruindo gráfico anterior');
-                    window.graficoPizzaInstance.destroy();
-                    window.graficoPizzaInstance = null;
-                }
-
-                // Criar novo gráfico
-                const ctx = document.getElementById('grafico-pizza');
+                const ctx = document.getElementById('{{ chart_id }}-canvas');
                 if (ctx) {
-                    console.log('Criando novo gráfico');
-                    try {
-                        // Registrar o plugin DataLabels
-                        Chart.register(ChartDataLabels);
-                        
-                        window.graficoPizzaInstance = new Chart(ctx, configuracao);
-                        console.log('Gráfico criado com sucesso');
-                    } catch (e) {
-                        console.error('Erro ao criar gráfico:', e);
+                    if (ctx.graficoPizzaInstance) {
+                        ctx.graficoPizzaInstance.destroy();
                     }
-                } else {
-                    console.error('Canvas grafico-pizza não encontrado!');
+                    Chart.register(ChartDataLabels);
+                    ctx.graficoPizzaInstance = new Chart(ctx, configuracao);
                 }
             }
-            
-            // Executar quando o DOM estiver carregado
+
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', criarGraficoPizza);
             } else {
-                // DOM já carregado (caso de HTMX)
                 criarGraficoPizza();
             }
-            
-            // Escutar eventos do HTMX para recriar gráfico quando conteúdo for atualizado
+
             document.body.addEventListener('htmx:afterSettle', function(evt) {
                 if (evt.target.id === 'relatorio-content') {
-                    console.log('Conteúdo HTMX atualizado, recriando gráfico...');
-                    setTimeout(criarGraficoPizza, 100); // Pequeno delay para garantir que o DOM foi atualizado
+                    setTimeout(criarGraficoPizza, 100);
                 }
             });
+
+        })();
         </script>
         {% else %}
         <div class="no-data-message">
@@ -202,12 +165,10 @@
         flex-direction: column;
         align-items: center;
     }
-    
     .chart-header {
         width: 100%;
         margin-bottom: 20px;
     }
-    
     .chart-header h2 {
         font-weight: 500;
         font-size: 1.2em;
@@ -216,21 +177,19 @@
         border-bottom: 1px solid #e0e0e0;
         padding-bottom: 10px;
     }
-    
     .chart-header p {
         margin: 10px 0 0 0;
         color: #666;
         font-size: 0.9em;
     }
-    
+
     .chart-wrapper {
         position: relative;
+        justify-content: center;
+        align-items: center;
         width: 100%;
-        max-width: 500px;
-        height: 500px;
-
     }
-    
+
     .no-data-message {
         display: flex;
         align-items: center;
@@ -240,3 +199,4 @@
         font-style: italic;
     }
 </style>
+{% endwith %}
