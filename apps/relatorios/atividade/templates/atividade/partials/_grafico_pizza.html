@@ -7,12 +7,12 @@
             <p>{{ cabecalho.subtitulo }}</p>
         </div>
 
-        {% if dados.dados_cards %}
+        {% if dados.dados_grafico_pizza %}
         <div class="chart-wrapper">
             <canvas id="{{ chart_id }}-canvas"></canvas>
         </div>
 
-        {{ dados.dados_cards|json_script:data_id }}
+        {{ dados.dados_grafico_pizza|json_script:data_id }}
 
         <script>
         (function() {
@@ -43,8 +43,8 @@
                     return;
                 }
 
-                const labels = dadosCards.map(card => card.projeto_nome);
-                const data = dadosCards.map(card => parseFloat(card.total_horas));
+                const labels = dadosCards.map(card => card.label);
+                const data = dadosCards.map(card => parseFloat(card.data));
 
                 const dadosGrafico = {
                     labels: labels,
@@ -119,6 +119,7 @@
                                 clip: false
                             }
                         },
+                        radius: '80%',
                     }
                 };
 
@@ -187,8 +188,8 @@
 
     .chart-wrapper {
         position: relative;
-        justify-content: center;  /* horizontal center */
-        align-items: center;      /* vertical center */
+        justify-content: center;
+        align-items: center;
         width: 100%;
     }
 

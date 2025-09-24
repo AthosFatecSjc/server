@@ -27,10 +27,9 @@ def relatorio_tabela_e_cards(request):
         ano, mes = hoje.year, hoje.month
 
     context = {
-        'cabecalho': {'titulo': 'jovi', 'subtitulo': ''},
+        'cabecalho': {'titulo': '', 'subtitulo': ''},
         'dados': AtividadeService.gerar_dados_relatorio_atividade(ano, mes)
     }
-
 
     response = '<div id="horas_projeto" class="conteudo">'
     response += get_tabela_horas_projeto(context, request)
@@ -49,6 +48,12 @@ def get_tabela_horas_projeto(context, request):
 
 def get_grafico_horas_projeto(context, request):
     context.update({'cabecalho': {'titulo': 'Distribuição de Horas por Projeto', 'subtitulo': 'Visualização percentual das horas trabalhadas'}})
+
+    context['dados']['dados_grafico_pizza'] = [
+            {"label": registro["projeto_nome"], "data": registro["total_horas"]}
+            for registro in context['dados']['dados_cards']
+        ]
+
     return render_to_string("atividade/partials/_grafico_pizza.html", context, request=request)
 
 def get_tabela_horas_por_dev(context, request):
@@ -57,4 +62,10 @@ def get_tabela_horas_por_dev(context, request):
 
 def get_grafico_horas_por_dev(context, request):
     context.update({'cabecalho': {'titulo': 'Distribuição de Horas por Dev', 'subtitulo': 'Visualização percentual das horas trabalhadas dor desenvolvedor'}})
+
+    context['dados']['dados_grafico_pizza'] = [
+            {"label": registro["colaborador_nome"], "data": registro["total_colaborador"]}
+            for registro in context['dados']['dados_tabela']
+        ]
+
     return render_to_string("atividade/partials/_grafico_pizza.html", context, request=request)
