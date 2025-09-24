@@ -9,20 +9,17 @@ def index(request):
     return render(request, 'comparacao/index.html')
 
 @require_GET
-def relatorio_anual_comparacao(request: any, ano: int = None):
+def relatorio_anual_comparacao(request: any):
     """
     Método de consolidação de dados e geração das informações utilizadas no Relatório de Comparação Anual.
-
-    Parameters:
-        ano (int): Ano para geração do relatório.
     
     Returns:
         dict (str, any): Dicionário com um inteiro e uma lista 'ano' e 'por_dev'.
     """
 
     try:
-        ano = int(ano or request.GET.get('ano') or datetime.date.today().year)
-    except Exception:
+        ano = int(request.GET.get('ano'))
+    except (TypeError, ValueError):
         ano = datetime.date.today().year
 
     realizados = ComparacaoService.soma_horas_por_dev_mes(ano)
