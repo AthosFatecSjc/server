@@ -126,7 +126,6 @@ def atualizar_codigo_especial(funcionario_id, mes, ano, dia, codigo):
             except:
                 dia_semana = 'Segunda'
             
-            # Cria novo registro com o código especial
             TempoGastoEquipe.objects.create(
                 funcionario=funcionario,
                 mes=data_mes,
@@ -181,13 +180,13 @@ def obter_meta_funcionario(funcionario_id, mes, ano):
             meta_individual = MetaTempoControle.objects.get(
                 objetivo_clt=f"META_{funcionario_id}_{ano}_{mes:02d}"
             )
-            return float(meta_individual.objetivo_estagirario or 154)
-        except MetaTempoControle.DoesNotExist:
-            try:
-                meta_global = MetaTempoControle.objects.get(id=1)
-                return float(meta_global.objetivo_clt or 154)
-            except MetaTempoControle.DoesNotExist:
+            meta_valor = meta_individual.objetivo_estagirario
+            if meta_valor and meta_valor.strip():
+                return float(meta_valor)
+            else:
                 return 154.0
+        except MetaTempoControle.DoesNotExist:
+            return 154.0
             
     except Exception as e:
         print(f"Erro ao obter meta: {e}")
@@ -239,7 +238,6 @@ def exportar_produtividade_pdf(mes, ano, resultados):
             if isinstance(dia_data, dict) and dia_data.get('type') == 'leave':
                 cell_value = dia_data.get("value", "-")
             elif isinstance(dia_data, (int, float)) and dia_data < 0:
-                # CORREÇÃO: Usar valores inteiros para comparação
                 codigo_int = int(dia_data)
                 codigo_map = {
                     -1: 'FE', -2: 'AT', -3: 'FO', -4: 'FA', -5: 'LI', -6: 'CO'

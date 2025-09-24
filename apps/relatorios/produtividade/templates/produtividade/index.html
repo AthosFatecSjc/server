@@ -269,7 +269,7 @@
         </div>
     </div>
 
-    <div id="metaModal" class="modal-overlay">
+   <div id="metaModal" class="modal-overlay">
         <div class="modal-content">
             <div class="mb-4">
                 <h3 class="text-lg font-semibold text-primary">Alterar Meta</h3>
@@ -277,12 +277,24 @@
             </div>
             <div class="space-y-2 mb-4">
                 <div class="meta-option" data-value="154">
-                    <span class="font-medium">154 horas</span>
+                    <span class="font-medium">154 horas (Padrão)</span>
                 </div>
                 <div class="meta-option" data-value="132">
                     <span class="font-medium">132 horas</span>
                 </div>
+                <div class="meta-option custom-meta" data-value="custom">
+                    <span class="font-medium">Personalizada</span>
+                </div>
             </div>
+            
+            <div id="customMetaInput" class="mb-4 hidden">
+                <label class="block text-sm font-medium mb-2">Digite a meta personalizada:</label>
+                <input type="number" id="customMetaValue" 
+                    class="w-full p-2 border border-gray-300 rounded" 
+                    placeholder="Ex: 120, 140, 160..." 
+                    min="1" max="300" step="0.1">
+            </div>
+            
             <div class="flex justify-end gap-3">
                 <button id="cancelMeta" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
                     Cancelar
@@ -422,12 +434,10 @@
                                 data-funcionario-id="{{ r.funcionario_id }}"
                                 data-funcionario="{{ r.funcionario }}">
                                 
-                                {# LÓGICA CORRIGIDA PARA EXIBIÇÃO DOS CÓDIGOS #}
                                 {% if dia_data.type == 'leave' %}
                                     {{ dia_data.value|default:"-" }}
                                 {% else %}
                                     {% if dia_data < 0 %}
-                                        {# Converter valor negativo para sigla #}
                                         {% if dia_data == -1 %}FE
                                         {% elif dia_data == -2 %}AT
                                         {% elif dia_data == -3 %}FO
@@ -724,17 +734,48 @@
             }
         });
 
+        let metaSelecionada = null;
+        let isCustomMeta = false;
+
         document.querySelectorAll('.meta-option').forEach(option => {
             option.addEventListener('click', function() {
                 document.querySelectorAll('.meta-option').forEach(opt => 
                     opt.style.backgroundColor = '');
                 this.style.backgroundColor = '#e5e7eb';
-                document.getElementById('confirmMeta').dataset.value = this.dataset.value;
+                
+                const value = this.dataset.value;
+                
+                if (value === 'custom') {
+                    document.getElementById('customMetaInput').classList.remove('hidden');
+                    document.getElementById('customMetaInput').classList.add('block');
+                    isCustomMeta = true;
+                    metaSelecionada = null;
+                } else {
+                    document.getElementById('customMetaInput').classList.remove('block');
+                    document.getElementById('customMetaInput').classList.add('hidden');
+                    isCustomMeta = false;
+                    metaSelecionada = value;
+                }
             });
         });
 
         document.getElementById('confirmMeta').addEventListener('click', function() {
-            const metaValue = this.dataset.value;
+            let metaValue = null;
+            
+            if (isCustomMeta) {
+                const customValue = document.getElementById('customMetaValue').value;
+                if (!customValue || customValue <= 0) {
+                    alert('Por favor, digite um valor válido para a meta personalizada.');
+                    return;
+                }
+                metaValue = parseFloat(customValue);
+            } else if (metaSelecionada) {
+                metaValue = parseFloat(metaSelecionada);
+            } else {
+                alert('Por favor, selecione uma opção de meta.');
+                return;
+            }
+            
             if (metaValue) {
                 closeModal(metaModal);
                 
@@ -749,6 +790,7 @@
                 openModal(confirmModal);
             }
         });
+
 
         function aplicarLegenda(legendaValue) {
             const dias = selectedCells.map(cell => cell.dia);
@@ -843,7 +885,15 @@
                 opt.style.backgroundColor = '');
         });
         
-        document.getElementById('cancelMeta').addEventListener('click', () => closeModal(metaModal));
+        document.getElementById('cancelMeta').addEventListener('click', () => {
+            closeModal(metaModal);
+            document.querySelectorAll('.meta-option').forEach(opt => 
+                opt.style.backgroundColor = '');
+            document.getElementById('customMetaInput').classList.add('hidden');
+            document.getElementById('customMetaValue').value = '';
+            metaSelecionada = null;
+            isCustomMeta = false;
+        });
         document.getElementById('cancelConfirm').addEventListener('click', () => closeModal(confirmModal));
 
         const exportButton = document.getElementById('exportPdfButton');
