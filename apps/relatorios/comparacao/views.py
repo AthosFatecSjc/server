@@ -2,11 +2,7 @@ import datetime
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
-from .services import (
-    soma_horas_por_dev_mes,
-    soma_horas_previstas_por_dev_mes,
-    totais_anuais_e_diferenca,
-)
+from .services import ComparacaoService
 
 @require_GET
 def index(request):
@@ -29,9 +25,9 @@ def relatorio_anual_comparacao(request: any, ano: int = None):
     except Exception:
         ano = datetime.date.today().year
 
-    realizados = soma_horas_por_dev_mes(ano)
-    previstos = soma_horas_previstas_por_dev_mes(ano)
-    resumo = totais_anuais_e_diferenca(ano)
+    realizados = ComparacaoService.soma_horas_por_dev_mes(ano)
+    previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano)
+    resumo = ComparacaoService.totais_anuais_e_diferenca(ano)
 
     por_dev = {}
     for dev in sorted(set(list(realizados.keys()) + list(previstos.keys()))):
