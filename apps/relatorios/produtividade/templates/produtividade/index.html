@@ -752,6 +752,15 @@
 
         function aplicarLegenda(legendaValue) {
             const dias = selectedCells.map(cell => cell.dia);
+            
+            console.log("Enviando dados:", {
+                funcionario_id: currentFuncionarioId,
+                mes: {{ mes }},
+                ano: {{ ano }},
+                dias: dias,
+                codigo: legendaValue
+            });
+            
             fetch('{% url "atualizar_legenda" %}', {
                 method: 'POST',
                 headers: {
@@ -763,7 +772,7 @@
                     mes: {{ mes }},
                     ano: {{ ano }},
                     dias: dias,
-                    codigo: legendaValue
+                    codigo: legendaValue  
                 })
             })
             .then(response => {
@@ -773,6 +782,7 @@
                 return response.json();
             })
             .then(data => {
+                console.log("Resposta do servidor:", data);
                 if (data.success) {
                     window.location.reload();
                 } else {
@@ -780,6 +790,7 @@
                 }
             })
             .catch(error => {
+                console.error("Erro na requisição:", error);
                 alert('Erro ao registrar ausência: ' + error.message);
             });
         }

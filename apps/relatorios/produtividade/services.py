@@ -89,7 +89,6 @@ def calcular_spends_por_dev(mes, ano):
     return resultados
 
 def atualizar_codigo_especial(funcionario_id, mes, ano, dia, codigo):
-    """Atualiza código especial para um dia específico usando tempo_gasto negativo"""
     from datetime import date
     try:
         data_mes = date(ano, mes, 1)
@@ -127,6 +126,7 @@ def atualizar_codigo_especial(funcionario_id, mes, ano, dia, codigo):
             except:
                 dia_semana = 'Segunda'
             
+            # Cria novo registro com o código especial
             TempoGastoEquipe.objects.create(
                 funcionario=funcionario,
                 mes=data_mes,
@@ -135,6 +135,9 @@ def atualizar_codigo_especial(funcionario_id, mes, ano, dia, codigo):
                 tempo_gasto=valor_especial,
                 meta=None
             )
+            print(f"Registro criado com sucesso para dia {dia}, código {codigo}")
+        else:
+            print(f"Removendo registro para dia {dia} (código NONE)")
         
         return True
     except Exception as e:
@@ -142,7 +145,6 @@ def atualizar_codigo_especial(funcionario_id, mes, ano, dia, codigo):
         return False
 
 def atualizar_meta_funcionario(funcionario_id, mes, ano, meta):
-    """Atualiza a meta de horas para um funcionário específico"""
     from datetime import date
     try:
         data_mes = date(ano, mes, 1)
@@ -165,7 +167,6 @@ def atualizar_meta_funcionario(funcionario_id, mes, ano, meta):
         return False
 
 def atualizar_multiplos_dias(funcionario_id, mes, ano, dias, codigo):
-    """Atualiza código especial para múltiplos dias de uma vez"""
     success_count = 0
     for dia in dias:
         if atualizar_codigo_especial(funcionario_id, mes, ano, dia, codigo):
@@ -174,7 +175,6 @@ def atualizar_multiplos_dias(funcionario_id, mes, ano, dias, codigo):
     return success_count == len(dias)
 
 def obter_meta_funcionario(funcionario_id, mes, ano):
-    """Obtém a meta atual do funcionário específico"""
     from datetime import date
     try:
         try:

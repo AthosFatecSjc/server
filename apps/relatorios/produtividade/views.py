@@ -100,16 +100,15 @@ def atualizar_legenda(request):
         mes = data.get('mes')
         ano = data.get('ano')
         dias = data.get('dias', [])
-        codigo = data.get('codigo')
-        codigo_map = {
-            'FE': -1, 'AT': -2, 'FO': -3, 'FA': -4, 'LI': -5, 'CO': -6, 'NONE': None
-        }
-        codigo_num = codigo_map.get(codigo, None)
+        codigo = data.get('codigo') 
         
-        success = atualizar_multiplos_dias(funcionario_id, mes, ano, dias, codigo_num)
+        print(f"Recebendo requisição: funcionario_id={funcionario_id}, mes={mes}, ano={ano}, dias={dias}, codigo={codigo}")
+
+        success = atualizar_multiplos_dias(funcionario_id, mes, ano, dias, codigo)
         
         return JsonResponse({'success': success})
     except Exception as e:
+        print(f"Erro na view atualizar_legenda: {e}")
         return JsonResponse({'success': False, 'error': str(e)})
 
 @csrf_exempt
