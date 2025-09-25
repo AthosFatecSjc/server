@@ -78,7 +78,7 @@
             </div>
             <form class="filter-form"
                   hx-get="{% url 'relatorio_tabela_e_cards' %}"
-                  hx-target="#horas_projeto"
+                  hx-target="#controle_horas_projeto_equipe"
                   hx-trigger="load, change"
                   hx-indicator="#loading">
                 
@@ -102,7 +102,6 @@
                         <option value="{{ ano }}" {% if ano == ano_atual %}selected{% endif %}>{{ ano }}</option>
                     {% endfor %}
                 </select>
-
             </form>
         </div>
         
@@ -110,7 +109,7 @@
             Carregando dados...
         </div>
 
-        <div id="horas_projeto" class="conteudo"></div>
+        <div id="controle_horas_projeto_equipe"></div>
         
     </div>
     
