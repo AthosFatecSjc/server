@@ -37,7 +37,7 @@ def relatorio_tabela_e_cards(request):
     response += get_grafico_horas_projeto(context, request)
     response += '</div>'
     response += '<div id="horas_por_dev" class="conteudo" style="margin-top: 15px">'
-    # response += get_tabela_horas_por_dev(context, request)
+    response += get_tabela_horas_por_dev(context, request)
     response += get_grafico_horas_por_dev(context, request)
     response += '</div>'
     
@@ -59,7 +59,7 @@ def get_grafico_horas_projeto(context, request):
 
 def get_tabela_horas_por_dev(context, request):
     context.update({'cabecalho': {'titulo': 'Horas por Dev', 'subtitulo': 'Visualização de horas trabalhadas por desenvolvedor'}})
-    return render_to_string("atividade/partials/_tabela_e_cards.html", context, request=request)
+    return render_to_string("atividade/partials/_tabela_horas_dev.html", context, request=request)
 
 def get_grafico_horas_por_dev(context, request):
     context.update({'cabecalho': {'titulo': 'Distribuição de Horas por Dev', 'subtitulo': 'Visualização percentual das horas trabalhadas dor desenvolvedor'}})
