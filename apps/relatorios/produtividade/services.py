@@ -152,12 +152,12 @@ def atualizar_meta_funcionario(funcionario_id, mes, ano, meta):
         meta_obj, created = MetaTempoControle.objects.get_or_create(
             objetivo_clt=f"META_{funcionario_id}_{ano}_{mes:02d}",
             defaults={
-                'objetivo_estagirario': str(meta)
+                'objetivo_estagiario': str(meta)
             }
         )
         
         if not created:
-            meta_obj.objetivo_estagirario = str(meta)
+            meta_obj.objetivo_estagiario = str(meta)
             meta_obj.save()
         
         return True
@@ -180,7 +180,7 @@ def obter_meta_funcionario(funcionario_id, mes, ano):
             meta_individual = MetaTempoControle.objects.get(
                 objetivo_clt=f"META_{funcionario_id}_{ano}_{mes:02d}"
             )
-            meta_valor = meta_individual.objetivo_estagirario
+            meta_valor = meta_individual.objetivo_estagiario
             if meta_valor and meta_valor.strip():
                 return float(meta_valor)
             else:
