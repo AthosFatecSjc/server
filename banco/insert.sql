@@ -199,55 +199,7 @@ SELECT
 FROM
     HorasFinaisPorFuncionarioProjetoMes hfp;
 
-
-
-MODELO DE DADOS BRUTOS
-
--- 1. Inserção na Tabela 'cargo'
-INSERT INTO cargo (sigla) VALUES
-('Gerente de Projetos'),
-('Membro de Equipe'),
-('Lider de Equipe');
-
--- 2. Inserção na Tabela 'projeto'
-INSERT INTO projeto (nome, data_criacao)
-SELECT
-    nome,
-    '2025-01-01'::DATE + (random() * (DATE '2025-12-31' - DATE '2025-01-01'))::INT AS data_criacao
-FROM (
-    VALUES
-        ('SOS Mnt'),
-        ('SOS Ges'),
-        ('SOS Ed'),
-        ('Ball Anal'),
-        ('Ball LNO'),
-        ('Ball PFS'),
-        ('Ball Dados'),
-        ('Bayer Mak'),
-        ('Incra'),
-        ('Climatem'),
-        ('Comercial'),
-        ('Reunião')
-) AS projetos(nome);
-
--- 3. Inserção na Tabela 'meta_tempo_controle'
-INSERT INTO meta_tempo_controle (objetivo_clt, objetivo_estagiario) VALUES
-('7', '6');
-
--- 4. Inserção na Tabela 'funcionario' 
-INSERT INTO funcionario (nome, time, cargo_id, gerente_id, data_criacao) VALUES
-('Daniel Maturana', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Gerente de Projetos'), NULL, '2025-09-01'),
-('Aline Dominique', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), '2025-09-01'),
-('Felipe Faria', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), '2025-09-01'),
-('Eric Lourenço', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), '2025-09-01'),
-('Alison Americo', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), '2025-09-01'),
-('Francisco Bustamante', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), '2025-09-01'),
-('Helena Benevenuto', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), '2025-09-01'),
-('João V Menezes', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), '2025-09-01'),
-('Jose Thomazini', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), '2025-09-01'),
-('Lucas Paiva', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), '2025-09-01'),
-('Sérgio Casas', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), '2025-09-01');
-
+-- # DADOS BRUTOS - Insert individual
 
 -- 5. Inserção na Tabela 'controle_horas_equipe_resumo'
 -- Adiciona dados de resumo para simular o total de horas para o mês de agosto.
@@ -355,5 +307,3 @@ INSERT INTO controle_tempo_resumo (realizado_equipe, total_real, total_meta, apr
 -- Resumo para o dia 5 de agosto
 (8.0, 8.0, 7.0, 114.28, (SELECT id FROM controle_tempo_equipe WHERE dia_mes = 5 AND funcionario_id = (SELECT id FROM funcionario WHERE nome = 'Aline Dominique') LIMIT 1)),
 (7.5, 7.5, 7.0, 107.14, (SELECT id FROM controle_tempo_equipe WHERE dia_mes = 5 AND funcionario_id = (SELECT id FROM funcionario WHERE nome = 'Felipe Faria') LIMIT 1));
-
-
