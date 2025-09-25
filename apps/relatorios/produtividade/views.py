@@ -1,12 +1,21 @@
 from django.shortcuts import render
-from django.db.models import Min
-from apps.relatorios.produtividade.services import calcular_spends_por_dev, exportar_produtividade_pdf
-from datetime import datetime
-from django.http import HttpResponse
-from django.views.decorators.http import require_GET 
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.csrf import csrf_protect
+import json
 
+from apps.relatorios.produtividade.services import (
+    calcular_spends_por_dev, 
+    calcular_spends_por_dev_com_legendas, 
+    exportar_produtividade_pdf,
+    atualizar_codigo_especial,
+    atualizar_meta_funcionario,
+    atualizar_multiplos_dias
+)
 from apps.relatorios.models import TempoGastoEquipe
+from datetime import datetime
 
+@require_GET
 def index(request):
     mes_param = request.GET.get('mes')
     ano_param = request.GET.get('ano')
@@ -39,8 +48,8 @@ def index(request):
         })
     
     meses_disponiveis.sort(key=lambda x: (x['ano'], x['mes']), reverse=True)
-    
-    resultados = calcular_spends_por_dev(mes, ano)
+
+    resultados = calcular_spends_por_dev_com_legendas(mes, ano)
     dias = list(range(1, 32))
 
     return render(request, 'produtividade/index.html', {
@@ -65,7 +74,7 @@ def exportar_pdf(request):
         mes = hoje.month
         ano = hoje.year
     
-    resultados = calcular_spends_por_dev(mes, ano)
+    resultados = calcular_spends_por_dev_com_legendas(mes, ano)
     pdf = exportar_produtividade_pdf(mes, ano, resultados)
     
     MESES_PORTUGUES = {
@@ -81,3 +90,37 @@ def exportar_pdf(request):
     response.write(pdf)
     
     return response
+
+@require_POST
+def atualizar_legenda(request):
+    try:
+        data = json.loads(request.body)
+        funcionario_id = data.get('funcionario_id')
+        mes = data.get('mes')
+        ano = data.get('ano')
+        dias = data.get('dias', [])
+        codigo = data.get('codigo') 
+        
+        print(f"Recebendo requisição: funcionario_id={funcionario_id}, mes={mes}, ano={ano}, dias={dias}, codigo={codigo}")
+
+        success = atualizar_multiplos_dias(funcionario_id, mes, ano, dias, codigo)
+        
+        return JsonResponse({'success': success})
+    except Exception as e:
+        print(f"Erro na view atualizar_legenda: {e}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@require_POST
+def atualizar_meta(request):
+    try:
+        data = json.loads(request.body)
+        funcionario_id = data.get('funcionario_id')
+        mes = data.get('mes')
+        ano = data.get('ano')
+        meta = data.get('meta')
+        
+        success = atualizar_meta_funcionario(funcionario_id, mes, ano, meta)
+        
+        return JsonResponse({'success': success})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
