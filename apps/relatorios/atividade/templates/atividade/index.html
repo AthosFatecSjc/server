@@ -10,56 +10,51 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js" integrity="sha256-Lye89HGy1p3XhJT24hcvsoRw64Q4IOL5a7hdOflhjTA=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" integrity="sha256-IMCPPZxtLvdt9tam8RJ8ABMzn+Mq3SQiInbDmMYwjDg=" crossorigin="anonymous"></script>
     <style>
-        body { font-family: "Noto Sans", sans-serif; margin: 20px; background-color: #f4f7f9; }
+        body { font-family: "Noto Sans", sans-serif; margin: 16px; background-color: #f4f7f9; }
         .container { 
             margin: 0;
         }
         .conteudo {
             display: grid;
-            grid-template-columns: 1fr 500px;
-            gap: 20px;
+            grid-template-columns: 1fr 400px;
+            gap: 16px;
             align-items: start;
-            min-width: 0; /* Permite que a tabela seja responsiva */
+            min-width: 0;
         }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .header h1 {
             font-weight: 400;
+            font-size: 1.5em;
             color: #0000FF;
         }
-        .filters { margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 4px solid #0000FF; }
+        .filters { margin-bottom: 16px; background: #fff; padding: 16px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 4px solid #0000FF; }
         .htmx-indicator{ display: none; }
         .filter-header {
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         .filter-header .filter-title {
             display: flex;
             align-items: center;
             color: #0000FF;
             font-weight: 600;
-            font-size: 1rem;
-            font-family: "Noto Sans", sans-serif;
+            font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         .filter-header .filter-title .filter-icon {
             margin-right: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         .filter-subtitle {
             margin-left: 28px;
             margin-top: 2px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #3b4b61;
-            font-family: "Noto Sans", sans-serif;
         }
-        .filter-form { display: flex; align-items: center; gap: 20px; }
-        .filter-form select { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccd4e0; font-size: 1em; background-color: #fdfdfd; transition: border 0.2s; font-family: "Noto Sans", sans-serif; }
-        .filter-form select:focus { border-color: #0000FF; outline: none; }
+        .filter-form { display: flex; align-items: center; gap: 16px; }
+        .filter-form select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ccd4e0; font-size: 0.9em; background-color: #fdfdfd; }
     </style>
 </head>
 <body>
