@@ -10,7 +10,8 @@
                 </tr>
             </thead>
             <tbody>
-                {% for linha in dados_tabela %}
+                {# ALTERAÇÃO: Adicionado "dados." para aceder corretamente à lista de dados da tabela. #}
+                {% for linha in dados.dados_tabela %}
                 <tr>
                     <td>{{ linha.colaborador_nome }}</td>
                     <td class="total-col">{{ linha.total_colaborador|floatformat:2 }}h</td>

@@ -1,10 +1,7 @@
-{# Template partial/parcial é para tabela e os cards. É carregado dinamicamente via HTMX, por isso deve ser mantido separado do index. #}
 <div id="tabela_e_cards">
-    <div class="container-tabela">
-        <div class="cabecalho">
-            <h2>{{ cabecalho.titulo }}</h2>
-            <p>{{ cabecalho.subtitulo }}</p>
-        </div>
+    <div class="table-wrapper">
+        <h2>Horas por Desenvolvedor e Projeto</h2>
+        <p style="margin-top: -10px; color: #666;">Distribuição de horas trabalhadas</p>
         <table>
             <thead>
                 <tr>
@@ -26,7 +23,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="{{ projetos_nomes|length|add:2 }}">Nenhum dado encontrado para o período selecionado.</td>
+                    <td colspan="{{ dados.projetos_nomes|length|add:2 }}">Nenhum dado encontrado para o período selecionado.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -54,35 +51,24 @@
         {% endfor %}
     </div>
 
-    {% include "atividade/partials/_tabela_horas_dev.html" %}
+    {# A LINHA ABAIXO FOI REMOVIDA PARA CORRIGIR A DUPLICAÇÃO #}
+    {# {% include "atividade/partials/_tabela_horas_dev.html" %} #}
 </div>
 
 <style>
-    .cabecalho {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    .cabecalho h2 {
-        font-weight: 500;
+    h2 { 
+        font-weight: 500; 
         font-size: 1.2em;
-        margin: 0 0 5px 0;
-        color: #0f172a;
+        margin-top: 30px; 
+        margin-bottom: 15px;
+        padding-bottom: 10px; 
         border-bottom: 1px solid #e0e0e0;
-        padding-bottom: 10px;
     }
-    .cabecalho p {
-        margin: 10px 0 0 0;
-        color: #666;
-        font-size: 0.9em;
-    }
-    .container-tabela {
+    .table-wrapper {
         background-color: #fff;
         border-radius: 8px;
         padding: 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
     }
     table { 
         width: 100%; 
@@ -137,9 +123,9 @@
         background-color: #fff;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        max-width: 450px;
+        
         margin-top: 20px;
-        border-top: 12px solid #0000FF;
+        border-top: 7px solid #3b82f6;
         overflow: hidden;
     }
 
@@ -150,7 +136,7 @@
     }
 
     .horas-dev-content {
-        padding: 12px;
+        padding: 20px;
     }
 
     .horas-dev-wrapper table thead th:first-child {
