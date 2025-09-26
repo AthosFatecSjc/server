@@ -11,18 +11,11 @@ from reportlab.lib.units import inch
 
 
 class AtividadeService:
-    """
-    Service para gerar relatórios de horas trabalhadas.
-    """
+    """Service para gerar relatórios de horas trabalhadas."""
 
     @staticmethod
     def _criar_estilo_tabela_base():
-        """
-        Cria estilo base para tabelas do PDF.
-        
-        Returns:
-            TableStyle: Estilo base para tabelas
-        """
+        """Cria estilo base para tabelas do PDF."""
         return TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0000FF')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -30,7 +23,6 @@ class AtividadeService:
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-            
             ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
             ('FONTSIZE', (0, 1), (-1, -1), 9),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -39,17 +31,7 @@ class AtividadeService:
 
     @staticmethod
     def _criar_tabela_com_estilo(data, col_widths, align_right_cols=None):
-        """
-        Cria tabela com estilo padrão.
-        
-        Parameters:
-            data: Dados da tabela
-            col_widths: Larguras das colunas
-            align_right_cols: Lista de colunas para alinhar à direita
-            
-        Returns:
-            tuple: (Table, TableStyle) - Tabela configurada e estilo
-        """
+        """Cria tabela com estilo padrão."""
         table = Table(data, colWidths=col_widths)
         style = AtividadeService._criar_estilo_tabela_base()
         
@@ -62,16 +44,7 @@ class AtividadeService:
 
     @staticmethod
     def horas_por_dev_e_projeto_por_mes(ano: int, mes: int) -> dict[list, list]:
-        """
-        Lista as horas de cada dev por projeto e o total por dev para um mês específico.
-
-        Parameters:
-            ano (int): Ano para geração do relatório
-            mes (int): Mes para geração do relatório
-        
-        Returns:
-            dict: Dicionário com duas listas: 'por_projeto' e 'total_por_dev'
-        """
+        """Lista as horas de cada dev por projeto e o total por dev para um mês específico."""
 
         # Horas por projeto
         dados = (
@@ -109,16 +82,7 @@ class AtividadeService:
 
     @staticmethod
     def soma_horas_por_dev_por_mes(ano: int, mes: int) -> list[dict[str, float]]:
-        """
-        Soma as horas agrupadas por desenvolvedor em um mês.
-
-        Parameters:
-            ano (int): Ano para geração do relatório
-            mes (int): Mes para geração do relatório
-        
-        Returns:
-            List: Lista de dicionários com 'funcionario', 'total_horas'
-        """
+        """Soma as horas agrupadas por desenvolvedor em um mês."""
 
         dados = (
             ControleHorasEquipe.objects
@@ -132,16 +96,7 @@ class AtividadeService:
 
     @staticmethod
     def gerar_dados_relatorio_atividade(ano: int, mes: int) -> dict:
-        """
-        Essa função gera os dados de relatório de atividade
-
-        Parameters:
-            ano (int): Ano para geração do relatório
-            mes (int): Mes para geração do relatório
-
-        Returns:
-            dict: Dados filtrados para geração da tabela
-        """
+        """Gera os dados de relatório de atividade."""
 
         queryset = ControleHorasEquipe.objects.filter(
             mes__year=ano,
@@ -201,17 +156,7 @@ class AtividadeService:
 
     @staticmethod
     def exportar_atividade_pdf(mes, ano, dados):
-        """
-        Gera um PDF com o relatório de atividades.
-        
-        Parameters:
-            mes (int): Mês do relatório
-            ano (int): Ano do relatório
-            dados (dict): Dados do relatório de atividade
-        
-        Returns:
-            bytes: PDF gerado em bytes
-        """
+        """Gera um PDF com o relatório de atividades."""
         MESES_PORTUGUES = {
             1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
             5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
