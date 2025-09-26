@@ -72,8 +72,8 @@
         .filter-form { display: flex; align-items: center; gap: 16px; }
         .filter-form select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ccd4e0; font-size: 0.9em; background-color: #fdfdfd; }
         
+        /* Classes básicas do Tailwind para compatibilidade */
         .bg-primary { background-color: #3b82f6; }
-        .hover\\:bg-blue-700:hover { background-color: #1d4ed8; }
         .text-white { color: white; }
         .font-medium { font-weight: 500; }
         .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
@@ -81,6 +81,8 @@
         .rounded { border-radius: 0.25rem; }
         .flex { display: flex; }
         .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-end { justify-content: flex-end; }
         .w-5 { width: 1.25rem; }
         .h-5 { height: 1.25rem; }
         .mr-2 { margin-right: 0.5rem; }
@@ -90,25 +92,9 @@
         .text-muted-foreground { color: #6b7280; }
         .mt-1 { margin-top: 0.25rem; }
         .mb-4 { margin-bottom: 1rem; }
-        .justify-end { justify-content: flex-end; }
         .gap-3 { gap: 0.75rem; }
         .text-gray-600 { color: #4b5563; }
-        .hover\\:text-gray-800:hover { color: #1f2937; }
-        
-        /* Estilos adicionais do Tailwind necessários */
         .space-y-6 > * + * { margin-top: 1.5rem; }
-        .flex-col { flex-direction: column; }
-        .md\\:flex-row { flex-direction: row; }
-        @media (min-width: 768px) {
-            .md\\:flex-row { flex-direction: row; }
-        }
-        .justify-between { justify-content: space-between; }
-        .items-start { align-items: flex-start; }
-        .md\\:items-center { align-items: center; }
-        @media (min-width: 768px) {
-            .md\\:items-center { align-items: center; }
-        }
-        .gap-4 { gap: 1rem; }
         .text-2xl { font-size: 1.5rem; line-height: 2rem; }
         .ml-auto { margin-left: auto; }
 
