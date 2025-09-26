@@ -11,7 +11,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js" integrity="sha256-Lye89HGy1p3XhJT24hcvsoRw64Q4IOL5a7hdOflhjTA=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" integrity="sha256-IMCPPZxtLvdt9tam8RJ8ABMzn+Mq3SQiInbDmMYwjDg=" crossorigin="anonymous"></script>
     <style>
-        /* Reset de estilos do Tailwind que podem causar problemas */
         * {
             margin: 0;
             padding: 0;
@@ -73,7 +72,6 @@
         .filter-form { display: flex; align-items: center; gap: 16px; }
         .filter-form select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ccd4e0; font-size: 0.9em; background-color: #fdfdfd; }
         
-        /* Classes Tailwind para o botão */
         .bg-primary { background-color: #3b82f6; }
         .hover\\:bg-blue-700:hover { background-color: #1d4ed8; }
         .text-white { color: white; }
@@ -94,8 +92,6 @@
         .mb-4 { margin-bottom: 1rem; }
         .justify-end { justify-content: flex-end; }
         .gap-3 { gap: 0.75rem; }
-        .px-4 { padding-left: 1rem; padding-right: 1rem; }
-        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
         .text-gray-600 { color: #4b5563; }
         .hover\\:text-gray-800:hover { color: #1f2937; }
         
@@ -114,8 +110,9 @@
         }
         .gap-4 { gap: 1rem; }
         .text-2xl { font-size: 1.5rem; line-height: 2rem; }
-        
-        /* Modal estilos */        .modal-overlay {
+        .ml-auto { margin-left: auto; }
+
+        .modal-overlay {
             display: none;
             position: fixed;
             top: 0;
@@ -143,15 +140,20 @@
 <body>
 
     <div class="container">
-        <div class="header">
-            <h1>Controle de Horas - Projeto / Equipe</h1>
-            <button id="exportPdfButton" class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center">
-                <svg class="icon w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Exportar PDF
-            </button>
-        </div>
+        <div class="space-y-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-semibold text-primary">Controle de Horas - Projeto / Equipe</h2>
+                </div>
+                <div class="ml-auto">
+                    <button id="exportPdfButton" class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                        <svg class="icon w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Exportar PDF
+                    </button>
+                </div>
+            </div>
 
         <div class="filters">
             <div class="filter-header">
@@ -200,6 +202,7 @@
 
         <div id="controle_horas_projeto_equipe"></div>
         
+        </div>
     </div>
 
     <!-- Modal de confirmação de exportação PDF -->
