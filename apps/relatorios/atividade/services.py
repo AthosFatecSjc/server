@@ -19,8 +19,6 @@ class AtividadeService:
         9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
     }
 
-    # ----------- Métodos Auxiliares -----------
-
     @staticmethod
     def _criar_estilo_tabela_base():
         """Criar estilo base para tabelas do PDF."""
@@ -64,8 +62,6 @@ class AtividadeService:
             Paragraph(texto, subtitle_style),
             Spacer(1, space_after * inch)
         ]
-
-    # ----------- Consultas -----------
 
     @staticmethod
     def horas_por_dev_e_projeto_por_mes(ano: int, mes: int) -> dict[list, list]:
@@ -169,8 +165,6 @@ class AtividadeService:
             'total_geral': total_geral_horas
         }
 
-    # ----------- Geração de partes do PDF -----------
-
     @staticmethod
     def _gerar_tabela_horas_por_dev_e_projeto(dados, styles):
         """Gerar tabela de horas por desenvolvedor e projeto."""
@@ -230,8 +224,6 @@ class AtividadeService:
             f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
             ParagraphStyle('DateStyle', parent=styles['Normal'], fontSize=8)
         )
-
-    # ----------- Exportação -----------
 
     @staticmethod
     def exportar_atividade_pdf(mes, ano, dados):
