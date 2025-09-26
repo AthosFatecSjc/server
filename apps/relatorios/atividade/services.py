@@ -11,7 +11,7 @@ from reportlab.lib.units import inch
 
 
 class AtividadeService:
-    """Service para gerar relatórios de horas trabalhadas."""
+    """Service responsável por gerar relatórios de horas trabalhadas."""
 
     MESES_PORTUGUES = {
         1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
@@ -23,7 +23,7 @@ class AtividadeService:
 
     @staticmethod
     def _criar_estilo_tabela_base():
-        """Cria estilo base para tabelas do PDF."""
+        """Criar estilo base para tabelas do PDF."""
         return TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0000FF')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -39,7 +39,7 @@ class AtividadeService:
 
     @staticmethod
     def _criar_tabela_com_estilo(data, col_widths, align_right_cols=None):
-        """Cria tabela com estilo padrão."""
+        """Criar tabela com estilo padrão."""
         table = Table(data, colWidths=col_widths)
         style = AtividadeService._criar_estilo_tabela_base()
 
@@ -52,7 +52,7 @@ class AtividadeService:
 
     @staticmethod
     def _criar_subtitulo(texto: str, styles, space_after=0.1):
-        """Cria parágrafo de subtítulo com espaçamento padrão."""
+        """Criar parágrafo de subtítulo com espaçamento padrão."""
         subtitle_style = ParagraphStyle(
             'SubTitle',
             parent=styles['Heading2'],
@@ -69,8 +69,7 @@ class AtividadeService:
 
     @staticmethod
     def horas_por_dev_e_projeto_por_mes(ano: int, mes: int) -> dict[list, list]:
-        """Lista as horas de cada dev por projeto e o total por dev para um mês específico."""
-
+        """Listar horas de cada dev por projeto e total por dev em um mês específico."""
         dados = (
             ControleHorasEquipe.objects
             .filter(mes__year=ano, mes__month=mes)
@@ -106,7 +105,7 @@ class AtividadeService:
 
     @staticmethod
     def soma_horas_por_dev_por_mes(ano: int, mes: int) -> list[dict[str, float]]:
-        """Soma as horas agrupadas por desenvolvedor em um mês."""
+        """Somar horas agrupadas por desenvolvedor em um mês."""
         return list(
             ControleHorasEquipe.objects
             .filter(mes__year=ano, mes__month=mes)
@@ -117,8 +116,7 @@ class AtividadeService:
 
     @staticmethod
     def gerar_dados_relatorio_atividade(ano: int, mes: int) -> dict:
-        """Gera os dados de relatório de atividade."""
-
+        """Gerar dados consolidados para o relatório de atividade."""
         queryset = ControleHorasEquipe.objects.filter(
             mes__year=ano,
             mes__month=mes
@@ -171,12 +169,73 @@ class AtividadeService:
             'total_geral': total_geral_horas
         }
 
+    # ----------- Geração de partes do PDF -----------
+
+    @staticmethod
+    def _gerar_tabela_horas_por_dev_e_projeto(dados, styles):
+        """Gerar tabela de horas por desenvolvedor e projeto."""
+        elements = AtividadeService._criar_subtitulo("Horas por Desenvolvedor e Projeto", styles)
+        table_data = [["Desenvolvedor", "Projeto", "Horas"]]
+        for registro in dados['dados_tabela']:
+            for i, projeto_nome in enumerate(dados['projetos_nomes']):
+                horas = registro['horas'][i]
+                if horas > 0:
+                    table_data.append([registro['colaborador_nome'], projeto_nome, f"{horas:.1f}h"])
+        table, _ = AtividadeService._criar_tabela_com_estilo(
+            table_data, [2.5*inch, 3*inch, 1*inch], align_right_cols=[2]
+        )
+        elements.append(table)
+        elements.append(Spacer(1, 0.3*inch))
+        return elements
+
+    @staticmethod
+    def _gerar_tabela_total_horas_por_dev(dados, styles):
+        """Gerar tabela de total de horas por desenvolvedor."""
+        elements = AtividadeService._criar_subtitulo("Total de Horas por Desenvolvedor", styles)
+        table_data = [["Desenvolvedor", "Total de Horas"]] + [
+            [registro['colaborador_nome'], f"{registro['total_colaborador']:.1f}h"]
+            for registro in dados['dados_tabela']
+        ]
+        table_data.append(["TOTAL GERAL", f"{dados['total_geral']:.1f}h"])
+        table, table_style = AtividadeService._criar_tabela_com_estilo(
+            table_data, [4*inch, 2*inch], align_right_cols=[1]
+        )
+        total_row = len(table_data) - 1
+        table_style.add('BACKGROUND', (0, total_row), (-1, total_row), colors.HexColor('#e9d5ff'))
+        table_style.add('FONTNAME', (0, total_row), (-1, total_row), 'Helvetica-Bold')
+        table.setStyle(table_style)
+        elements.append(table)
+        elements.append(Spacer(1, 0.3*inch))
+        return elements
+
+    @staticmethod
+    def _gerar_tabela_total_horas_por_projeto(dados, styles):
+        """Gerar tabela de total de horas por projeto."""
+        elements = AtividadeService._criar_subtitulo("Total de Horas por Projeto", styles)
+        table_data = [["Projeto", "Total de Horas"]] + [
+            [registro['projeto_nome'], f"{registro['total_horas']:.1f}h"]
+            for registro in dados['dados_cards']
+        ]
+        table, _ = AtividadeService._criar_tabela_com_estilo(
+            table_data, [4*inch, 2*inch], align_right_cols=[1]
+        )
+        elements.append(table)
+        elements.append(Spacer(1, 0.2*inch))
+        return elements
+
+    @staticmethod
+    def _gerar_footer(styles):
+        """Gerar rodapé com a data de geração do relatório."""
+        return Paragraph(
+            f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            ParagraphStyle('DateStyle', parent=styles['Normal'], fontSize=8)
+        )
+
     # ----------- Exportação -----------
 
     @staticmethod
     def exportar_atividade_pdf(mes, ano, dados):
-        """Gera um PDF com o relatório de atividades."""
-
+        """Exportar relatório de atividades em formato PDF."""
         buffer = BytesIO()
         doc = SimpleDocTemplate(
             buffer,
@@ -201,61 +260,10 @@ class AtividadeService:
         elements.append(Paragraph(title_text, title_style))
         elements.append(Spacer(1, 0.2*inch))
 
-        # --- Tabela 1: Horas por Desenvolvedor e Projeto
-        elements += AtividadeService._criar_subtitulo("Horas por Desenvolvedor e Projeto", styles)
-
-        table_data = [["Desenvolvedor", "Projeto", "Horas"]]
-        for registro in dados['dados_tabela']:
-            for i, projeto_nome in enumerate(dados['projetos_nomes']):
-                horas = registro['horas'][i]
-                if horas > 0:
-                    table_data.append([registro['colaborador_nome'], projeto_nome, f"{horas:.1f}h"])
-
-        table1, _ = AtividadeService._criar_tabela_com_estilo(
-            table_data, [2.5*inch, 3*inch, 1*inch], align_right_cols=[2]
-        )
-        elements.append(table1)
-        elements.append(Spacer(1, 0.3*inch))
-
-        # --- Tabela 2: Total de Horas por Desenvolvedor
-        elements += AtividadeService._criar_subtitulo("Total de Horas por Desenvolvedor", styles)
-
-        table_data2 = [["Desenvolvedor", "Total de Horas"]] + [
-            [registro['colaborador_nome'], f"{registro['total_colaborador']:.1f}h"]
-            for registro in dados['dados_tabela']
-        ]
-        table_data2.append(["TOTAL GERAL", f"{dados['total_geral']:.1f}h"])
-
-        table2, table2_style = AtividadeService._criar_tabela_com_estilo(
-            table_data2, [4*inch, 2*inch], align_right_cols=[1]
-        )
-        total_row = len(table_data2) - 1
-        table2_style.add('BACKGROUND', (0, total_row), (-1, total_row), colors.HexColor('#e9d5ff'))
-        table2_style.add('FONTNAME', (0, total_row), (-1, total_row), 'Helvetica-Bold')
-        table2.setStyle(table2_style)
-        elements.append(table2)
-        elements.append(Spacer(1, 0.3*inch))
-
-        # --- Tabela 3: Total de Horas por Projeto
-        elements += AtividadeService._criar_subtitulo("Total de Horas por Projeto", styles)
-
-        table_data3 = [["Projeto", "Total de Horas"]] + [
-            [registro['projeto_nome'], f"{registro['total_horas']:.1f}h"]
-            for registro in dados['dados_cards']
-        ]
-
-        table3, _ = AtividadeService._criar_tabela_com_estilo(
-            table_data3, [4*inch, 2*inch], align_right_cols=[1]
-        )
-        elements.append(table3)
-        elements.append(Spacer(1, 0.2*inch))
-
-        # --- Data de geração
-        gen_date = Paragraph(
-            f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
-            ParagraphStyle('DateStyle', parent=styles['Normal'], fontSize=8)
-        )
-        elements.append(gen_date)
+        elements += AtividadeService._gerar_tabela_horas_por_dev_e_projeto(dados, styles)
+        elements += AtividadeService._gerar_tabela_total_horas_por_dev(dados, styles)
+        elements += AtividadeService._gerar_tabela_total_horas_por_projeto(dados, styles)
+        elements.append(AtividadeService._gerar_footer(styles))
 
         doc.build(elements)
         pdf = buffer.getvalue()
