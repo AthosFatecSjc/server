@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js" integrity="sha256-Lye89HGy1p3XhJT24hcvsoRw64Q4IOL5a7hdOflhjTA=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" integrity="sha256-IMCPPZxtLvdt9tam8RJ8ABMzn+Mq3SQiInbDmMYwjDg=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" integrity="sha256-IMCPPZxtLvdt9tam8RJ8ABMzn+Mq3SQiInbDmMYwjDg=" crossorigin="anonymous"></script>
     <style>
         body { font-family: "Noto Sans", sans-serif; margin: 16px; background-color: #f4f7f9; }
         .container { 
@@ -26,6 +27,12 @@
             font-weight: 400;
             font-size: 1.5em;
             color: #0000FF;
+            margin: 0;
+        }
+        .header .subtitle {
+            font-size: 0.9em;
+            color: #3b4b61;
+            margin-top: 4px;
         }
         .filters { margin-bottom: 16px; background: #fff; padding: 16px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 4px solid #0000FF; }
         .htmx-indicator{ display: none; }
@@ -61,7 +68,10 @@
 
     <div class="container">
         <div class="header">
-            <h1>Controle de Horas - Projeto / Equipe</h1>
+            <div>
+                <h1>Controle de Horas - Projeto / Equipe</h1>
+                <p class="subtitle">Visão geral das horas lançadas por projeto e por membro da equipe.</p>
+            </div>
         </div>
 
         <div class="filters">
