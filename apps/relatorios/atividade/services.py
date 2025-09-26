@@ -16,6 +16,51 @@ class AtividadeService:
     """
 
     @staticmethod
+    def _criar_estilo_tabela_base():
+        """
+        Cria estilo base para tabelas do PDF.
+        
+        Returns:
+            TableStyle: Estilo base para tabelas
+        """
+        return TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0000FF')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            
+            ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ])
+
+    @staticmethod
+    def _criar_tabela_com_estilo(data, col_widths, align_right_cols=None):
+        """
+        Cria tabela com estilo padrão.
+        
+        Parameters:
+            data: Dados da tabela
+            col_widths: Larguras das colunas
+            align_right_cols: Lista de colunas para alinhar à direita
+            
+        Returns:
+            tuple: (Table, TableStyle) - Tabela configurada e estilo
+        """
+        table = Table(data, colWidths=col_widths)
+        style = AtividadeService._criar_estilo_tabela_base()
+        
+        if align_right_cols:
+            for col in align_right_cols:
+                style.add('ALIGN', (col, 1), (col, -1), 'CENTER')
+        
+        table.setStyle(style)
+        return table, style
+
+    @staticmethod
     def horas_por_dev_e_projeto_por_mes(ano: int, mes: int) -> dict[list, list]:
         """
         Lista as horas de cada dev por projeto e o total por dev para um mês específico.
@@ -221,25 +266,12 @@ class AtividadeService:
                         projeto_nome,
                         f"{horas:.1f}h"
                     ])
-        
 
-        table1 = Table(table_data, colWidths=[2.5*inch, 3*inch, 1*inch])
-        table1_style = TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0000FF')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-            
-            ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-            ('ALIGN', (2, 1), (2, -1), 'CENTER'),
-            ('FONTSIZE', (0, 1), (-1, -1), 9),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ])
-        
-        table1.setStyle(table1_style)
+        table1, _ = AtividadeService._criar_tabela_com_estilo(
+            table_data, 
+            [2.5*inch, 3*inch, 1*inch], 
+            align_right_cols=[2]
+        )
         elements.append(table1)
         elements.append(Spacer(1, 0.3*inch))
         
@@ -259,27 +291,17 @@ class AtividadeService:
             f"{dados['total_geral']:.1f}h"
         ])
         
-        table2 = Table(table_data2, colWidths=[4*inch, 2*inch])
-        table2_style = TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0000FF')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-            
-            ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-            ('ALIGN', (1, 1), (1, -1), 'CENTER'),
-            ('FONTSIZE', (0, 1), (-1, -1), 9),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ])
+        table2, table2_style = AtividadeService._criar_tabela_com_estilo(
+            table_data2, 
+            [4*inch, 2*inch], 
+            align_right_cols=[1]
+        )
         
         total_row = len(table_data2) - 1
         table2_style.add('BACKGROUND', (0, total_row), (-1, total_row), colors.HexColor('#e9d5ff'))
         table2_style.add('FONTNAME', (0, total_row), (-1, total_row), 'Helvetica-Bold')
-        
         table2.setStyle(table2_style)
+        
         elements.append(table2)
         elements.append(Spacer(1, 0.3*inch))
         
@@ -294,23 +316,11 @@ class AtividadeService:
                 f"{registro['total_horas']:.1f}h"
             ])
         
-        table3 = Table(table_data3, colWidths=[4*inch, 2*inch])
-        table3_style = TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0000FF')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-            
-            ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-            ('ALIGN', (1, 1), (1, -1), 'CENTER'),
-            ('FONTSIZE', (0, 1), (-1, -1), 9),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ])
-        
-        table3.setStyle(table3_style)
+        table3, _ = AtividadeService._criar_tabela_com_estilo(
+            table_data3, 
+            [4*inch, 2*inch], 
+            align_right_cols=[1]
+        )
         elements.append(table3)
         
         elements.append(Spacer(1, 0.2*inch))
