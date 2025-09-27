@@ -11,7 +11,21 @@ from reportlab.lib.units import inch
 
 
 class AtividadeService:
-    """Service responsável por gerar relatórios de horas trabalhadas."""
+    """Oferece métodos para processar e gerar relatórios de atividades.
+
+    Esta classe funciona como uma camada de serviço, encapsulando a lógica
+    de negócio para consultar o banco de dados, agregar dados de horas
+    trabalhadas e exportar os resultados em diferentes formatos, como
+    dicionários Python ou relatórios PDF completos usando a biblioteca ReportLab.
+
+    Todos os métodos são estáticos, indicando que a classe é usada como
+    um agrupador de funcionalidades relacionadas, sem a necessidade de
+    gerir um estado interno.
+
+    Attributes:
+        MESES_PORTUGUES (dict): Um dicionário de classe que mapeia o número
+            do mês (int) para o seu nome correspondente em português (str).
+    """
 
     MESES_PORTUGUES = {
         1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
@@ -21,12 +35,16 @@ class AtividadeService:
 
     @staticmethod
     def _criar_estilo_tabela_base():
-        """
-        Cria o estilo base para tabelas utilizadas no PDF de relatório.
+        """Cria e retorna o estilo base para as tabelas do relatório PDF.
 
-    Returns:
-        TableStyle: Objeto configurado com o estilo padrão de cabeçalho, fonte, alinhamento e bordas para uso em tabelas do PDF.
-        
+        O estilo define uma aparência padrão e consistente para as tabelas,
+        configurando cores de fundo e texto para o cabeçalho, fontes,
+        alinhamentos e as linhas da grade.
+
+        Returns:
+            TableStyle: Um objeto `TableStyle` do ReportLab pré-configurado
+                e pronto para ser aplicado a uma tabela.
+
         """
         return TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0000FF')),
@@ -43,14 +61,23 @@ class AtividadeService:
 
     @staticmethod
     def _criar_tabela_com_estilo(data, col_widths, align_right_cols=None):
-        """
-         Cria e retorna o estilo base para tabelas utilizadas nos relatórios PDF.
+        """Cria um objeto Table do ReportLab com um estilo padrão.
 
-    O estilo define configurações de cor de fundo, cor do texto, alinhamento, 
-    fonte, tamanho da fonte, preenchimento, grade e alinhamento vertical para as células da tabela.
+        Esta função recebe os dados e a configuração das colunas, constrói
+        uma tabela e aplica um estilo base. Opcionalmente, pode alinhar
+        colunas específicas ao centro.
 
-    Returns:
-        TableStyle: Objeto com as configurações de estilo para aplicação em tabelas do ReportLab.
+        Args:
+            data (list): Uma lista de listas contendo os dados da tabela.
+            col_widths (list): Uma lista com as larguras das colunas em
+                unidades do ReportLab (ex: polegadas).
+            align_right_cols (list, optional): Uma lista de índices de
+                colunas (baseado em zero) que devem ter o seu conteúdo
+                alinhado ao centro. O padrão é None.
+
+        Returns:
+            tuple: Uma tupla contendo o objeto `Table` e o objeto `TableStyle`
+                aplicado a ele.
         
         """
         table = Table(data, colWidths=col_widths)
@@ -65,19 +92,22 @@ class AtividadeService:
 
     @staticmethod
     def _criar_subtitulo(texto: str, styles, space_after=0.1):
-        """
-        Cria um parágrafo de subtítulo para ser utilizado em relatórios PDF.
+        """Cria um componente de subtítulo para o relatório PDF.
 
-        Este método gera um subtítulo estilizado com espaçamento padrão após o texto,
-        utilizando o estilo base fornecido.
+        Esta função gera uma lista contendo um parágrafo de subtítulo
+        estilizado e um espaçador (`Spacer`) para adicionar um espaço
+        vertical após o texto.
 
-         Args:
-        texto (str): Texto que será exibido como subtítulo.
-        styles: Coleção de estilos do ReportLab para formatação do subtítulo.
-        space_after (float, opcional): Espaçamento (em polegadas) após o subtítulo. Padrão é 0.1.
+        Args:
+            texto (str): O conteúdo textual que será exibido no subtítulo.
+            styles (StyleSheet): O objeto de folha de estilos do ReportLab
+                usado como base para a formatação.
+            space_after (float, optional): A altura do espaçamento em
+                polegadas a ser adicionado após o subtítulo. O padrão é 0.1.
 
-         Returns:
-        list: Lista contendo um objeto Paragraph estilizado e um Spacer para espaçamento.
+        Returns:
+            list: Uma lista de objetos 'flowable' do ReportLab, contendo
+                o `Paragraph` do subtítulo e o `Spacer`.
         """
         subtitle_style = ParagraphStyle(
             'SubTitle',
@@ -93,17 +123,23 @@ class AtividadeService:
 
     @staticmethod
     def horas_por_dev_e_projeto_por_mes(ano: int, mes: int) -> dict[list, list]:
-        """
-        Lista as horas de cada dev por projeto e o total por dev para um mês específico.
+        """Lista horas detalhadas por projeto e totais por desenvolvedor.
 
-    Args:
-        ano (int): Ano para geração do relatório.
-        mes (int): Mês para geração do relatório.
+        Consulta o banco de dados para um mês e ano específicos, agregando
+        as horas trabalhadas. Retorna uma estrutura de dados detalhada.
 
-    Returns:
-        dict[list, list]: Dicionário com duas listas: 'por_projeto' e 'total_por_dev'.
-        
-        
+        Args:
+            ano (int): O ano para o qual o relatório será gerado.
+            mes (int): O mês para o qual o relatório será gerado.
+
+        Returns:
+            dict: Um dicionário contendo duas chaves:
+                'por_projeto' (list): Uma lista de dicionários, cada um
+                    representando o total de horas de um dev em um projeto.
+                'total_por_dev' (list): Uma lista de dicionários, cada um
+                    com o total de horas de um desenvolvedor no mês.
+       
+    
         """
         dados = (
             ControleHorasEquipe.objects
@@ -140,14 +176,15 @@ class AtividadeService:
 
     @staticmethod
     def soma_horas_por_dev_por_mes(ano: int, mes: int) -> list[dict[str, float]]:
-        """
-         Soma as horas agrupadas por desenvolvedor em um mês.
-        Parameters:
-            ano (int): Ano para geração do relatório
-            mes (int): Mes para geração do relatório
-        
+        """Soma as horas agrupadas por desenvolvedor em um mês.
+
+        Args:
+            ano (int): Ano para geração do relatório.
+            mes (int): Mês para geração do relatório.
+
         Returns:
-            List: Lista de dicionários com 'funcionario', 'total_horas'
+            list[dict[str, float]]: Lista de dicionários com as chaves
+                'funcionario' e 'total_horas'.
         """
         return list(
             ControleHorasEquipe.objects
