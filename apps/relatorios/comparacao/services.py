@@ -1,5 +1,5 @@
 from django.db.models import Sum
-from apps.relatorios.models import ControleHorasEquipe, TempoGastoEquipe, TempoControleValores
+from apps.relatorios.models import ControleHorasEquipe, TempoGastoEquipe, TempoControleValores, Projeto
 import datetime
 
 class ComparacaoService:
@@ -79,4 +79,17 @@ class ComparacaoService:
 
     @staticmethod
     def get_nome_projetos() -> list[str]:
-        return ['SOS', 'GEL']
+        """
+        Busca o nome dos projetos ativos.
+
+        Returns:
+            nome_projetos (list(str)): Lista com o nome dos projetos ativos.
+        """
+
+        qs = (
+            Projeto.objects
+            .values("nome")
+            .order_by("nome")
+        )
+
+        return [item['nome'] for item in qs]
