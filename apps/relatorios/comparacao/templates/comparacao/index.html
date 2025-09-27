@@ -1,44 +1,539 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Página de Boas-vindas</title>
-  <style>
-    :root{--bg:#f7f9fc;--card:#ffffff;--accent:#3b82f6;--text:#0f172a}
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;height:100vh}
-    .card{background:var(--card);padding:32px;border-radius:12px;box-shadow:0 6px 20px rgba(15,23,42,0.08);width:min(720px,90%);text-align:center}
-    h1{margin:0 0 8px;font-size:28px}
-    p{margin:0 0 20px;color:#475569}
-    .btn{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--accent);color:white;text-decoration:none;font-weight:600}
-    footer{margin-top:18px;font-size:13px;color:#94a3b8}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Comparação de Horas</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
-  <body>
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div class="flex items-center gap-2 mb-4">
-            <i data-lucide="filter" class="w-5 h-5 text-blue-600"></i>
-            <h2 class="text-lg font-semibold">Filtros</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Projeto</label>
-                <select id="projectFilter" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  {% for nome_projeto in nome_projetos %}
-                    <option value="{{ nome_projeto }}">{{ nome_projeto }}</option>
-                  {% endfor %}
-                </select>
+                <h1 class="text-2xl font-semibold text-blue-600">Controle de Horas SOS</h1>
+                <p class="text-gray-600">Relatório de Comparação de Horas Realizadas vs Previstas (Total)</p>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Ano</label>
-                <select id="yearFilter" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  {% for ano in anos_disponiveis %}
-                    <option value="{{ ano }}" {% if ano_atual == ano %}selected{% endif %}>{{ ano }}</option>
-                  {% endfor %}
-                </select>
+            <button onclick="openExportModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+                <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                Exportar PDF
+            </button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+            <div class="flex items-center gap-2 mb-4">
+                <i data-lucide="filter" class="w-5 h-5 text-blue-600"></i>
+                <h2 class="text-lg font-semibold">Filtros</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Projeto</label>
+                    <select id="projectFilter" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        {% for nome_projeto in nome_projetos %}
+                            <option value="{{ nome_projeto }}">{{ nome_projeto }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+                    <select id="yearFilter" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        {% for ano in anos_disponiveis %}
+                            <option value="{{ ano }}" {% if ano_atual == ano %}selected{% endif %}>{{ ano }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in">
+                <h3 class="text-lg font-semibold mb-4">Performance Geral</h3>
+                <div class="text-3xl font-bold text-blue-600 mb-2" id="performancePercentage">0%</div>
+                <p class="text-sm text-gray-600 mb-3">Meta de eficiência atingida</p>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="performanceBar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in">
+                <h3 class="text-lg font-semibold mb-4">Total Realizado</h3>
+                <div class="text-3xl font-bold text-green-600 mb-2" id="totalRealized">0h</div>
+                <p class="text-sm text-gray-600 mb-2">Horas trabalhadas no período</p>
+                <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full" id="collaboratorsCount">0 colaboradores</span>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in cursor-pointer hover:bg-gray-50 transition-colors" onclick="openPlannedHoursModal()">
+                <h3 class="text-lg font-semibold mb-4 flex items-center justify-center gap-2">
+                    Meta Planejada <i data-lucide="edit" class="w-4 h-4 text-gray-500"></i>
+                </h3>
+                <div class="text-3xl font-bold text-orange-600 mb-2" id="totalPlanned">0h</div>
+                <p class="text-sm text-gray-600 mb-2">Horas planejadas para o período</p>
+                <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full" id="deficit">Déficit: 0h</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 fade-in">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-semibold">Horas Realizadas vs Previstas por Colaborador</h2>
+                <p class="text-gray-600">Detalhes mensais das horas realizadas e previstas no projeto</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full" id="comparisonTable">
+                    <thead>
+                        <tr class="bg-blue-600 text-white">
+                            <th class="p-3 text-left font-medium">Colaborador</th>
+                            <th class="p-3 text-center font-medium">JAN</th>
+                            <th class="p-3 text-center font-medium">FEV</th>
+                            <th class="p-3 text-center font-medium">MAR</th>
+                            <th class="p-3 text-center font-medium">ABR</th>
+                            <th class="p-3 text-center font-medium">MAI</th>
+                            <th class="p-3 text-center font-medium">JUN</th>
+                            <th class="p-3 text-center font-medium">JUL</th>
+                            <th class="p-3 text-center font-medium">AGO</th>
+                            <th class="p-3 text-center font-medium">SET</th>
+                            <th class="p-3 text-center font-medium">OUT</th>
+                            <th class="p-3 text-center font-medium">NOV</th>
+                            <th class="p-3 text-center font-medium">DEZ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 fade-in">
+                <h3 class="text-xl font-semibold mb-2">Distribuição de Horas</h3>
+                <p class="text-gray-600 mb-4">Representação da participação de cada colaborador</p>
+                <div class="relative h-80">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 fade-in">
+                <h3 class="text-xl font-semibold mb-2">Total de Horas</h3>
+                <p class="text-gray-600 mb-4">Comparação do total de horas realizadas e previstas</p>
+                <div class="relative h-80">
+                    <canvas id="barChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
-  </body>
+
+    <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-2">Exportar relatório</h3>
+            <p class="text-gray-600 mb-4">Tem certeza que deseja exportar este relatório em PDF?</p>
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeExportModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+                <button onclick="exportPDF()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="plannedHoursModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-2">Ajustar Meta Planejada</h3>
+            <p class="text-gray-600 mb-4">Altere o valor total de horas planejadas para o projeto.</p>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Horas Planejadas</label>
+                <input type="number" id="newPlannedHours" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" step="0.01">
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button onclick="closePlannedHoursModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+                <button onclick="savePlannedHours()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = {};
+        let totalPlannedHours = 0;
+        let pieChartInstance = null;
+        let barChartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            loadReportData();
+
+            document.getElementById('yearFilter').addEventListener('change', loadReportData);
+            document.getElementById('projectFilter').addEventListener('change', loadReportData);
+        });
+
+        async function loadReportData() {
+            const year = document.getElementById('yearFilter').value;
+            const project = document.getElementById('projectFilter').value;
+            
+            try {
+                const response = await fetch(`/relatorios/comparacao/relatorio-anual?ano=${year}&projeto=${encodeURIComponent(project)}`);
+                if (response.ok) {
+                    currentData = await response.json();
+                    renderReport();
+                } else {
+                    throw new Error('Erro ao carregar dados da API');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                showError('Erro ao carregar dados. Verifique a conexão com a API.');
+                currentData = { por_dev: {} };
+                renderReport();
+            }
+        }
+
+        function showError(message) {
+            console.error(message);
+            alert(message);
+        }
+
+        function renderReport() {
+            updateSummaryCards();
+            renderComparisonTable();
+            renderCharts();
+        }
+
+        function updateSummaryCards() {
+            if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
+                document.getElementById('performancePercentage').textContent = '0%';
+                document.getElementById('performanceBar').style.width = '0%';
+                document.getElementById('totalRealized').textContent = '0h';
+                document.getElementById('collaboratorsCount').textContent = '0 colaboradores';
+                document.getElementById('totalPlanned').textContent = '0h';
+                document.getElementById('deficit').textContent = 'Déficit: 0h';
+                return;
+            }
+
+            const collaborators = Object.keys(currentData.por_dev);
+            const totalRealized = Object.values(currentData.por_dev).reduce((sum, dev) => 
+                sum + dev.totais.total_realizado, 0);
+            const totalPlanned = Object.values(currentData.por_dev).reduce((sum, dev) => 
+                sum + dev.totais.total_previsto, 0);
+
+            const percentage = totalPlanned > 0 ? (totalRealized / totalPlanned) * 100 : 0;
+            const deficit = totalPlanned - totalRealized;
+
+            document.getElementById('performancePercentage').textContent = percentage.toFixed(1) + '%';
+            document.getElementById('performanceBar').style.width = Math.min(percentage, 100) + '%';
+            document.getElementById('totalRealized').textContent = totalRealized.toFixed(2) + 'h';
+            document.getElementById('collaboratorsCount').textContent = collaborators.length + ' colaboradores';
+            document.getElementById('totalPlanned').textContent = totalPlanned.toFixed(2) + 'h';
+            document.getElementById('deficit').textContent = 'Déficit: ' + deficit.toFixed(2) + 'h';
+            
+            totalPlannedHours = totalPlanned;
+        }
+
+        function renderComparisonTable() {
+            const tableBody = document.getElementById('tableBody');
+            
+            if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="13" class="p-3 text-center text-gray-500">Nenhum dado disponível para o período selecionado</td></tr>';
+                return;
+            }
+
+            let tableHTML = '';
+            Object.entries(currentData.por_dev).forEach(([devName, devData]) => {
+                tableHTML += `<tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">`;
+                tableHTML += `<td class="p-3 font-medium">${devName}</td>`;
+                
+                for (let month = 1; month <= 12; month++) {
+                    const monthData = devData.mensal[month];
+                    const realized = monthData ? monthData.realizado : 0;
+                    
+                    tableHTML += `<td class="p-3 text-center">`;
+                    if (realized > 0) {
+                        tableHTML += `
+                            <div class="space-y-1">
+                                <div class="text-green-600 font-semibold text-sm">${realized.toFixed(2)}h</div>
+                            </div>
+                        `;
+                    } else {
+                        tableHTML += `<span class="text-gray-400 text-sm">-</span>`;
+                    }
+                    tableHTML += `</td>`;
+                }
+                tableHTML += `</tr>`;
+            });
+
+            tableHTML += `<tr class="bg-gray-100 font-semibold">`;
+            tableHTML += `<td class="p-3">Total Geral</td>`;
+            for (let month = 1; month <= 12; month++) {
+                const monthRealized = Object.values(currentData.por_dev).reduce((sum, dev) => 
+                    sum + ((dev.mensal[month] && dev.mensal[month].realizado) || 0), 0);
+                
+                tableHTML += `<td class="p-3 text-center">`;
+                if (monthRealized > 0) {
+                    tableHTML += `
+                        <div class="space-y-1">
+                            <div class="text-blue-600 text-sm">${monthRealized.toFixed(2)}h</div>
+                        </div>
+                    `;
+                } else {
+                    tableHTML += `<span class="text-gray-400 text-sm">-</span>`;
+                }
+                tableHTML += `</td>`;
+            }
+            tableHTML += `</tr>`;
+
+            tableBody.innerHTML = tableHTML;
+        }
+
+        function renderCharts() {
+            renderPieChart();
+            renderBarChart();
+        }
+
+        function renderPieChart() {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            
+            if (pieChartInstance) {
+                pieChartInstance.destroy();
+            }
+
+            if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
+                pieChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sem dados'],
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#e5e7eb'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right' },
+                            tooltip: { enabled: false }
+                        }
+                    }
+                });
+                return;
+            }
+
+            const collaborators = Object.entries(currentData.por_dev);
+            const data = collaborators.map(([name, data]) => ({
+                name: name,
+                value: data.totais.total_realizado
+            })).filter(item => item.value > 0);
+
+            if (data.length === 0) {
+                pieChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sem horas realizadas'],
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#e5e7eb'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right' },
+                            tooltip: { enabled: false }
+                        }
+                    }
+                });
+                return;
+            }
+
+            pieChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(item => item.name),
+                    datasets: [{
+                        data: data.map(item => item.value),
+                        backgroundColor: [
+                            '#0057B8', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF',
+                            '#8884d8', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ${context.parsed.toFixed(2)}h (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderBarChart() {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            
+            if (barChartInstance) {
+                barChartInstance.destroy();
+            }
+
+            if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
+                barChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Comparação Total'],
+                        datasets: [
+                            {
+                                label: 'Horas Realizadas',
+                                data: [0],
+                                backgroundColor: '#0057B8',
+                                borderWidth: 0,
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Horas Previstas',
+                                data: [0],
+                                backgroundColor: '#FF8042',
+                                borderWidth: 0,
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Horas'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}h`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                return;
+            }
+
+            const totalRealized = Object.values(currentData.por_dev).reduce((sum, dev) => 
+                sum + dev.totais.total_realizado, 0);
+            const totalPlanned = Object.values(currentData.por_dev).reduce((sum, dev) => 
+                sum + dev.totais.total_previsto, 0);
+
+            barChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Comparação Total'],
+                    datasets: [
+                        {
+                            label: 'Horas Realizadas',
+                            data: [totalRealized],
+                            backgroundColor: '#0057B8',
+                            borderWidth: 0,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Horas Previstas',
+                            data: [totalPlanned],
+                            backgroundColor: '#FF8042',
+                            borderWidth: 0,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Horas'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}h`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function openExportModal() {
+            document.getElementById('exportModal').classList.remove('hidden');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.add('hidden');
+        }
+
+        function openPlannedHoursModal() {
+            document.getElementById('newPlannedHours').value = totalPlannedHours;
+            document.getElementById('plannedHoursModal').classList.remove('hidden');
+        }
+
+        function closePlannedHoursModal() {
+            document.getElementById('plannedHoursModal').classList.add('hidden');
+        }
+
+        function savePlannedHours() {
+            totalPlannedHours = parseFloat(document.getElementById('newPlannedHours').value) || 0;
+            document.getElementById('totalPlanned').textContent = totalPlannedHours.toFixed(2) + 'h';
+
+            const totalRealized = parseFloat(document.getElementById('totalRealized').textContent) || 0;
+            const deficit = totalPlannedHours - totalRealized;
+            document.getElementById('deficit').textContent = 'Déficit: ' + deficit.toFixed(2) + 'h';
+            
+            closePlannedHoursModal();
+            renderBarChart();
+        }
+
+        function exportPDF() {
+            alert('Em constução por JUAN ');
+            closeExportModal();
+        }
+    </script>
+</body>
 </html>
