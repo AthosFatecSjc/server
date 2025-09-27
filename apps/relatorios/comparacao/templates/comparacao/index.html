@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Comparação de Horas</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" 
+          integrity="sha384-5p1p2z1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1" 
+          crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" 
+            integrity="sha384-5p1p2z1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1" 
+            crossorigin="anonymous"></script>
     <style>
         .fade-in {
             animation: fadeIn 0.5s ease-in;
@@ -274,6 +278,7 @@
                 }
                 tableHTML += `</tr>`;
             });
+
 
             tableHTML += `<tr class="bg-gray-100 font-semibold">`;
             tableHTML += `<td class="p-3">Total Geral</td>`;
