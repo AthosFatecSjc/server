@@ -184,11 +184,9 @@
             gray: '#e5e7eb'
         };
 
-        const CHART_CONFIGS = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'right' } }
-        };
+        function formatHours(hours) {
+            return `${hours.toFixed(2)}h`;
+        }
 
         function handleKeyDown(event, callback) {
             if (event.key === 'Enter' || event.key === ' ') {
@@ -251,10 +249,10 @@
 
             document.getElementById('performancePercentage').textContent = percentage.toFixed(1) + '%';
             document.getElementById('performanceBar').style.width = Math.min(percentage, 100) + '%';
-            document.getElementById('totalRealized').textContent = totalRealized.toFixed(2) + 'h';
+            document.getElementById('totalRealized').textContent = formatHours(totalRealized);
             document.getElementById('collaboratorsCount').textContent = collaborators.length + ' colaboradores';
-            document.getElementById('totalPlanned').textContent = totalPlanned.toFixed(2) + 'h';
-            document.getElementById('deficit').textContent = 'Déficit: ' + deficit.toFixed(2) + 'h';
+            document.getElementById('totalPlanned').textContent = formatHours(totalPlanned);
+            document.getElementById('deficit').textContent = 'Déficit: ' + formatHours(deficit);
             
             totalPlannedHours = totalPlanned;
         }
@@ -262,10 +260,10 @@
         function resetSummaryCards() {
             document.getElementById('performancePercentage').textContent = '0%';
             document.getElementById('performanceBar').style.width = '0%';
-            document.getElementById('totalRealized').textContent = '0h';
+            document.getElementById('totalRealized').textContent = formatHours(0);
             document.getElementById('collaboratorsCount').textContent = '0 colaboradores';
-            document.getElementById('totalPlanned').textContent = '0h';
-            document.getElementById('deficit').textContent = 'Déficit: 0h';
+            document.getElementById('totalPlanned').textContent = formatHours(0);
+            document.getElementById('deficit').textContent = 'Déficit: ' + formatHours(0);
         }
 
         function renderComparisonTable() {
@@ -287,7 +285,7 @@
                     
                     tableHTML += `<td class="p-3 text-center">`;
                     if (realized > 0) {
-                        tableHTML += `<div class="text-green-600 font-semibold text-sm">${realized.toFixed(2)}h</div>`;
+                        tableHTML += `<div class="text-green-600 font-semibold text-sm">${formatHours(realized)}</div>`;
                     } else {
                         tableHTML += `<span class="text-gray-400 text-sm">-</span>`;
                     }
@@ -303,7 +301,7 @@
                 
                 tableHTML += `<td class="p-3 text-center">`;
                 if (monthRealized > 0) {
-                    tableHTML += `<div class="text-blue-600 text-sm">${monthRealized.toFixed(2)}h</div>`;
+                    tableHTML += `<div class="text-blue-600 text-sm">${formatHours(monthRealized)}</div>`;
                 } else {
                     tableHTML += `<span class="text-gray-400 text-sm">-</span>`;
                 }
@@ -319,6 +317,17 @@
             renderBarChart();
         }
 
+        function createChartInstance(ctx, config) {
+            return new Chart(ctx, {
+                ...config,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    ...config.options
+                }
+            });
+        }
+
         function renderPieChart() {
             const ctx = document.getElementById('pieChart').getContext('2d');
             
@@ -327,7 +336,7 @@
             }
 
             if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
-                createEmptyChart(ctx, 'doughnut', 'Sem dados');
+                pieChartInstance = createEmptyChart(ctx, 'doughnut', 'Sem dados');
                 return;
             }
 
@@ -338,11 +347,11 @@
             })).filter(item => item.value > 0);
 
             if (data.length === 0) {
-                createEmptyChart(ctx, 'doughnut', 'Sem horas realizadas');
+                pieChartInstance = createEmptyChart(ctx, 'doughnut', 'Sem horas realizadas');
                 return;
             }
 
-            pieChartInstance = new Chart(ctx, {
+            pieChartInstance = createChartInstance(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: data.map(item => item.name),
@@ -357,8 +366,6 @@
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             position: 'right',
@@ -368,7 +375,7 @@
                                 label: function(context) {
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                    return `${context.label}: ${context.parsed.toFixed(2)}h (${percentage}%)`;
+                                    return `${context.label}: ${formatHours(context.parsed)} (${percentage}%)`;
                                 }
                             }
                         }
@@ -385,7 +392,7 @@
             }
 
             if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
-                createEmptyBarChart(ctx);
+                barChartInstance = createEmptyBarChart(ctx);
                 return;
             }
 
@@ -394,7 +401,7 @@
             const totalPlanned = Object.values(currentData.por_dev).reduce((sum, dev) => 
                 sum + dev.totais.total_previsto, 0);
 
-            barChartInstance = new Chart(ctx, {
+            barChartInstance = createChartInstance(ctx, {
                 type: 'bar',
                 data: {
                     labels: ['Comparação Total'],
@@ -416,8 +423,6 @@
                     ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -434,7 +439,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}h`;
+                                    return `${context.dataset.label}: ${formatHours(context.parsed.y)}`;
                                 }
                             }
                         }
@@ -507,7 +512,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}h`;
+                                    return `${context.dataset.label}: ${formatHours(context.parsed.y)}`;
                                 }
                             }
                         }
@@ -535,11 +540,11 @@
 
         function savePlannedHours() {
             totalPlannedHours = parseFloat(document.getElementById('newPlannedHours').value) || 0;
-            document.getElementById('totalPlanned').textContent = totalPlannedHours.toFixed(2) + 'h';
+            document.getElementById('totalPlanned').textContent = formatHours(totalPlannedHours);
 
             const totalRealized = parseFloat(document.getElementById('totalRealized').textContent) || 0;
             const deficit = totalPlannedHours - totalRealized;
-            document.getElementById('deficit').textContent = 'Déficit: ' + deficit.toFixed(2) + 'h';
+            document.getElementById('deficit').textContent = 'Déficit: ' + formatHours(deficit);
             
             closePlannedHoursModal();
             renderBarChart();
