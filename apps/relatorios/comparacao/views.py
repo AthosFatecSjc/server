@@ -6,7 +6,16 @@ from .services import ComparacaoService
 
 @require_GET
 def index(request):
-    return render(request, 'comparacao/index.html')
+    hoje = datetime.date.today()
+    anos_disponiveis = range(hoje.year - 5, hoje.year + 2)
+
+    context = {
+        'ano_atual': hoje.year,
+        'nome_projetos': ComparacaoService.get_nome_projetos(),
+        'anos_disponiveis': anos_disponiveis,
+    }
+
+    return render(request, 'comparacao/index.html', context)
 
 @require_GET
 def relatorio_anual_comparacao(request: any):

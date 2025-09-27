@@ -76,3 +76,7 @@ class ComparacaoService:
                 'diferenca': float(total_prev - total_real),
             }
         return resumo
+
+    @staticmethod
+    def get_nome_projetos() -> list[str]:
+        return ['SOS', 'GEL']
