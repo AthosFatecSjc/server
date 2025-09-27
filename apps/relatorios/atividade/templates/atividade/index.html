@@ -42,6 +42,12 @@
             font-weight: 400;
             font-size: 1.5em;
             color: #0000FF;
+            margin: 0;
+        }
+        .header .subtitle {
+            font-size: 0.9em;
+            color: #3b4b61;
+            margin-top: 4px;
         }
         .filters { margin-bottom: 16px; background: #fff; padding: 16px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 4px solid #0000FF; }
         .htmx-indicator{ display: none; }
@@ -71,8 +77,6 @@
         }
         .filter-form { display: flex; align-items: center; gap: 16px; }
         .filter-form select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ccd4e0; font-size: 0.9em; background-color: #fdfdfd; }
-        
-        /* Classes básicas do Tailwind para compatibilidade */
         .bg-primary { background-color: #3b82f6; }
         .text-white { color: white; }
         .font-medium { font-weight: 500; }
@@ -130,6 +134,7 @@
             <div class="flex justify-between items-center">
                 <div>
                     <h2 class="text-2xl font-semibold text-primary">Controle de Horas - Projeto / Equipe</h2>
+                    <p class="subtitle">Visão geral das horas lançadas por projeto e por membro da equipe.</p>
                 </div>
                 <div class="ml-auto">
                     <button id="exportPdfButton" class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center">
@@ -190,8 +195,6 @@
         
         </div>
     </div>
-
-    <!-- Modal de confirmação de exportação PDF -->
     <div id="pdfModal" class="modal-overlay">
         <div class="modal-content">
             <div class="mb-4">
@@ -212,11 +215,9 @@
     <script src="{% static 'js/htmx.min.js' %}"></script>
     
     <script>
-        // Variáveis globais para capturar os valores atuais dos filtros
         let currentMonth = {{ mes_atual }};
         let currentYear = {{ ano_atual }};
         
-        // Atualizar as variáveis quando os filtros mudarem
         document.querySelector('select[name="mes"]').addEventListener('change', function(e) {
             currentMonth = parseInt(e.target.value);
         });
@@ -225,7 +226,6 @@
             currentYear = parseInt(e.target.value);
         });
         
-        // Funcionalidade do modal de exportação PDF
         const pdfModal = document.getElementById('pdfModal');
         const exportButton = document.getElementById('exportPdfButton');
         const confirmButton = document.getElementById('confirmExport');
