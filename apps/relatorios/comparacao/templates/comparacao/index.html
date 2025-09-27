@@ -5,33 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Comparação de Horas</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" 
-      integrity="sha384-5p1p2z1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1pZ1" 
-      crossorigin="anonymous">
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
+        .fade-in { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
-        .icon {
-            width: 1em;
-            height: 1em;
-            vertical-align: -0.125em;
-        }
+        .icon { width: 1em; height: 1em; vertical-align: -0.125em; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-6">
             <div>
-                <h1 class="text-2xl font-semibold text-blue-600">Controle de Horas SOS</h1>
+                <h1 class="text-2xl font-semibold text-blue-600">Controle de Horas</h1>
                 <p class="text-gray-600">Relatório de Comparação de Horas Realizadas vs Previstas (Total)</p>
             </div>
             <button 
@@ -187,6 +176,20 @@
         let pieChartInstance = null;
         let barChartInstance = null;
 
+        const CHART_COLORS = {
+            blue: '#0057B8',
+            green: '#00C49F',
+            orange: '#FF8042',
+            purple: '#AF19FF',
+            gray: '#e5e7eb'
+        };
+
+        const CHART_CONFIGS = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right' } }
+        };
+
         function handleKeyDown(event, callback) {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
@@ -194,9 +197,13 @@
             }
         }
 
+        function showError(message) {
+            console.error(message);
+            alert(message);
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             loadReportData();
-
             document.getElementById('yearFilter').addEventListener('change', loadReportData);
             document.getElementById('projectFilter').addEventListener('change', loadReportData);
         });
@@ -221,11 +228,6 @@
             }
         }
 
-        function showError(message) {
-            console.error(message);
-            alert(message);
-        }
-
         function renderReport() {
             updateSummaryCards();
             renderComparisonTable();
@@ -234,12 +236,7 @@
 
         function updateSummaryCards() {
             if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
-                document.getElementById('performancePercentage').textContent = '0%';
-                document.getElementById('performanceBar').style.width = '0%';
-                document.getElementById('totalRealized').textContent = '0h';
-                document.getElementById('collaboratorsCount').textContent = '0 colaboradores';
-                document.getElementById('totalPlanned').textContent = '0h';
-                document.getElementById('deficit').textContent = 'Déficit: 0h';
+                resetSummaryCards();
                 return;
             }
 
@@ -262,6 +259,15 @@
             totalPlannedHours = totalPlanned;
         }
 
+        function resetSummaryCards() {
+            document.getElementById('performancePercentage').textContent = '0%';
+            document.getElementById('performanceBar').style.width = '0%';
+            document.getElementById('totalRealized').textContent = '0h';
+            document.getElementById('collaboratorsCount').textContent = '0 colaboradores';
+            document.getElementById('totalPlanned').textContent = '0h';
+            document.getElementById('deficit').textContent = 'Déficit: 0h';
+        }
+
         function renderComparisonTable() {
             const tableBody = document.getElementById('tableBody');
             
@@ -281,11 +287,7 @@
                     
                     tableHTML += `<td class="p-3 text-center">`;
                     if (realized > 0) {
-                        tableHTML += `
-                            <div class="space-y-1">
-                                <div class="text-green-600 font-semibold text-sm">${realized.toFixed(2)}h</div>
-                            </div>
-                        `;
+                        tableHTML += `<div class="text-green-600 font-semibold text-sm">${realized.toFixed(2)}h</div>`;
                     } else {
                         tableHTML += `<span class="text-gray-400 text-sm">-</span>`;
                     }
@@ -294,19 +296,14 @@
                 tableHTML += `</tr>`;
             });
 
-            tableHTML += `<tr class="bg-gray-100 font-semibold">`;
-            tableHTML += `<td class="p-3">Total Geral</td>`;
+            tableHTML += `<tr class="bg-gray-100 font-semibold"><td class="p-3">Total Geral</td>`;
             for (let month = 1; month <= 12; month++) {
                 const monthRealized = Object.values(currentData.por_dev).reduce((sum, dev) => 
                     sum + ((dev.mensal[month] && dev.mensal[month].realizado) || 0), 0);
                 
                 tableHTML += `<td class="p-3 text-center">`;
                 if (monthRealized > 0) {
-                    tableHTML += `
-                        <div class="space-y-1">
-                            <div class="text-blue-600 text-sm">${monthRealized.toFixed(2)}h</div>
-                        </div>
-                    `;
+                    tableHTML += `<div class="text-blue-600 text-sm">${monthRealized.toFixed(2)}h</div>`;
                 } else {
                     tableHTML += `<span class="text-gray-400 text-sm">-</span>`;
                 }
@@ -330,26 +327,7 @@
             }
 
             if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
-                pieChartInstance = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Sem dados'],
-                        datasets: [{
-                            data: [1],
-                            backgroundColor: ['#e5e7eb'],
-                            borderWidth: 2,
-                            borderColor: '#fff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'right' },
-                            tooltip: { enabled: false }
-                        }
-                    }
-                });
+                createEmptyChart(ctx, 'doughnut', 'Sem dados');
                 return;
             }
 
@@ -360,26 +338,7 @@
             })).filter(item => item.value > 0);
 
             if (data.length === 0) {
-                pieChartInstance = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Sem horas realizadas'],
-                        datasets: [{
-                            data: [1],
-                            backgroundColor: ['#e5e7eb'],
-                            borderWidth: 2,
-                            borderColor: '#fff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'right' },
-                            tooltip: { enabled: false }
-                        }
-                    }
-                });
+                createEmptyChart(ctx, 'doughnut', 'Sem horas realizadas');
                 return;
             }
 
@@ -390,8 +349,8 @@
                     datasets: [{
                         data: data.map(item => item.value),
                         backgroundColor: [
-                            '#0057B8', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF',
-                            '#8884d8', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'
+                            CHART_COLORS.blue, CHART_COLORS.green, '#FFBB28', CHART_COLORS.orange, CHART_COLORS.purple,
+                            '#8884d8', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#111827', '#F3F4F6', '#DC2626'
                         ],
                         borderWidth: 2,
                         borderColor: '#fff'
@@ -426,53 +385,7 @@
             }
 
             if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
-                barChartInstance = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Comparação Total'],
-                        datasets: [
-                            {
-                                label: 'Horas Realizadas',
-                                data: [0],
-                                backgroundColor: '#0057B8',
-                                borderWidth: 0,
-                                borderRadius: 4
-                            },
-                            {
-                                label: 'Horas Previstas',
-                                data: [0],
-                                backgroundColor: '#FF8042',
-                                borderWidth: 0,
-                                borderRadius: 4
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Horas'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}h`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+                createEmptyBarChart(ctx);
                 return;
             }
 
@@ -489,14 +402,87 @@
                         {
                             label: 'Horas Realizadas',
                             data: [totalRealized],
-                            backgroundColor: '#0057B8',
+                            backgroundColor: CHART_COLORS.blue,
                             borderWidth: 0,
                             borderRadius: 4
                         },
                         {
                             label: 'Horas Previstas',
                             data: [totalPlanned],
-                            backgroundColor: '#FF8042',
+                            backgroundColor: CHART_COLORS.orange,
+                            borderWidth: 0,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Horas'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}h`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createEmptyChart(ctx, type, message) {
+            return new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: [message],
+                    datasets: [{
+                        data: [1],
+                        backgroundColor: [CHART_COLORS.gray],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+        }
+
+        function createEmptyBarChart(ctx) {
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Comparação Total'],
+                    datasets: [
+                        {
+                            label: 'Horas Realizadas',
+                            data: [0],
+                            backgroundColor: CHART_COLORS.blue,
+                            borderWidth: 0,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Horas Previstas',
+                            data: [0],
+                            backgroundColor: CHART_COLORS.orange,
                             borderWidth: 0,
                             borderRadius: 4
                         }
