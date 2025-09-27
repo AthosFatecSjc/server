@@ -10,24 +10,40 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js" integrity="sha256-Lye89HGy1p3XhJT24hcvsoRw64Q4IOL5a7hdOflhjTA=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" integrity="sha256-IMCPPZxtLvdt9tam8RJ8ABMzn+Mq3SQiInbDmMYwjDg=" crossorigin="anonymous"></script>
     <style>
-        body { font-family: "Noto Sans", sans-serif; margin: 16px; background-color: #f4f7f9; }
+        body { font-family: "Noto Sans", sans-serif; margin: 0; background-color: #f4f7f9; }
         .container { 
-            margin: 0;
+            max-width: 6000px; 
+            margin: 0 auto;
+            padding: 16px; 
+            box-sizing: border-box; 
         }
-        .conteudo {
-            display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: 16px;
-            align-items: start;
+       #controle_horas_projeto_equipe {
+            display: flex; 
+            flex-direction: column;
+            gap: 24px; 
+            align-items: stretch;
             min-width: 0;
         }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .header { display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 16px; 
+            flex-wrap: wrap; 
+            gap: 16px;
+        }
         .header h1 {
             font-weight: 400;
             font-size: 1.5em;
             color: #0000FF;
         }
-        .filters { margin-bottom: 16px; background: #fff; padding: 16px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 4px solid #0000FF; }
+        .filters { 
+            margin-bottom: 16px; 
+            background: #fff; 
+            padding: 16px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
+            border-left: 4px solid #0000FF; 
+        }
         .htmx-indicator{ display: none; }
         .filter-header {
             display: flex;
@@ -53,8 +69,53 @@
             font-size: 0.8rem;
             color: #3b4b61;
         }
-        .filter-form { display: flex; align-items: center; gap: 16px; }
-        .filter-form select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ccd4e0; font-size: 0.9em; background-color: #fdfdfd; }
+        .filter-form { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            flex-wrap: wrap;
+        }
+        .filter-form select { 
+            padding: 6px 10px; 
+            border-radius: 6px; 
+            border: 1px solid #ccd4e0; 
+            font-size: 0.9em; 
+            background-color: #fdfdfd; 
+        }
+        .select-wrapper .chevron-icon {
+            position: absolute;
+            right: 12px;
+            pointer-events: none;
+            color: #5a6a82;
+        }
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background-color: #fff;
+        }
+        .table-wrapper table {
+            width: 100%;
+            min-width: 700px; 
+            border-collapse: collapse;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 24px;
+        }
+        .chart-container {
+            position: relative; 
+            height: 400px;
+            padding: 16px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
     </style>
 </head>
 <body>
