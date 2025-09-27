@@ -88,7 +88,10 @@
                 <span class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full" id="collaboratorsCount">0 colaboradores</span>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in cursor-pointer hover:bg-gray-50 transition-colors" onclick="openPlannedHoursModal()">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in cursor-pointer hover:bg-gray-50 transition-colors" 
+                 onclick="openPlannedHoursModal()" 
+                 onKeyDown="handleCardKeyPress(event)"
+                 tabindex="0">
                 <h3 class="text-lg font-semibold mb-4 flex items-center justify-center gap-2">
                     Meta Planejada 
                     <svg class="edit-icon text-gray-500" viewBox="0 0 24 24">
@@ -146,6 +149,13 @@
             document.getElementById('yearFilter').addEventListener('change', loadReportData);
             document.getElementById('projectFilter').addEventListener('change', loadReportData);
         });
+
+        function handleCardKeyPress(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openPlannedHoursModal();
+            }
+        }
 
         async function loadReportData() {
             const year = document.getElementById('yearFilter').value;
