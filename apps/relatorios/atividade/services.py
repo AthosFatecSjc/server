@@ -122,26 +122,17 @@ class AtividadeService:
         ]
 
     @staticmethod
-    def horas_por_dev_e_projeto_por_mes(ano: int, mes: int) -> dict[list, list]:
-        """Lista horas detalhadas por projeto e totais por desenvolvedor.
-
-        Consulta o banco de dados para um mês e ano específicos, agregando
-        as horas trabalhadas. Retorna uma estrutura de dados detalhada.
-
+    def _buscar_horas_detalhadas(ano: int, mes: int):
+        """Busca horas detalhadas por funcionário e projeto.
+        
         Args:
-            ano (int): O ano para o qual o relatório será gerado.
-            mes (int): O mês para o qual o relatório será gerado.
-
+            ano (int): Ano para filtrar os dados.
+            mes (int): Mês para filtrar os dados.
+            
         Returns:
-            dict: Um dicionário contendo duas chaves:
-                'por_projeto' (list): Uma lista de dicionários, cada um
-                    representando o total de horas de um dev em um projeto.
-                'total_por_dev' (list): Uma lista de dicionários, cada um
-                    com o total de horas de um desenvolvedor no mês.
-       
-    
+            QuerySet: Dados agregados de horas por funcionário e projeto.
         """
-        dados = (
+        return (
             ControleHorasEquipe.objects
             .filter(mes__year=ano, mes__month=mes)
             .values('funcionario_id__nome', 'projeto_id__nome')
@@ -149,6 +140,16 @@ class AtividadeService:
             .order_by('funcionario_id__nome', 'projeto_id__nome')
         )
 
+    @staticmethod
+    def _processar_dados_horas_detalhadas(dados):
+        """Processa os dados de horas, criando estruturas para por_projeto e totais.
+        
+        Args:
+            dados: QuerySet com dados de horas por funcionário e projeto.
+            
+        Returns:
+            tuple: Tupla contendo (por_projeto, total_por_dev).
+        """
         totais = defaultdict(float)
         por_projeto = []
 
@@ -168,6 +169,30 @@ class AtividadeService:
             {'funcionario': funcionario, 'total_horas': total}
             for funcionario, total in totais.items()
         ]
+
+        return por_projeto, total_por_dev
+
+    @staticmethod
+    def horas_por_dev_e_projeto_por_mes(ano: int, mes: int) -> dict[list, list]:
+        """Lista horas detalhadas por projeto e totais por desenvolvedor.
+
+        Coordena a consulta ao banco de dados e o processamento dos dados
+        para um mês e ano específicos, delegando responsabilidades para
+        métodos auxiliares especializados.
+
+        Args:
+            ano (int): O ano para o qual o relatório será gerado.
+            mes (int): O mês para o qual o relatório será gerado.
+
+        Returns:
+            dict: Um dicionário contendo duas chaves:
+                'por_projeto' (list): Uma lista de dicionários, cada um
+                    representando o total de horas de um dev em um projeto.
+                'total_por_dev' (list): Uma lista de dicionários, cada um
+                    com o total de horas de um desenvolvedor no mês.
+        """
+        dados = AtividadeService._buscar_horas_detalhadas(ano, mes)
+        por_projeto, total_por_dev = AtividadeService._processar_dados_horas_detalhadas(dados)
 
         return {
             'por_projeto': por_projeto,
@@ -195,20 +220,31 @@ class AtividadeService:
         )
 
     @staticmethod
-    def gerar_dados_relatorio_atividade(ano: int, mes: int) -> dict:
-        """
-        Essa função gera os dados de relatório de atividade
-        Parameters:
-            ano (int): Ano para geração do relatório
-            mes (int): Mes para geração do relatório
+    def _buscar_dados_base(ano: int, mes: int):
+        """Busca os dados base do banco de dados para o relatório.
+        
+        Args:
+            ano (int): Ano para geração do relatório.
+            mes (int): Mês para geração do relatório.
+            
         Returns:
-            dict: Dados filtrados para geração da tabela
+            QuerySet: Dados filtrados e otimizados do ControleHorasEquipe.
         """
-        queryset = ControleHorasEquipe.objects.filter(
+        return ControleHorasEquipe.objects.filter(
             mes__year=ano,
             mes__month=mes
         ).select_related('funcionario', 'projeto').order_by('funcionario__nome')
 
+    @staticmethod
+    def _processar_dados_por_colaborador(queryset):
+        """Organiza os dados por colaborador e projeto.
+        
+        Args:
+            queryset: QuerySet com os dados do ControleHorasEquipe.
+            
+        Returns:
+            tuple: Tupla contendo (dados_por_colaborador, projetos_nomes, dados_tabela).
+        """
         dados_por_colaborador = defaultdict(lambda: defaultdict(float))
         for registro in queryset:
             dados_por_colaborador[registro.funcionario.nome][registro.projeto.nome] += float(registro.horas)
@@ -223,7 +259,20 @@ class AtividadeService:
             }
             for colaborador, projetos in dados_por_colaborador.items()
         ]
+        
+        return dados_por_colaborador, projetos_nomes, dados_tabela
 
+    @staticmethod
+    def _calcular_totais_projeto(queryset, projetos_nomes):
+        """Calcula os totais por projeto e total geral.
+        
+        Args:
+            queryset: QuerySet com os dados do ControleHorasEquipe.
+            projetos_nomes (list): Lista com nomes dos projetos.
+            
+        Returns:
+            tuple: Tupla contendo (resumo_projetos, totais_por_projeto, total_geral_horas).
+        """
         total_geral_horas = queryset.aggregate(total=Sum('horas'))['total'] or 0
 
         resumo_projetos = queryset.values('projeto__nome').annotate(
@@ -236,8 +285,21 @@ class AtividadeService:
         totais_por_projeto = [
             resumo_projetos_dict.get(p_nome, {}).get('total_horas', 0) for p_nome in projetos_nomes
         ]
+        
+        return resumo_projetos, totais_por_projeto, total_geral_horas
 
-        dados_cards = [
+    @staticmethod
+    def _gerar_dados_cards(resumo_projetos, total_geral_horas):
+        """Gera os dados formatados para os cards de resumo.
+        
+        Args:
+            resumo_projetos: Lista com o resumo dos projetos.
+            total_geral_horas (float): Total geral de horas.
+            
+        Returns:
+            list: Lista de dicionários com dados dos cards.
+        """
+        return [
             {
                 'projeto_nome': item['projeto__nome'],
                 'total_horas': float(item['total_horas']),
@@ -247,6 +309,33 @@ class AtividadeService:
             }
             for item in resumo_projetos
         ]
+
+    @staticmethod
+    def gerar_dados_relatorio_atividade(ano: int, mes: int) -> dict:
+        """Gera os dados completos para o relatório de atividade.
+        
+        Esta função orquestra a geração de dados, delegando responsabilidades
+        específicas para métodos auxiliares, mantendo a função principal 
+        focada apenas na coordenação do processo.
+        
+        Args:
+            ano (int): Ano para geração do relatório.
+            mes (int): Mês para geração do relatório.
+            
+        Returns:
+            dict: Dados formatados e prontos para geração do relatório.
+        """
+        # Buscar dados do banco
+        queryset = AtividadeService._buscar_dados_base(ano, mes)
+        
+        # Processar dados por colaborador
+        dados_por_colaborador, projetos_nomes, dados_tabela = AtividadeService._processar_dados_por_colaborador(queryset)
+        
+        # Calcular totais por projeto
+        resumo_projetos, totais_por_projeto, total_geral_horas = AtividadeService._calcular_totais_projeto(queryset, projetos_nomes)
+        
+        # Gerar dados para cards
+        dados_cards = AtividadeService._gerar_dados_cards(resumo_projetos, total_geral_horas)
 
         return {
             'dados_tabela': dados_tabela,
@@ -385,15 +474,75 @@ class AtividadeService:
         )
 
     @staticmethod
-    def exportar_atividade_pdf(mes, ano, dados):
+    def _configurar_documento_pdf(buffer):
+        """Configura o documento PDF com tamanho e margens adequadas.
+        
+        Args:
+            buffer: Buffer de bytes onde o PDF será escrito.
+            
+        Returns:
+            SimpleDocTemplate: Documento PDF configurado.
         """
-        Orquestra a geração completa do relatório de atividades em PDF.
+        return SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(legal),
+            leftMargin=0.2*inch,
+            rightMargin=0.2*inch,
+            topMargin=0.3*inch,
+            bottomMargin=0.3*inch
+        )
 
-        Esta função é o ponto de entrada para a exportação. Ela configura
-        o documento PDF (tamanho da página e margens), define o título
-        com base no mês e ano, e chama os métodos auxiliares para construir
-        cada seção do relatório. O resultado final é um arquivo PDF completo
-        gerado em memória.
+    @staticmethod
+    def _criar_titulo_relatorio(mes, ano, styles):
+        """Cria o título formatado do relatório.
+        
+        Args:
+            mes (int): Mês do relatório.
+            ano (int): Ano do relatório.
+            styles: Estilos do ReportLab.
+            
+        Returns:
+            list: Lista com elementos do título e espaçamento.
+        """
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            spaceAfter=20,
+            alignment=1
+        )
+        
+        title_text = f"Relatório de Atividades - {AtividadeService.MESES_PORTUGUES.get(mes)}/{ano}"
+        return [
+            Paragraph(title_text, title_style),
+            Spacer(1, 0.2*inch)
+        ]
+
+    @staticmethod
+    def _combinar_elementos_relatorio(dados, styles):
+        """Combina todos os elementos do relatório em uma lista.
+        
+        Args:
+            dados (dict): Dados processados do relatório.
+            styles: Estilos do ReportLab.
+            
+        Returns:
+            list: Lista completa de elementos para o PDF.
+        """
+        elements = []
+        elements += AtividadeService._gerar_tabela_horas_por_dev_e_projeto(dados, styles)
+        elements += AtividadeService._gerar_tabela_total_horas_por_dev(dados, styles)
+        elements += AtividadeService._gerar_tabela_total_horas_por_projeto(dados, styles)
+        elements.append(AtividadeService._gerar_footer(styles))
+        return elements
+
+    @staticmethod
+    def exportar_atividade_pdf(mes, ano, dados):
+        """Orquestra a geração completa do relatório de atividades em PDF.
+
+        Esta função coordena a criação do PDF, delegando responsabilidades
+        específicas para métodos auxiliares, mantendo-a focada apenas na
+        orquestração do processo de geração.
 
         Args:
             mes (int): O mês para o qual o relatório será gerado.
@@ -406,34 +555,15 @@ class AtividadeService:
                 serem usados em uma resposta HTTP.
         """
         buffer = BytesIO()
-        doc = SimpleDocTemplate(
-            buffer,
-            pagesize=landscape(legal),
-            leftMargin=0.2*inch,
-            rightMargin=0.2*inch,
-            topMargin=0.3*inch,
-            bottomMargin=0.3*inch
-        )
-        elements = []
-
+        doc = AtividadeService._configurar_documento_pdf(buffer)
         styles = getSampleStyleSheet()
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=16,
-            spaceAfter=20,
-            alignment=1
-        )
+        
+        # Criar elementos do documento
+        elements = []
+        elements += AtividadeService._criar_titulo_relatorio(mes, ano, styles)
+        elements += AtividadeService._combinar_elementos_relatorio(dados, styles)
 
-        title_text = f"Relatório de Atividades - {AtividadeService.MESES_PORTUGUES.get(mes)}/{ano}"
-        elements.append(Paragraph(title_text, title_style))
-        elements.append(Spacer(1, 0.2*inch))
-
-        elements += AtividadeService._gerar_tabela_horas_por_dev_e_projeto(dados, styles)
-        elements += AtividadeService._gerar_tabela_total_horas_por_dev(dados, styles)
-        elements += AtividadeService._gerar_tabela_total_horas_por_projeto(dados, styles)
-        elements.append(AtividadeService._gerar_footer(styles))
-
+        # Gerar PDF
         doc.build(elements)
         pdf = buffer.getvalue()
         buffer.close()
