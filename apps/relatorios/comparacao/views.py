@@ -1,7 +1,8 @@
 import datetime
-from django.http import JsonResponse
+import json
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from .services import ComparacaoService
 
 @require_GET
@@ -21,11 +22,7 @@ def index(request):
 def relatorio_anual_comparacao(request: any):
     """
     Método de consolidação de dados e geração das informações utilizadas no Relatório de Comparação Anual.
-    
-    Returns:
-        dict (str, any): Dicionário com um inteiro e uma lista 'ano' e 'por_dev'.
     """
-
     try:
         ano = int(request.GET.get('ano'))
     except (TypeError, ValueError):
@@ -53,3 +50,17 @@ def relatorio_anual_comparacao(request: any):
 
     payload = {"ano": ano, "por_dev": por_dev}
     return JsonResponse(payload, safe=True)
+
+@require_POST
+def exportar_pdf(request):
+    try:
+        data = json.loads(request.body)
+        ano = int(data.get('year', datetime.date.today().year))
+        projeto_nome = data.get('project_name', '')
+        horas_planejadas = float(data.get('total_planned_hours', 0))
+        
+        response = ComparacaoService.exportar_relatorio_pdf(ano, projeto_nome, horas_planejadas)
+        return response
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
