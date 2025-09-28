@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Comparação de Horas</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js" integrity="sha256-Lye89HGy1p3XhJT24hcvsoRw64Q4IOL5a7hdOflhjTA=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" integrity="sha256-IMCPPZxtLvdt9tam8RJ8ABMzn+Mq3SQiInbDmMYwjDg=" crossorigin="anonymous"></script>
     <style>
         .fade-in {
             animation: fadeIn 0.5s ease-in;
@@ -101,7 +103,7 @@
                 </h3>
                 <div class="text-3xl font-bold text-orange-600 mb-2" id="totalPlanned">0h</div>
                 <p class="text-sm text-gray-600 mb-2">Horas planejadas para o período</p>
-                <span class="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full" id="deficit">Déficit: 0h</span>
+                <span class="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full" id="deficit" style="background-color: #FF8042; color: white;">Déficit: 0h</span>
             </div>
         </div>
 
@@ -115,11 +117,33 @@
                     <thead>
                         <tr class="bg-blue-600 text-white">
                             <th class="p-3 text-left font-medium">Colaborador</th>
+                            <th class="p-3 text-center font-medium">JAN</th>
+                            <th class="p-3 text-center font-medium">FEV</th>
+                            <th class="p-3 text-center font-medium">MAR</th>
+                            <th class="p-3 text-center font-medium">ABR</th>
+                            <th class="p-3 text-center font-medium">MAI</th>
+                            <th class="p-3 text-center font-medium">JUN</th>
+                            <th class="p-3 text-center font-medium">JUL</th>
+                            <th class="p-3 text-center font-medium">AGO</th>
+                            <th class="p-3 text-center font-medium">SET</th>
+                            <th class="p-3 text-center font-medium">OUT</th>
+                            <th class="p-3 text-center font-medium">NOV</th>
+                            <th class="p-3 text-center font-medium">DEZ</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 fade-in">
+                <h3 class="text-xl font-semibold mb-2">Distribuição de Horas</h3>
+                <p class="text-gray-600 mb-4">Representação da participação de cada colaborador</p>
+                <div class="relative h-80">
+                    <canvas id="pieChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -142,6 +166,7 @@
     <script>
         let currentData = {};
         let totalPlannedHours = 0;
+        let pieChartInstance = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             loadReportData();
@@ -185,6 +210,7 @@
         function renderReport() {
             updateSummaryCards();
             renderComparisonTable();
+            renderCharts();
         }
 
         function updateSummaryCards() {
@@ -226,12 +252,6 @@
                 return;
             }
 
-            const thead = document.querySelector('#comparisonTable thead tr');
-            thead.innerHTML = '<th class="p-3 text-left font-medium">Colaborador</th>';
-            months.forEach(month => {
-                thead.innerHTML += `<th class="p-3 text-center font-medium">${month}</th>`;
-            });
-
             let tableHTML = '';
             Object.entries(currentData.por_dev).forEach(([devName, devData]) => {
                 tableHTML += `<tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">`;
@@ -256,6 +276,7 @@
                 tableHTML += `</tr>`;
             });
 
+
             tableHTML += `<tr class="bg-gray-100 font-semibold">`;
             tableHTML += `<td class="p-3">Total Geral</td>`;
             for (let month = 1; month <= 12; month++) {
@@ -277,6 +298,110 @@
             tableHTML += `</tr>`;
 
             tableBody.innerHTML = tableHTML;
+        }
+
+        function renderCharts() {
+            renderPieChart();
+        }
+
+        function renderPieChart() {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            
+            if (pieChartInstance) {
+                pieChartInstance.destroy();
+            }
+
+            if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
+                pieChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sem dados'],
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#e5e7eb'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right' },
+                            tooltip: { enabled: false }
+                        }
+                    }
+                });
+                return;
+            }
+
+            const collaborators = Object.entries(currentData.por_dev);
+            const data = collaborators.map(([name, data]) => ({
+                name: name,
+                value: data.totais.total_realizado
+            })).filter(item => item.value > 0); 
+
+            if (data.length === 0) {
+                pieChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sem horas realizadas'],
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#e5e7eb'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right' },
+                            tooltip: { enabled: false }
+                        }
+                    }
+                });
+                return;
+            }
+
+            pieChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(item => item.name),
+                    datasets: [{
+                        data: data.map(item => item.value),
+                        backgroundColor: [
+                        '#0057B8', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF',
+                        '#8884d8', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                        '#9966FF', '#C9CBCF', '#FF4500', '#008080', '#FFD700',
+                        '#8A2BE2', '#DC143C', '#00FA9A', '#FF69B4', '#1E90FF',
+                        '#32CD32', '#FF1493', '#A52A2A', '#2E8B57', '#FFA07A',
+                        '#20B2AA', '#BA55D3', '#7FFF00', '#FF7F50', '#191970'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ${context.parsed.toFixed(2)}h (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         function openPlannedHoursModal() {
