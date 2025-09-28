@@ -234,16 +234,10 @@
         }
 
         function updateSummaryCards() {
-            if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
-                resetSummaryCards();
-                return;
-            }
-
             const collaborators = Object.keys(currentData.por_dev);
             const totalRealized = Object.values(currentData.por_dev).reduce((sum, dev) => 
                 sum + dev.totais.total_realizado, 0);
-            const totalPlanned = Object.values(currentData.por_dev).reduce((sum, dev) => 
-                sum + dev.totais.total_previsto, 0);
+            let totalPlanned = currentData.horas_planejadas_projeto;
 
             const percentage = totalPlanned > 0 ? (totalRealized / totalPlanned) * 100 : 0;
             const deficit = totalPlanned - totalRealized;
@@ -256,15 +250,6 @@
             document.getElementById('deficit').textContent = 'Déficit: ' + formatHours(deficit);
             
             totalPlannedHours = totalPlanned;
-        }
-
-        function resetSummaryCards() {
-            document.getElementById('performancePercentage').textContent = '0%';
-            document.getElementById('performanceBar').style.width = '0%';
-            document.getElementById('totalRealized').textContent = formatHours(0);
-            document.getElementById('collaboratorsCount').textContent = '0 colaboradores';
-            document.getElementById('totalPlanned').textContent = formatHours(0);
-            document.getElementById('deficit').textContent = 'Déficit: ' + formatHours(0);
         }
 
         function renderComparisonTable() {
