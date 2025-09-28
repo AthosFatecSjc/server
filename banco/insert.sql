@@ -26,14 +26,14 @@ SELECT
     '2025-01-01'::DATE + (random() * (DATE '2025-12-31' - DATE '2025-01-01'))::INT AS data_criacao
 FROM (
     VALUES
-        ('SOS Mnt'),
-        ('SOS Ges'),
-        ('SOS Ed'),
-        ('Ball Anal'),
-        ('Ball LNO'),
-        ('Ball PFS'),
-        ('Ball Dados'),
-        ('Bayer Mak'),
+        ('Mnt'),
+        ('Ges'),
+        ('Ed'),
+        ('Ball'),
+        ('LNO'),
+        ('PFS'),
+        ('Dados'),
+        ('Mak'),
         ('Incra'),
         ('Climatem'),
         ('Comercial'),
