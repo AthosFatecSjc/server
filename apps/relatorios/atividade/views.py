@@ -69,7 +69,7 @@ def get_grafico_horas_projeto(context, request):
 
 def get_tabela_horas_por_dev(context, request):
     context.update({'cabecalho': {
-        'titulo': 'Horas por Desenvolvedor', 
+        'titulo': 'Total de Horas por Desenvolvedor', 
         'subtitulo': f'{context.get("mes_nome")}/{context.get("ano")}'
     }})
     return render_to_string("atividade/partials/_tabela_horas_dev.html", context, request=request)
