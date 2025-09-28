@@ -38,10 +38,10 @@ def relatorio_tabela_e_cards(request):
 
     response = '<div id="horas_projeto" class="conteudo">'
     response += get_tabela_horas_projeto(context, request)
-    response += get_grafico_horas_projeto(context, request)
-    response += '</div>'
-    response += '<div id="horas_por_dev" class="conteudo" style="margin-top: 15px">'
     response += get_tabela_horas_por_dev(context, request)
+    response += '</div>'
+    response += '<div id="horas_por_dev" class="conteudo" style="margin-top: 15px">'   
+    response += get_grafico_horas_projeto(context, request)
     response += get_grafico_horas_por_dev(context, request)
     response += '</div>'
     
