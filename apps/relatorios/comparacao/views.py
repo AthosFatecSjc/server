@@ -27,7 +27,12 @@ def relatorio_anual_comparacao(request: any):
         ano = int(request.GET.get('ano'))
     except (TypeError, ValueError):
         ano = datetime.date.today().year
-
+    
+    try:
+        nome_projeto = str(request.GET.get('nome_projeto'))
+    except (TypeError, ValueError):
+        return HttpResponse("Nome do projeto inválido")
+    
     realizados = ComparacaoService.soma_horas_por_dev_mes(ano)
     previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano)
     resumo = ComparacaoService.totais_anuais_e_diferenca(ano)
@@ -48,7 +53,12 @@ def relatorio_anual_comparacao(request: any):
             ),
         }
 
-    payload = {"ano": ano, "por_dev": por_dev}
+    payload = {
+        "ano": ano,
+        "horas_planejadas_projeto": ComparacaoService.get_horas_previstas_projeto(ano, nome_projeto), 
+        "por_dev": por_dev
+    }
+
     return JsonResponse(payload, safe=True)
 
 @require_POST

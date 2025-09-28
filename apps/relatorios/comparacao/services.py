@@ -11,7 +11,7 @@ from reportlab.graphics.shapes import Drawing, String, Rect
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 
-from apps.relatorios.models import ControleHorasEquipe, TempoGastoEquipe, TempoControleValores, Projeto
+from apps.relatorios.models import ControleHorasEquipe, TempoGastoEquipe, TempoControleValores, Projeto, MetaTempoControle
 
 class ComparacaoService:
 
@@ -432,3 +432,58 @@ class ComparacaoService:
         except Exception as e:
             print(f"Erro ao criar gráfico de barras: {e}")
             return None
+
+    @staticmethod
+    def _get_projeto_id(nome_projeto: str) -> int:
+        """
+        Busca projeto_id
+
+        Args:
+            nome_projeto (str): Nome do projeto.
+            
+        Returns:
+            projeto_id (int): Identificado único do projeto.
+        """
+
+        try:
+            projeto_id = (
+                Projeto.objects
+                    .filter(nome=nome_projeto)
+                    .values("id")
+            )
+
+        except Exception as e:
+            print(f"Id do projeto não encontrado: {e}")
+            return 0
+        
+        return projeto_id[0]['id']
+
+    @staticmethod
+    def get_horas_previstas_projeto(ano:int, nome_projeto: str) -> float:
+        """
+        Lê registro de horas previstas para o projeto especificado
+
+        Args:
+            ano (int): Ano para geração do relatório.
+            nome_projeto (str): Nome do projeto.
+            
+        Returns:
+            horas_previstas (float): Quantidade de horas previstas para o relatório no ano.
+        """
+
+        try:
+            try:
+                meta_individual = MetaTempoControle.objects.get(
+                    objetivo_clt=f"META_{ComparacaoService._get_projeto_id(nome_projeto)}_{ano}"
+                )
+                meta_valor = meta_individual.objetivo_estagiario
+                if meta_valor and meta_valor.strip():
+                    return float(meta_valor)
+                else:
+                    return 0
+            except MetaTempoControle.DoesNotExist:
+                return 0
+                
+        except Exception as e:
+            print(f"Erro ao obter meta: {e}")
+            return 0

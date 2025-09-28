@@ -212,7 +212,7 @@
             const project = document.getElementById('projectFilter').value;
             
             try {
-                const response = await fetch(`/relatorios/comparacao/relatorio-anual?ano=${year}&projeto=${encodeURIComponent(project)}`);
+                const response = await fetch(`/relatorios/comparacao/relatorio-anual?ano=${year}&nome_projeto=${encodeURIComponent(project)}`);
                 if (response.ok) {
                     currentData = await response.json();
                     renderReport();
