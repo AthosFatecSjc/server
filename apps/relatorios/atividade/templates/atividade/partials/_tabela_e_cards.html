@@ -1,5 +1,17 @@
 <div id="tabela_e_cards">
 
+    <div class="cards-container" id="cards-resumo">
+        {% for card in dados.dados_cards %}
+        {% cycle 'color-1' 'color-2' 'color-3' 'color-4' as card_color silent %}
+        <div class="card {{ card_color }}">
+            <h3>{{ card.projeto_nome }}</h3>
+            <p>{{ card.total_horas|floatformat:2 }}h</p>
+            <span>{{ card.percentual }}% do total do mês</span><br>
+            <span>{{ card.desenvolvedores }} desenvolvedor(es)</span>
+        </div>
+        {% endfor %}
+    </div>
+
     <div class="table-wrapper">
         <h2>Horas por Desenvolvedor e Projeto</h2>
         <p style="margin-top: -10px; color: #666;">{{ cabecalho.subtitulo }}</p>
@@ -40,18 +52,6 @@
         </table>
     </div>
 
-    <div class="cards-container" id="cards-resumo">
-        {% for card in dados.dados_cards %}
-        {% cycle 'color-1' 'color-2' 'color-3' 'color-4' as card_color silent %}
-        <div class="card {{ card_color }}">
-            <h3>{{ card.projeto_nome }}</h3>
-            <p>{{ card.total_horas|floatformat:2 }}h</p>
-            <span>{{ card.percentual }}% do total do mês</span><br>
-            <span>{{ card.desenvolvedores }} desenvolvedor(es)</span>
-        </div>
-        {% endfor %}
-    </div>
-
 </div>
 
 <style>
@@ -90,7 +90,7 @@
         border-bottom: none;
     }
     tfoot tr {
-        font-weight: bold;
+        font-weight: bold; 
         background-color: #0000FF;
         color: #ffffff;
     }
@@ -101,7 +101,8 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 20px; 
-        margin-top: 20px;
+        /* Ajuste de margem: agora o espaço é embaixo, para separar da tabela */
+        margin-bottom: 30px; 
     }
     .card { 
         background: #fff; 
