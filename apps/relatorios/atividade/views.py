@@ -76,7 +76,7 @@ def get_tabela_horas_por_dev(context, request):
 
 def get_grafico_horas_por_dev(context, request):
     context.update({'cabecalho': {
-        'titulo': 'Distribuição de Horas por Dev', 
+        'titulo': 'Distribuição de Horas por Desenvolvedor', 
         'subtitulo': f'{context.get("mes_nome")}/{context.get("ano")}'
     }})
 
