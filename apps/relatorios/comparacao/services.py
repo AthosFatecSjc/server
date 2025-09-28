@@ -16,6 +16,16 @@ from apps.relatorios.models import ControleHorasEquipe, TempoGastoEquipe, TempoC
 class ComparacaoService:
 
     @staticmethod
+    def _soma_horas_por_dev_mes_base(queryset, dev_field, mes_field, horas_field):
+        resultado = {}
+        for item in queryset:
+            dev = item[dev_field]
+            mes = item[mes_field]
+            horas = item[horas_field] or 0
+            resultado.setdefault(dev, {})[mes] = float(horas)
+        return resultado
+
+    @staticmethod
     def soma_horas_por_dev_mes(ano):
         queryset = (
             ControleHorasEquipe.objects
@@ -24,14 +34,9 @@ class ComparacaoService:
             .annotate(total_horas=Sum("horas"))
             .order_by("funcionario__nome", "mes__month")
         )
-
-        resultado = {}
-        for item in queryset:
-            dev = item["funcionario__nome"]
-            mes = item["mes__month"]
-            horas = item["total_horas"] or 0
-            resultado.setdefault(dev, {})[mes] = float(horas)
-        return resultado
+        return ComparacaoService._soma_horas_por_dev_mes_base(
+            queryset, "funcionario__nome", "mes__month", "total_horas"
+        )
 
     @staticmethod
     def soma_horas_previstas_por_dev_mes(ano, *, source='tempo_controle_valores', field_name=None):
@@ -46,13 +51,12 @@ class ComparacaoService:
                 .annotate(total_previstas=Sum(field_name or "total_meta"))
                 .order_by("controle_tempo_equipe__funcionario__nome", "controle_tempo_equipe__mes__month")
             )
-            resultado = {}
-            for it in qs:
-                dev = it["controle_tempo_equipe__funcionario__nome"]
-                mes = it["controle_tempo_equipe__mes__month"]
-                val = it["total_previstas"] or 0
-                resultado.setdefault(dev, {})[mes] = float(val)
-            return resultado
+            return ComparacaoService._soma_horas_por_dev_mes_base(
+                qs, 
+                "controle_tempo_equipe__funcionario__nome", 
+                "controle_tempo_equipe__mes__month", 
+                "total_previstas"
+            )
 
         if source == 'tempo_gasto':
             qs = (
@@ -62,25 +66,26 @@ class ComparacaoService:
                 .annotate(total_previstas=Sum(field_name or "tempo_gasto"))
                 .order_by("funcionario__nome", "mes__month")
             )
-            resultado = {}
-            for it in qs:
-                dev = it["funcionario__nome"]
-                mes = it["mes__month"]
-                val = it["total_previstas"] or 0
-                resultado.setdefault(dev, {})[mes] = float(val)
-            return resultado
+            return ComparacaoService._soma_horas_por_dev_mes_base(
+                qs, "funcionario__nome", "mes__month", "total_previstas"
+            )
 
         raise RuntimeError("Fonte inválida para soma_horas_previstas_por_dev_mes. Use 'tempo_controle_valores' ou 'tempo_gasto'.")
+
+    @staticmethod
+    def _calcular_total_por_dev(dados_por_dev):
+        return sum(sum(meses.values()) for meses in dados_por_dev.values()) if dados_por_dev else 0.0
 
     @staticmethod
     def totais_anuais_e_diferenca(ano):
         realizados = ComparacaoService.soma_horas_por_dev_mes(ano)
         previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano)
         devs = set(list(realizados.keys()) + list(previstos.keys()))
+        
         resumo = {}
         for dev in devs:
-            total_real = sum(realizados.get(dev, {}).values()) if realizados.get(dev) else 0.0
-            total_prev = sum(previstos.get(dev, {}).values()) if previstos.get(dev) else 0.0
+            total_real = ComparacaoService._calcular_total_por_dev({dev: realizados.get(dev, {})})
+            total_prev = ComparacaoService._calcular_total_por_dev({dev: previstos.get(dev, {})})
             resumo[dev] = {
                 'total_previsto': float(total_prev),
                 'total_realizado': float(total_real),
@@ -98,7 +103,7 @@ class ComparacaoService:
         return [item['nome'] for item in qs]
 
     @staticmethod
-    def exportar_relatorio_pdf(ano: int, projeto_nome: str, horas_planejadas: float) -> HttpResponse:
+    def _preparar_dados_para_relatorio(ano):
         realizados = ComparacaoService.soma_horas_por_dev_mes(ano)
         previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano)
         resumo = ComparacaoService.totais_anuais_e_diferenca(ano)
@@ -119,7 +124,11 @@ class ComparacaoService:
                 ),
             }
 
-        current_data = {"ano": ano, "por_dev": por_dev}
+        return {"ano": ano, "por_dev": por_dev}
+
+    @staticmethod
+    def exportar_relatorio_pdf(ano: int, projeto_nome: str, horas_planejadas: float) -> HttpResponse:
+        current_data = ComparacaoService._preparar_dados_para_relatorio(ano)
         
         buffer = ComparacaoService._gerar_pdf(current_data, horas_planejadas, projeto_nome, ano)
         
@@ -128,6 +137,27 @@ class ComparacaoService:
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         return response
+
+    @staticmethod
+    def _criar_estilo_titulo(styles):
+        return ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            spaceAfter=20,
+            alignment=1,
+            textColor=colors.HexColor('#0057B8')
+        )
+
+    @staticmethod
+    def _criar_estilo_data(styles):
+        return ParagraphStyle(
+            'DateStyle',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=colors.gray,
+            alignment=2
+        )
 
     @staticmethod
     def _gerar_pdf(current_data: dict, total_planned_hours: float, project_name: str, year: int) -> io.BytesIO:
@@ -145,15 +175,7 @@ class ComparacaoService:
         elements = []
         styles = getSampleStyleSheet()
         
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=16,
-            spaceAfter=20,
-            alignment=1,
-            textColor=colors.HexColor('#0057B8')
-        )
-        
+        title_style = ComparacaoService._criar_estilo_titulo(styles)
         title = Paragraph(f"Relatório de Horas - {project_name} ({year})", title_style)
         elements.append(title)
         
@@ -162,7 +184,7 @@ class ComparacaoService:
         
         tabela_elements = ComparacaoService._criar_tabela_comparacao(current_data, styles)
         
-        if len(tabela_elements) > 0:
+        if tabela_elements:
             elements.append(Paragraph("Detalhamento por Colaborador", styles['Heading2']))
             elements.append(Spacer(1, 10))
             elements.extend(tabela_elements)
@@ -171,13 +193,7 @@ class ComparacaoService:
         elements.append(PageBreak())
         elements.extend(ComparacaoService._criar_graficos(current_data, styles))
         
-        date_style = ParagraphStyle(
-            'DateStyle',
-            parent=styles['Normal'],
-            fontSize=8,
-            textColor=colors.gray,
-            alignment=2
-        )
+        date_style = ComparacaoService._criar_estilo_data(styles)
         elements.append(Spacer(1, 15))
         elements.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}", date_style))
         
@@ -186,15 +202,19 @@ class ComparacaoService:
         return buffer
 
     @staticmethod
+    def _calcular_totais_resumo(current_data):
+        if not current_data.get('por_dev'):
+            return 0, 0
+        
+        collaborators_count = len(current_data['por_dev'])
+        total_realized = sum(dev['totais']['total_realizado'] for dev in current_data['por_dev'].values())
+        return total_realized, collaborators_count
+
+    @staticmethod
     def _criar_cards_resumo(current_data: dict, total_planned_hours: float) -> list:
         from reportlab.platypus import Table, TableStyle
         
-        total_realized = 0
-        collaborators_count = 0
-        
-        if current_data.get('por_dev'):
-            collaborators_count = len(current_data['por_dev'])
-            total_realized = sum(dev['totais']['total_realizado'] for dev in current_data['por_dev'].values())
+        total_realized, collaborators_count = ComparacaoService._calcular_totais_resumo(current_data)
         
         performance_percentage = (total_realized / total_planned_hours * 100) if total_planned_hours > 0 else 0
         deficit = total_planned_hours - total_realized
@@ -335,6 +355,17 @@ class ComparacaoService:
         return elements
 
     @staticmethod
+    def _criar_estilo_titulo_grafico(styles, font_size=12):
+        return ParagraphStyle(
+            'ChartsTitle',
+            parent=styles['Heading3'],
+            fontSize=font_size,
+            spaceAfter=8,
+            alignment=1,
+            textColor=colors.HexColor('#1F2937')
+        )
+
+    @staticmethod
     def _criar_graficos(current_data: dict, styles) -> list:
         from reportlab.platypus import Spacer, Table, TableStyle
         elements = []
@@ -343,28 +374,13 @@ class ComparacaoService:
             return elements
         
         elements.append(Spacer(1, 20))
-        title_style = ParagraphStyle(
-            'ChartsTitle',
-            parent=styles['Heading2'],
-            fontSize=14,
-            spaceAfter=20,
-            textColor=colors.HexColor('#1F2937'),
-            alignment=1
-        )
-        
+        title_style = ComparacaoService._criar_estilo_titulo_grafico(styles, 14)
         title = Paragraph("Análise Gráfica", title_style)
         elements.append(title)
         
         pie_chart = ComparacaoService._criar_grafico_pizza(current_data)
         if pie_chart:
-            titulo_pizza_style = ParagraphStyle(
-                'PizzaTitle',
-                parent=styles['Heading3'],
-                fontSize=12,
-                spaceAfter=8,
-                alignment=1,
-                textColor=colors.HexColor('#1F2937')
-            )
+            titulo_pizza_style = ComparacaoService._criar_estilo_titulo_grafico(styles, 12)
             titulo_pizza = Paragraph("Distribuição de Horas por Colaborador", titulo_pizza_style)
             elements.append(titulo_pizza)
             
@@ -378,14 +394,7 @@ class ComparacaoService:
         
         bar_chart = ComparacaoService._criar_grafico_barras(current_data)
         if bar_chart:
-            titulo_barras_style = ParagraphStyle(
-                'BarrasTitle',
-                parent=styles['Heading3'],
-                fontSize=12,
-                spaceAfter=8,
-                alignment=1,
-                textColor=colors.HexColor('#1F2937')
-            )
+            titulo_barras_style = ComparacaoService._criar_estilo_titulo_grafico(styles, 12)
             titulo_barras = Paragraph("Comparação Total de Horas", titulo_barras_style)
             elements.append(titulo_barras)
             
