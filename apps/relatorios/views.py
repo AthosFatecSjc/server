@@ -17,7 +17,7 @@ def index(request):
             'categoria': 'Projetos'
         },
         {
-            'nome': 'Controle de Horas SOS', 
+            'nome': 'Controle de Horas Projeto', 
             'url': 'comparacao/', 
             'descricao': 'Comparação de horas realizadas vs previstas com gráfico de barras',
             'categoria': 'Comparativo'
