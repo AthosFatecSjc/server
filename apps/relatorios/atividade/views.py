@@ -70,3 +70,30 @@ def get_grafico_horas_por_dev(context, request):
         ]
 
     return render_to_string("atividade/partials/_grafico_pizza.html", context, request=request)
+
+@require_GET  
+def exportar_pdf(request):
+    hoje = datetime.date.today()
+    
+    try:
+        ano = int(request.GET.get('ano', hoje.year))
+        mes = int(request.GET.get('mes', hoje.month))
+    except (ValueError, TypeError):
+        ano, mes = hoje.year, hoje.month
+    
+    dados = AtividadeService.gerar_dados_relatorio_atividade(ano, mes)
+    pdf = AtividadeService.exportar_atividade_pdf(mes, ano, dados)
+    
+    MESES_PORTUGUES = {
+        1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+        5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+        9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+    }
+    
+    filename = f"atividades_{MESES_PORTUGUES.get(mes)}_{ano}.pdf"
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response.write(pdf)
+    
+    return response
