@@ -16,12 +16,12 @@ from apps.relatorios.models import ControleHorasEquipe, TempoGastoEquipe, TempoC
 class ComparacaoService:
 
     @staticmethod
-    def _soma_horas_por_dev_mes_base(queryset, dev_field, mes_field, horas_field):
+    def _processar_queryset_horas(queryset, campos):
         resultado = {}
         for item in queryset:
-            dev = item[dev_field]
-            mes = item[mes_field]
-            horas = item[horas_field] or 0
+            dev = item[campos['dev']]
+            mes = item[campos['mes']]
+            horas = item[campos['horas']] or 0
             resultado.setdefault(dev, {})[mes] = float(horas)
         return resultado
 
@@ -34,47 +34,50 @@ class ComparacaoService:
             .annotate(total_horas=Sum("horas"))
             .order_by("funcionario__nome", "mes__month")
         )
-        return ComparacaoService._soma_horas_por_dev_mes_base(
-            queryset, "funcionario__nome", "mes__month", "total_horas"
+        return ComparacaoService._processar_queryset_horas(
+            queryset, 
+            {'dev': 'funcionario__nome', 'mes': 'mes__month', 'horas': 'total_horas'}
         )
 
     @staticmethod
     def soma_horas_previstas_por_dev_mes(ano, *, source='tempo_controle_valores', field_name=None):
-        if source == 'tempo_controle_valores':
-            qs = (
-                TempoControleValores.objects
-                .filter(controle_tempo_equipe__mes__year=ano)
-                .values(
-                    "controle_tempo_equipe__funcionario__nome",
-                    "controle_tempo_equipe__mes__month"
-                )
-                .annotate(total_previstas=Sum(field_name or "total_meta"))
-                .order_by("controle_tempo_equipe__funcionario__nome", "controle_tempo_equipe__mes__month")
-            )
-            return ComparacaoService._soma_horas_por_dev_mes_base(
-                qs, 
-                "controle_tempo_equipe__funcionario__nome", 
-                "controle_tempo_equipe__mes__month", 
-                "total_previstas"
-            )
-
-        if source == 'tempo_gasto':
-            qs = (
-                TempoGastoEquipe.objects
-                .filter(mes__year=ano)
-                .values("funcionario__nome", "mes__month")
-                .annotate(total_previstas=Sum(field_name or "tempo_gasto"))
-                .order_by("funcionario__nome", "mes__month")
-            )
-            return ComparacaoService._soma_horas_por_dev_mes_base(
-                qs, "funcionario__nome", "mes__month", "total_previstas"
-            )
-
-        raise RuntimeError("Fonte inválida para soma_horas_previstas_por_dev_mes. Use 'tempo_controle_valores' ou 'tempo_gasto'.")
+        campos_map = {
+            'tempo_controle_valores': {
+                'model': TempoControleValores,
+                'filtro': 'controle_tempo_equipe__mes__year',
+                'dev': 'controle_tempo_equipe__funcionario__nome',
+                'mes': 'controle_tempo_equipe__mes__month',
+                'campo_sum': field_name or "total_meta"
+            },
+            'tempo_gasto': {
+                'model': TempoGastoEquipe,
+                'filtro': 'mes__year',
+                'dev': 'funcionario__nome',
+                'mes': 'mes__month',
+                'campo_sum': field_name or "tempo_gasto"
+            }
+        }
+        
+        if source not in campos_map:
+            raise RuntimeError("Fonte inválida. Use 'tempo_controle_valores' ou 'tempo_gasto'.")
+        
+        config = campos_map[source]
+        qs = (
+            config['model'].objects
+            .filter(**{config['filtro']: ano})
+            .values(config['dev'], config['mes'])
+            .annotate(total_previstas=Sum(config['campo_sum']))
+            .order_by(config['dev'], config['mes'])
+        )
+        
+        return ComparacaoService._processar_queryset_horas(
+            qs, 
+            {'dev': config['dev'], 'mes': config['mes'], 'horas': 'total_previstas'}
+        )
 
     @staticmethod
-    def _calcular_total_por_dev(dados_por_dev):
-        return sum(sum(meses.values()) for meses in dados_por_dev.values()) if dados_por_dev else 0.0
+    def _calcular_soma_valores(dicionario):
+        return sum(sum(meses.values()) for meses in dicionario.values()) if dicionario else 0.0
 
     @staticmethod
     def totais_anuais_e_diferenca(ano):
@@ -82,25 +85,45 @@ class ComparacaoService:
         previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano)
         devs = set(list(realizados.keys()) + list(previstos.keys()))
         
-        resumo = {}
-        for dev in devs:
-            total_real = ComparacaoService._calcular_total_por_dev({dev: realizados.get(dev, {})})
-            total_prev = ComparacaoService._calcular_total_por_dev({dev: previstos.get(dev, {})})
-            resumo[dev] = {
-                'total_previsto': float(total_prev),
-                'total_realizado': float(total_real),
-                'diferenca': float(total_prev - total_real),
+        return {
+            dev: {
+                'total_previsto': float(ComparacaoService._calcular_soma_valores({dev: previstos.get(dev, {})})),
+                'total_realizado': float(ComparacaoService._calcular_soma_valores({dev: realizados.get(dev, {})})),
+                'diferenca': float(
+                    ComparacaoService._calcular_soma_valores({dev: previstos.get(dev, {})}) - 
+                    ComparacaoService._calcular_soma_valores({dev: realizados.get(dev, {})})
+                ),
             }
-        return resumo
+            for dev in devs
+        }
 
     @staticmethod
     def get_nome_projetos() -> list[str]:
-        qs = (
-            Projeto.objects
-            .values("nome")
-            .order_by("nome")
-        )
-        return [item['nome'] for item in qs]
+        return list(Projeto.objects.values_list("nome", flat=True).order_by("nome"))
+
+    @staticmethod
+    def _criar_estilo_padrao(nome, parent, **kwargs):
+        return ParagraphStyle(nome, parent=parent, **kwargs)
+
+    @staticmethod
+    def _criar_container_tabela(elemento, largura_total):
+        from reportlab.platypus import Table, TableStyle
+        container = Table([[elemento]], colWidths=[largura_total])
+        container.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        return container
+
+    @staticmethod
+    def exportar_relatorio_pdf(ano: int, projeto_nome: str, horas_planejadas: float) -> HttpResponse:
+        current_data = ComparacaoService._preparar_dados_para_relatorio(ano)
+        buffer = ComparacaoService._gerar_pdf(current_data, horas_planejadas, projeto_nome, ano)
+        
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        filename = f"relatorio_horas_{projeto_nome.replace(' ', '_')}_{ano}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
     @staticmethod
     def _preparar_dados_para_relatorio(ano):
@@ -108,82 +131,40 @@ class ComparacaoService:
         previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano)
         resumo = ComparacaoService.totais_anuais_e_diferenca(ano)
 
-        por_dev = {}
-        for dev in sorted(set(list(realizados.keys()) + list(previstos.keys()))):
-            meses = {}
-            for m in range(1, 13):
-                meses[m] = {
-                    "previsto": float(previstos.get(dev, {}).get(m, 0.0)),
-                    "realizado": float(realizados.get(dev, {}).get(m, 0.0)),
+        return {
+            "ano": ano,
+            "por_dev": {
+                dev: {
+                    "mensal": {
+                        m: {
+                            "previsto": float(previstos.get(dev, {}).get(m, 0.0)),
+                            "realizado": float(realizados.get(dev, {}).get(m, 0.0)),
+                        }
+                        for m in range(1, 13)
+                    },
+                    "totais": resumo.get(dev, {"total_previsto": 0.0, "total_realizado": 0.0, "diferenca": 0.0}),
                 }
-            por_dev[dev] = {
-                "mensal": meses,
-                "totais": resumo.get(
-                    dev,
-                    {"total_previsto": 0.0, "total_realizado": 0.0, "diferenca": 0.0},
-                ),
+                for dev in sorted(set(list(realizados.keys()) + list(previstos.keys())))
             }
-
-        return {"ano": ano, "por_dev": por_dev}
-
-    @staticmethod
-    def exportar_relatorio_pdf(ano: int, projeto_nome: str, horas_planejadas: float) -> HttpResponse:
-        current_data = ComparacaoService._preparar_dados_para_relatorio(ano)
-        
-        buffer = ComparacaoService._gerar_pdf(current_data, horas_planejadas, projeto_nome, ano)
-        
-        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-        filename = f"relatorio_horas_{projeto_nome.replace(' ', '_')}_{ano}.pdf"
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        
-        return response
-
-    @staticmethod
-    def _criar_estilo_titulo(styles):
-        return ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=16,
-            spaceAfter=20,
-            alignment=1,
-            textColor=colors.HexColor('#0057B8')
-        )
-
-    @staticmethod
-    def _criar_estilo_data(styles):
-        return ParagraphStyle(
-            'DateStyle',
-            parent=styles['Normal'],
-            fontSize=8,
-            textColor=colors.gray,
-            alignment=2
-        )
+        }
 
     @staticmethod
     def _gerar_pdf(current_data: dict, total_planned_hours: float, project_name: str, year: int) -> io.BytesIO:
         buffer = io.BytesIO()
-        
-        doc = SimpleDocTemplate(
-            buffer,
-            rightMargin=36,
-            leftMargin=36,
-            topMargin=36,
-            bottomMargin=36,
-            pagesize=A4
-        )
-        
+        doc = SimpleDocTemplate(buffer, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36, pagesize=A4)
         elements = []
         styles = getSampleStyleSheet()
         
-        title_style = ComparacaoService._criar_estilo_titulo(styles)
-        title = Paragraph(f"Relatório de Horas - {project_name} ({year})", title_style)
-        elements.append(title)
+        title_style = ComparacaoService._criar_estilo_padrao(
+            'CustomTitle', styles['Heading1'],
+            fontSize=16, spaceAfter=20, alignment=1, textColor=colors.HexColor('#0057B8')
+        )
+        elements.append(Paragraph(f"Relatório de Horas - {project_name} ({year})", title_style))
         
         elements.extend(ComparacaoService._criar_cards_resumo(current_data, total_planned_hours))
         elements.append(Spacer(1, 25))
         
-        tabela_elements = ComparacaoService._criar_tabela_comparacao(current_data, styles)
-        
+        tabela_elements = ComparacaoService._criar_tabela_comparacao(current_data)
         if tabela_elements:
             elements.append(Paragraph("Detalhamento por Colaborador", styles['Heading2']))
             elements.append(Spacer(1, 10))
@@ -191,9 +172,12 @@ class ComparacaoService:
             elements.append(Spacer(1, 25))
         
         elements.append(PageBreak())
-        elements.extend(ComparacaoService._criar_graficos(current_data, styles))
+        elements.extend(ComparacaoService._criar_secao_graficos(current_data, styles))
         
-        date_style = ComparacaoService._criar_estilo_data(styles)
+        date_style = ComparacaoService._criar_estilo_padrao(
+            'DateStyle', styles['Normal'],
+            fontSize=8, textColor=colors.gray, alignment=2
+        )
         elements.append(Spacer(1, 15))
         elements.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}", date_style))
         
@@ -202,52 +186,24 @@ class ComparacaoService:
         return buffer
 
     @staticmethod
-    def _calcular_totais_resumo(current_data):
-        if not current_data.get('por_dev'):
-            return 0, 0
-        
-        collaborators_count = len(current_data['por_dev'])
-        total_realized = sum(dev['totais']['total_realizado'] for dev in current_data['por_dev'].values())
-        return total_realized, collaborators_count
-
-    @staticmethod
     def _criar_cards_resumo(current_data: dict, total_planned_hours: float) -> list:
         from reportlab.platypus import Table, TableStyle
         
-        total_realized, collaborators_count = ComparacaoService._calcular_totais_resumo(current_data)
-        
+        total_realized, collaborators_count = ComparacaoService._obter_metricas_resumo(current_data)
         performance_percentage = (total_realized / total_planned_hours * 100) if total_planned_hours > 0 else 0
         deficit = total_planned_hours - total_realized
         
-        card1 = ComparacaoService._criar_card_individual(
-            "Performance Geral", 
-            f'{performance_percentage:.1f}%', 
-            "Meta de eficiência atingida",
-            colors.HexColor('#0057B8')
-        )
+        cards_config = [
+            ("Performance Geral", f'{performance_percentage:.1f}%', "Meta de eficiência atingida", 
+             colors.HexColor('#0057B8'), None),
+            ("Total Realizado", f'{total_realized:.2f}h', "Horas trabalhadas no período", 
+             colors.HexColor('#00C49F'), f'{collaborators_count} colaboradores'),
+            ("Meta Planejada", f'{total_planned_hours:.2f}h', "Horas planejadas para o período", 
+             colors.HexColor('#EA580C'), f'Déficit: {deficit:.2f}h')
+        ]
         
-        card2 = ComparacaoService._criar_card_individual(
-            "Total Realizado", 
-            f'{total_realized:.2f}h', 
-            "Horas trabalhadas no período",
-            colors.HexColor('#00C49F'),
-            f'{collaborators_count} colaboradores'
-        )
-        
-        card3 = ComparacaoService._criar_card_individual(
-            "Meta Planejada", 
-            f'{total_planned_hours:.2f}h', 
-            "Horas planejadas para o período",
-            colors.HexColor('#EA580C'),
-            f'Déficit: {deficit:.2f}h'
-        )
-        
-        card_table_data = [[card1, card2, card3]]
-        
-        width = A4[0] - 72
-        card_width = width / 3
-        
-        card_table = Table(card_table_data, colWidths=[card_width] * 3)
+        cards = [ComparacaoService._criar_card_individual(*config) for config in cards_config]
+        card_table = Table([cards], colWidths=[(A4[0] - 72) / 3] * 3)
         card_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -257,21 +213,25 @@ class ComparacaoService:
         return [card_table]
 
     @staticmethod
+    def _obter_metricas_resumo(current_data):
+        """Obtém métricas padronizadas para resumo"""
+        if not current_data.get('por_dev'):
+            return 0, 0
+        return (
+            sum(dev['totais']['total_realizado'] for dev in current_data['por_dev'].values()),
+            len(current_data['por_dev'])
+        )
+
+    @staticmethod
     def _criar_card_individual(titulo: str, valor: str, descricao: str, cor: colors.Color, info_extra: str = None) -> Table:
         from reportlab.platypus import Table, TableStyle
         
-        card_data = [
-            [titulo],
-            [valor],
-            [descricao]
-        ]
-        
+        card_data = [[titulo], [valor], [descricao]]
         if info_extra:
             card_data.append([info_extra])
         
         card_table = Table(card_data)
-        
-        table_style = TableStyle([
+        estilo_base = [
             ('BACKGROUND', (0, 0), (-1, 0), cor),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -286,54 +246,53 @@ class ComparacaoService:
             ('BOTTOMPADDING', (0, 2), (-1, -1), 4),
             ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F8FAFC')),
             ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#E2E8F0')),
-        ])
+        ]
         
         if info_extra:
-            table_style.add('FONTNAME', (0, 3), (-1, 3), 'Helvetica-Bold')
-            table_style.add('FONTSIZE', (0, 3), (-1, 3), 8)
-            table_style.add('TEXTCOLOR', (0, 3), (-1, 3), cor)
-            table_style.add('BACKGROUND', (0, 3), (-1, 3), colors.HexColor('#F0FDF4'))
+            estilo_base.extend([
+                ('FONTNAME', (0, 3), (-1, 3), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 3), (-1, 3), 8),
+                ('TEXTCOLOR', (0, 3), (-1, 3), cor),
+                ('BACKGROUND', (0, 3), (-1, 3), colors.HexColor('#F0FDF4'))
+            ])
         
-        card_table.setStyle(table_style)
+        card_table.setStyle(TableStyle(estilo_base))
         return card_table
 
     @staticmethod
-    def _criar_tabela_comparacao(current_data: dict, styles) -> list:
-        elements = []
-        
+    def _criar_tabela_comparacao(current_data: dict) -> list:
         if not current_data.get('por_dev'):
-            return elements
+            return []
         
+        from reportlab.platypus import Table
         meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ']
         header = ['Colaborador'] + meses
         
         table_data = [header]
-        
         for dev_name, dev_data in current_data['por_dev'].items():
-            row = [dev_name]
-            for month in range(1, 13):
-                realized = dev_data['mensal'][month]['realizado']
-                row.append(f'{realized:.1f}h' if realized > 0 else '-')
+            row = [dev_name] + [
+                f"{dev_data['mensal'][m]['realizado']:.1f}h" 
+                if dev_data['mensal'][m]['realizado'] > 0 else '-'
+                for m in range(1, 13)
+            ]
             table_data.append(row)
         
-        total_row = ['TOTAL GERAL']
-        for month in range(1, 13):
-            month_total = sum(dev_data['mensal'][month]['realizado'] 
-                            for dev_data in current_data['por_dev'].values())
-            total_row.append(f'{month_total:.1f}h' if month_total > 0 else '-')
-        table_data.append(total_row)
-        
-        from reportlab.platypus import Table
+        totais_mensais = [
+            sum(dev_data['mensal'][m]['realizado'] for dev_data in current_data['por_dev'].values())
+            for m in range(1, 13)
+        ]
+        table_data.append(['TOTAL GERAL'] + [f'{total:.1f}h' if total > 0 else '-' for total in totais_mensais])
         
         available_width = A4[0] - 72
-        first_col_width = available_width * 0.2
-        month_col_width = (available_width - first_col_width) / 12
-        
-        col_widths = [first_col_width] + [month_col_width] * 12
+        col_widths = [available_width * 0.2] + [(available_width * 0.8) / 12] * 12
         
         table = Table(table_data, colWidths=col_widths, repeatRows=1)
-        
-        table_style = TableStyle([
+        table.setStyle(ComparacaoService._obter_estilo_tabela())
+        return [table]
+
+    @staticmethod
+    def _obter_estilo_tabela():
+        return TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0057B8')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -348,74 +307,55 @@ class ComparacaoService:
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#F8FAFC')]),
         ])
-        
-        table.setStyle(table_style)
-        elements.append(table)
-        
-        return elements
 
     @staticmethod
-    def _criar_estilo_titulo_grafico(styles, font_size=12):
-        return ParagraphStyle(
-            'ChartsTitle',
-            parent=styles['Heading3'],
-            fontSize=font_size,
-            spaceAfter=8,
-            alignment=1,
-            textColor=colors.HexColor('#1F2937')
-        )
-
-    @staticmethod
-    def _criar_graficos(current_data: dict, styles) -> list:
-        from reportlab.platypus import Spacer, Table, TableStyle
-        elements = []
-        
+    def _criar_secao_graficos(current_data: dict, styles) -> list:
         if not current_data.get('por_dev'):
-            return elements
+            return []
         
-        elements.append(Spacer(1, 20))
-        title_style = ComparacaoService._criar_estilo_titulo_grafico(styles, 14)
-        title = Paragraph("Análise Gráfica", title_style)
-        elements.append(title)
+        elements = [Spacer(1, 20)]
+        
+        title_style = ComparacaoService._criar_estilo_padrao(
+            'ChartsTitle', styles['Heading2'],
+            fontSize=14, spaceAfter=20, textColor=colors.HexColor('#1F2937'), alignment=1
+        )
+        elements.append(Paragraph("Análise Gráfica", title_style))
         
         pie_chart = ComparacaoService._criar_grafico_pizza(current_data)
         if pie_chart:
-            titulo_pizza_style = ComparacaoService._criar_estilo_titulo_grafico(styles, 12)
-            titulo_pizza = Paragraph("Distribuição de Horas por Colaborador", titulo_pizza_style)
-            elements.append(titulo_pizza)
-            
-            pie_container = Table([[pie_chart]], colWidths=[A4[0] - 72])
-            pie_container.setStyle(TableStyle([
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ]))
-            elements.append(pie_container)
-            elements.append(Spacer(1, 25))
-        
+            elements.extend(ComparacaoService._criar_subsecao_grafico(
+                "Distribuição de Horas por Colaborador", pie_chart, styles
+            ))
+
         bar_chart = ComparacaoService._criar_grafico_barras(current_data)
         if bar_chart:
-            titulo_barras_style = ComparacaoService._criar_estilo_titulo_grafico(styles, 12)
-            titulo_barras = Paragraph("Comparação Total de Horas", titulo_barras_style)
-            elements.append(titulo_barras)
-            
-            bar_container = Table([[bar_chart]], colWidths=[A4[0] - 72])
-            bar_container.setStyle(TableStyle([
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ]))
-            elements.append(bar_container)
+            elements.extend(ComparacaoService._criar_subsecao_grafico(
+                "Comparação Total de Horas", bar_chart, styles
+            ))
         
         elements.append(Spacer(1, 20))
+        return elements
+
+    @staticmethod
+    def _criar_subsecao_grafico(titulo: str, grafico, styles):
+        elements = []
+        titulo_style = ComparacaoService._criar_estilo_padrao(
+            'GraphSubtitle', styles['Heading3'],
+            fontSize=12, spaceAfter=8, alignment=1, textColor=colors.HexColor('#1F2937')
+        )
+        elements.append(Paragraph(titulo, titulo_style))
+        elements.append(ComparacaoService._criar_container_tabela(grafico, A4[0] - 72))
+        elements.append(Spacer(1, 25))
         return elements
 
     @staticmethod
     def _criar_grafico_pizza(current_data: dict):
         try:
-            collaborators_data = []
-            for dev_name, dev_data in current_data['por_dev'].items():
-                total_realized = dev_data['totais']['total_realizado']
-                if total_realized > 0:
-                    collaborators_data.append((dev_name, total_realized))
+            collaborators_data = [
+                (dev_name, dev_data['totais']['total_realizado'])
+                for dev_name, dev_data in current_data['por_dev'].items()
+                if dev_data['totais']['total_realizado'] > 0
+            ]
             
             if not collaborators_data:
                 return None
@@ -426,20 +366,12 @@ class ComparacaoService:
             
             drawing = Drawing(400, 280)
             pie = Pie()
+            pie.x, pie.y, pie.width, pie.height = 100, 40, 200, 200
+            pie.data, pie.labels = data_values, labels
+            pie.sideLabels, pie.simpleLabels = True, False
             
-            pie.x = 100
-            pie.y = 40
-            pie.width = 200
-            pie.height = 200
-            
-            pie.data = data_values
-            pie.labels = labels
-            pie.sideLabels = True
-            pie.simpleLabels = False
-            
-            for i in range(len(labels)):
-                if len(labels[i]) > 12:
-                    pie.labels[i] = labels[i][:10] + ".."
+            for i, label in enumerate(labels):
+                pie.labels[i] = label[:10] + ".." if len(label) > 12 else label
             
             colors_list = [
                 colors.HexColor('#0057B8'), colors.HexColor('#00C49F'), 
@@ -468,72 +400,32 @@ class ComparacaoService:
             total_planned = sum(dev['totais']['total_previsto'] for dev in current_data['por_dev'].values())
             
             drawing = Drawing(400, 220)
-            
             chart = VerticalBarChart()
-            chart.x = 80
-            chart.y = 40
-            chart.width = 240
-            chart.height = 130
-            
+
+            chart.x, chart.y, chart.width, chart.height = 80, 40, 240, 130
             chart.data = [[total_realized], [total_planned]]
             chart.categoryAxis.categoryNames = ['']
-            chart.valueAxis.valueMin = 0
-            max_value = max(total_realized, total_planned)
-            chart.valueAxis.valueMax = max_value * 1.4
-            
-            chart.bars[0].fillColor = colors.HexColor('#0057B8')
-            chart.bars[1].fillColor = colors.HexColor('#EA580C')
-            
-            chart.barWidth = 45
-            chart.barSpacing = 15
-            chart.groupSpacing = 80
-            
-            chart.valueAxis.labels.fontName = 'Helvetica'
-            chart.valueAxis.labels.fontSize = 8
+            chart.valueAxis.valueMin, chart.valueAxis.valueMax = 0, max(total_realized, total_planned) * 1.4
+            chart.bars[0].fillColor, chart.bars[1].fillColor = colors.HexColor('#0057B8'), colors.HexColor('#EA580C')
+            chart.barWidth, chart.barSpacing, chart.groupSpacing = 45, 15, 80
+            chart.valueAxis.labels.fontName, chart.valueAxis.labels.fontSize = 'Helvetica', 8
             chart.categoryAxis.visible = False
-            
-            label_realizado_y = chart.y + total_realized + 12
-            label_previsto_y = chart.y + total_planned + 12
-            
-            label_realizado = String(chart.x + 35, label_realizado_y, 
-                                   f'{total_realized:.1f}h', 
-                                   fontName='Helvetica-Bold', fontSize=9, 
-                                   fillColor=colors.HexColor('#0057B8'))
-            
-            label_previsto = String(chart.x + 135, label_previsto_y, 
-                                  f'{total_planned:.1f}h', 
-                                  fontName='Helvetica-Bold', fontSize=9, 
-                                  fillColor=colors.HexColor('#EA580C'))
+
+            drawing.add(chart)
+            drawing.add(String(chart.x + 35, chart.y + total_realized + 12, f'{total_realized:.1f}h', 
+                             fontName='Helvetica-Bold', fontSize=9, fillColor=colors.HexColor('#0057B8')))
+            drawing.add(String(chart.x + 135, chart.y + total_planned + 12, f'{total_planned:.1f}h', 
+                             fontName='Helvetica-Bold', fontSize=9, fillColor=colors.HexColor('#EA580C')))
             
             legenda_y = chart.y - 20
-            
-            legenda_realizado_x = chart.x + 20
-            legenda_realizado = String(legenda_realizado_x, legenda_y, 
-                                     'Realizadas', 
-                                     fontName='Helvetica-Bold', fontSize=8, 
-                                     fillColor=colors.HexColor('#0057B8'))
-            
-            legenda_previsto_x = chart.x + 160
-            legenda_previsto = String(legenda_previsto_x, legenda_y, 
-                                    'Previstas', 
-                                    fontName='Helvetica-Bold', fontSize=8, 
-                                    fillColor=colors.HexColor('#EA580C'))
-            
-            indicador_realizado = Rect(legenda_realizado_x - 12, legenda_y - 3, 8, 8, 
-                                     fillColor=colors.HexColor('#0057B8'),
-                                     strokeColor=colors.black, strokeWidth=0.5)
-            
-            indicador_previsto = Rect(legenda_previsto_x - 12, legenda_y - 3, 8, 8, 
-                                    fillColor=colors.HexColor('#EA580C'),
-                                    strokeColor=colors.black, strokeWidth=0.5)
-            
-            drawing.add(chart)
-            drawing.add(label_realizado)
-            drawing.add(label_previsto)
-            drawing.add(legenda_realizado)
-            drawing.add(legenda_previsto)
-            drawing.add(indicador_realizado)
-            drawing.add(indicador_previsto)
+            drawing.add(String(chart.x + 20, legenda_y, 'Realizadas', fontName='Helvetica-Bold', fontSize=8, 
+                             fillColor=colors.HexColor('#0057B8')))
+            drawing.add(String(chart.x + 160, legenda_y, 'Previstas', fontName='Helvetica-Bold', fontSize=8, 
+                             fillColor=colors.HexColor('#EA580C')))
+            drawing.add(Rect(chart.x + 8, legenda_y - 3, 8, 8, fillColor=colors.HexColor('#0057B8'), 
+                           strokeColor=colors.black, strokeWidth=0.5))
+            drawing.add(Rect(chart.x + 148, legenda_y - 3, 8, 8, fillColor=colors.HexColor('#EA580C'), 
+                           strokeColor=colors.black, strokeWidth=0.5))
             
             return drawing
             
