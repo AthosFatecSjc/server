@@ -34,7 +34,6 @@ class Funcionario(models.Model):
 class Projeto(models.Model):
     nome = models.CharField(max_length=100)
     data_criacao = models.DateField(auto_now_add=True)
-    horas_previstas = models.FloatField(default=0)
 
     class Meta:
         db_table = 'projeto'
