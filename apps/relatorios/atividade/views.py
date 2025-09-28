@@ -27,9 +27,13 @@ def relatorio_tabela_e_cards(request):
     except (ValueError, TypeError):
         ano, mes = hoje.year, hoje.month
 
+    mes_nome = AtividadeService.MESES_PORTUGUES.get(mes, '')
+
     context = {
         'cabecalho': {'titulo': '', 'subtitulo': ''},
-        'dados': AtividadeService.gerar_dados_relatorio_atividade(ano, mes)
+        'dados': AtividadeService.gerar_dados_relatorio_atividade(ano, mes),
+        'ano': ano,
+        'mes_nome': mes_nome,
     }
 
     response = '<div id="horas_projeto" class="conteudo">'
@@ -44,11 +48,17 @@ def relatorio_tabela_e_cards(request):
     return HttpResponse(response)
 
 def get_tabela_horas_projeto(context, request):
-    context.update({'cabecalho': {'titulo': 'Horas por Desenvolvedor e Projeto', 'subtitulo': 'Visualização de horas trabalhadas'}})
+    context.update({'cabecalho': {
+        'titulo': 'Horas por Desenvolvedor e Projeto', 
+        'subtitulo': f'Distribuição de horas trabalhadas - {context.get("mes_nome")}/{context.get("ano")}'
+    }})
     return render_to_string("atividade/partials/_tabela_e_cards.html", context, request=request)
 
 def get_grafico_horas_projeto(context, request):
-    context.update({'cabecalho': {'titulo': 'Distribuição de Horas por Projeto', 'subtitulo': 'Visualização percentual das horas trabalhadas'}})
+    context.update({'cabecalho': {
+        'titulo': 'Distribuição de Horas por Projeto', 
+        'subtitulo': f'Percentual de horas dedicadas a cada projeto em {context.get("mes_nome")}/{context.get("ano")}'
+    }})
 
     context['dados']['dados_grafico_pizza'] = [
             {"label": registro["projeto_nome"], "data": registro["total_horas"]}
@@ -58,11 +68,17 @@ def get_grafico_horas_projeto(context, request):
     return render_to_string("atividade/partials/_grafico_pizza.html", context, request=request)
 
 def get_tabela_horas_por_dev(context, request):
-    context.update({'cabecalho': {'titulo': 'Horas por Dev', 'subtitulo': 'Visualização de horas trabalhadas por desenvolvedor'}})
+    context.update({'cabecalho': {
+        'titulo': 'Horas por Desenvolvedor', 
+        'subtitulo': f'{context.get("mes_nome")}/{context.get("ano")}'
+    }})
     return render_to_string("atividade/partials/_tabela_horas_dev.html", context, request=request)
 
 def get_grafico_horas_por_dev(context, request):
-    context.update({'cabecalho': {'titulo': 'Distribuição de Horas por Dev', 'subtitulo': 'Visualização percentual das horas trabalhadas dor desenvolvedor'}})
+    context.update({'cabecalho': {
+        'titulo': 'Distribuição de Horas por Dev', 
+        'subtitulo': f'{context.get("mes_nome")}/{context.get("ano")}'
+    }})
 
     context['dados']['dados_grafico_pizza'] = [
             {"label": registro["colaborador_nome"], "data": registro["total_colaborador"]}

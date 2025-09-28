@@ -1,7 +1,7 @@
 <div id="tabela_e_cards">
     <div class="table-wrapper">
         <h2>Horas por Desenvolvedor e Projeto</h2>
-        <p style="margin-top: -10px; color: #666;">Distribuição de horas trabalhadas</p>
+        <p style="margin-top: -10px; color: #666;">{{ cabecalho.subtitulo }}</p>
         <table>
             <thead>
                 <tr>
@@ -51,8 +51,6 @@
         {% endfor %}
     </div>
 
-    {# A LINHA ABAIXO FOI REMOVIDA PARA CORRIGIR A DUPLICAÇÃO #}
-    {# {% include "atividade/partials/_tabela_horas_dev.html" %} #}
 </div>
 
 <style>
