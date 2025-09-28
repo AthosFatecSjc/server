@@ -212,7 +212,7 @@
             const project = document.getElementById('projectFilter').value;
             
             try {
-                const response = await fetch(`/relatorios/comparacao/relatorio-anual?ano=${year}&projeto=${encodeURIComponent(project)}`);
+                const response = await fetch(`/relatorios/comparacao/relatorio-anual?ano=${year}&nome_projeto=${encodeURIComponent(project)}`);
                 if (response.ok) {
                     currentData = await response.json();
                     renderReport();
@@ -234,37 +234,23 @@
         }
 
         function updateSummaryCards() {
-            if (!currentData.por_dev || Object.keys(currentData.por_dev).length === 0) {
-                resetSummaryCards();
-                return;
-            }
-
             const collaborators = Object.keys(currentData.por_dev);
             const totalRealized = Object.values(currentData.por_dev).reduce((sum, dev) => 
                 sum + dev.totais.total_realizado, 0);
-            const totalPlanned = Object.values(currentData.por_dev).reduce((sum, dev) => 
-                sum + dev.totais.total_previsto, 0);
+            
+            let totalPlanned = currentData.horas_planejadas_projeto || 0;
 
-            const percentage = totalPlanned > 0 ? (totalRealized / totalPlanned) * 100 : 0;
-            const deficit = totalPlanned - totalRealized;
+            const percentage = totalRealized == 0 ? 0 : totalPlanned > 0 ? (totalPlanned / totalRealized) * 100 : 0;
+            const deficit = Math.max(0, totalRealized - totalPlanned); 
 
             document.getElementById('performancePercentage').textContent = percentage.toFixed(1) + '%';
             document.getElementById('performanceBar').style.width = Math.min(percentage, 100) + '%';
             document.getElementById('totalRealized').textContent = formatHours(totalRealized);
             document.getElementById('collaboratorsCount').textContent = collaborators.length + ' colaboradores';
             document.getElementById('totalPlanned').textContent = formatHours(totalPlanned);
-            document.getElementById('deficit').textContent = 'Déficit: ' + formatHours(deficit);
+            document.getElementById('deficit').textContent = deficit > 0 ? 'Déficit: ' + formatHours(deficit) : 'Sem déficit';
             
-            totalPlannedHours = totalPlanned;
-        }
-
-        function resetSummaryCards() {
-            document.getElementById('performancePercentage').textContent = '0%';
-            document.getElementById('performanceBar').style.width = '0%';
-            document.getElementById('totalRealized').textContent = formatHours(0);
-            document.getElementById('collaboratorsCount').textContent = '0 colaboradores';
-            document.getElementById('totalPlanned').textContent = formatHours(0);
-            document.getElementById('deficit').textContent = 'Déficit: ' + formatHours(0);
+            totalPlannedHours = totalPlanned; 
         }
 
         function renderComparisonTable() {
@@ -399,8 +385,8 @@
 
             const totalRealized = Object.values(currentData.por_dev).reduce((sum, dev) => 
                 sum + dev.totais.total_realizado, 0);
-            const totalPlanned = Object.values(currentData.por_dev).reduce((sum, dev) => 
-                sum + dev.totais.total_previsto, 0);
+
+            const totalPlanned = currentData.horas_planejadas_projeto || 0;
 
             barChartInstance = createChartInstance(ctx, {
                 type: 'bar',
@@ -415,7 +401,7 @@
                             borderRadius: 4
                         },
                         {
-                            label: 'Horas Previstas',
+                            label: 'Horas Planejadas',
                             data: [totalPlanned],
                             backgroundColor: CHART_COLORS.orange,
                             borderWidth: 0,
@@ -539,16 +525,41 @@
             document.getElementById('plannedHoursModal').classList.add('hidden');
         }
 
-        function savePlannedHours() {
-            totalPlannedHours = parseFloat(document.getElementById('newPlannedHours').value) || 0;
-            document.getElementById('totalPlanned').textContent = formatHours(totalPlannedHours);
+        async function savePlannedHours() {
+            const newHours = parseFloat(document.getElementById('newPlannedHours').value) || 0;
+            totalPlannedHours = newHours;
 
-            const totalRealized = parseFloat(document.getElementById('totalRealized').textContent) || 0;
-            const deficit = totalPlannedHours - totalRealized;
-            document.getElementById('deficit').textContent = 'Déficit: ' + formatHours(deficit);
+            currentData.horas_planejadas_projeto = totalPlannedHours;
             
-            closePlannedHoursModal();
-            renderBarChart();
+            const year = document.getElementById('yearFilter').value;
+            const project = document.getElementById('projectFilter').value;
+
+            try {
+                const response = await fetch('/relatorios/comparacao/horas-previstas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        nome_projeto: project,
+                        ano: year,
+                        horas_previstas: totalPlannedHours
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erro ao salvar horas previstas');
+                }
+
+                await loadReportData();
+                
+            } catch (error) {
+                console.error('Erro ao salvar horas previstas:', error);
+                alert('Erro ao salvar horas previstas: ' + error.message);
+            } finally {
+                closePlannedHoursModal();
+            }
         }
 
         async function exportPDF() {
