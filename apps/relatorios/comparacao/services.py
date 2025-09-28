@@ -196,7 +196,8 @@ class ComparacaoService:
             elements.append(Spacer(1, 25))
         
         elements.append(PageBreak())
-        elements.extend(ComparacaoService._criar_secao_graficos(current_data, styles))
+        
+        elements.extend(ComparacaoService._criar_secao_graficos(current_data, total_planned_hours, styles))
         
         date_style = ComparacaoService._criar_estilo_padrao(
             'DateStyle', styles['Normal'],
@@ -332,7 +333,7 @@ class ComparacaoService:
         ])
 
     @staticmethod
-    def _criar_secao_graficos(current_data: dict, styles) -> list:
+    def _criar_secao_graficos(current_data: dict, total_planned_hours: float, styles) -> list:
         if not current_data.get('por_dev'):
             return []
         
@@ -350,7 +351,7 @@ class ComparacaoService:
                 "Distribuição de Horas por Colaborador", pie_chart, styles
             ))
 
-        bar_chart = ComparacaoService._criar_grafico_barras(current_data)
+        bar_chart = ComparacaoService._criar_grafico_barras(current_data, total_planned_hours)
         if bar_chart:
             elements.extend(ComparacaoService._criar_subsecao_grafico(
                 "Comparação Total de Horas", bar_chart, styles
@@ -384,24 +385,41 @@ class ComparacaoService:
                 return None
             
             collaborators_data.sort(key=lambda x: x[1], reverse=True)
+            
             labels = [data[0] for data in collaborators_data]
             data_values = [data[1] for data in collaborators_data]
             
-            drawing = Drawing(400, 280)
-            pie = Pie()
-            pie.x, pie.y, pie.width, pie.height = 100, 40, 200, 200
-            pie.data, pie.labels = data_values, labels
-            pie.sideLabels, pie.simpleLabels = True, False
+            total_horas = sum(data_values)
             
-            for i, label in enumerate(labels):
-                pie.labels[i] = label[:10] + ".." if len(label) > 12 else label
+            formatted_labels = []
+            for label in labels:
+                parts = label.split()
+                if len(parts) >= 2:
+                    formatted_label = f"{parts[0]} {parts[1][0]}."
+                    if len(parts) > 2:
+                        formatted_label += f" {parts[2][0]}."  
+                else:
+                    formatted_label = label[:10]  
+                formatted_labels.append(formatted_label)
+            
+            drawing = Drawing(450, 320)  
+            pie = Pie()
+            pie.x = 80   
+            pie.y = 40   
+            pie.width = 160
+            pie.height = 160
+            pie.data = data_values
+            pie.labels = formatted_labels
+            pie.sideLabels = True
+            pie.simpleLabels = False
             
             colors_list = [
                 colors.HexColor('#0057B8'), colors.HexColor('#00C49F'), 
                 colors.HexColor('#FFBB28'), colors.HexColor('#FF8042'),
                 colors.HexColor('#AF19FF'), colors.HexColor('#8884d8'),
                 colors.HexColor('#FF6384'), colors.HexColor('#36A2EB'),
-                colors.HexColor('#4BC0C0'), colors.HexColor('#FFCE56')
+                colors.HexColor('#4BC0C0'), colors.HexColor('#FFCE56'),
+                colors.HexColor('#FF6B6B')  
             ]
             
             for i in range(len(data_values)):
@@ -410,45 +428,84 @@ class ComparacaoService:
                 pie.slices[i].strokeWidth = 1
             
             drawing.add(pie)
+            
+            legend_x = 320  
+            legend_y = 280  
+            
+            drawing.add(String(legend_x, legend_y, "Colaboradores:", 
+                            fontName='Helvetica-Bold', fontSize=8, 
+                            fillColor=colors.black, textAnchor='start'))
+            
+            for i, (label, valor) in enumerate(zip(labels, data_values)):
+                porcentagem = (valor / total_horas) * 100 if total_horas > 0 else 0
+                
+                legend_text = f"{label} ({porcentagem:.1f}%)"
+                
+                drawing.add(String(legend_x, legend_y - (i * 18) - 20, 
+                                legend_text, 
+                                fontName='Helvetica', fontSize=6,
+                                fillColor=colors_list[i % len(colors_list)],
+                                textAnchor='start'))
+            
+            drawing.add(String(225, 15, f"Total: {total_horas:.1f}h", 
+                            fontName='Helvetica-Bold', fontSize=9, 
+                            fillColor=colors.black, textAnchor='middle'))
+            
             return drawing
             
         except Exception as e:
-            print(f"Erro ao criar gráfico de pizza: {e}")
             return None
-
+    
     @staticmethod
-    def _criar_grafico_barras(current_data: dict):
+    def _criar_grafico_barras(current_data: dict, total_planned_hours: float):
         try:
             total_realized = sum(dev['totais']['total_realizado'] for dev in current_data['por_dev'].values())
-            total_planned = sum(dev['totais']['total_previsto'] for dev in current_data['por_dev'].values())
+            
+            total_planned = total_planned_hours
             
             drawing = Drawing(400, 220)
             chart = VerticalBarChart()
 
             chart.x, chart.y, chart.width, chart.height = 80, 40, 240, 130
+            
             chart.data = [[total_realized], [total_planned]]
             chart.categoryAxis.categoryNames = ['']
-            chart.valueAxis.valueMin, chart.valueAxis.valueMax = 0, max(total_realized, total_planned) * 1.4
-            chart.bars[0].fillColor, chart.bars[1].fillColor = colors.HexColor('#0057B8'), colors.HexColor('#EA580C')
-            chart.barWidth, chart.barSpacing, chart.groupSpacing = 45, 15, 80
-            chart.valueAxis.labels.fontName, chart.valueAxis.labels.fontSize = 'Helvetica', 8
+            
+            max_value = max(total_realized, total_planned)
+            chart.valueAxis.valueMin = 0
+            chart.valueAxis.valueMax = max_value * 1.2
+            
+            chart.bars[0].fillColor = colors.HexColor('#0057B8')
+            chart.bars[1].fillColor = colors.HexColor('#EA580C')
+            
+            chart.barWidth = 45
+            chart.barSpacing = 15
+            chart.groupSpacing = 80
+            
+            chart.valueAxis.labels.fontName = 'Helvetica'
+            chart.valueAxis.labels.fontSize = 8
             chart.categoryAxis.visible = False
 
             drawing.add(chart)
-            drawing.add(String(chart.x + 35, chart.y + total_realized + 12, f'{total_realized:.1f}h', 
-                             fontName='Helvetica-Bold', fontSize=9, fillColor=colors.HexColor('#0057B8')))
-            drawing.add(String(chart.x + 135, chart.y + total_planned + 12, f'{total_planned:.1f}h', 
-                             fontName='Helvetica-Bold', fontSize=9, fillColor=colors.HexColor('#EA580C')))
             
             legenda_y = chart.y - 20
+            texto_y = legenda_y - 15  
+            
+            drawing.add(String(chart.x + 35, texto_y, f'{total_realized:.0f}h', 
+                            fontName='Helvetica-Bold', fontSize=9, fillColor=colors.HexColor('#0057B8')))
+            
+            drawing.add(String(chart.x + 135, texto_y, f'{total_planned:.0f}h', 
+                            fontName='Helvetica-Bold', fontSize=9, fillColor=colors.HexColor('#EA580C')))
+            
             drawing.add(String(chart.x + 20, legenda_y, 'Realizadas', fontName='Helvetica-Bold', fontSize=8, 
-                             fillColor=colors.HexColor('#0057B8')))
+                            fillColor=colors.HexColor('#0057B8')))
             drawing.add(String(chart.x + 160, legenda_y, 'Previstas', fontName='Helvetica-Bold', fontSize=8, 
-                             fillColor=colors.HexColor('#EA580C')))
+                            fillColor=colors.HexColor('#EA580C')))
+            
             drawing.add(Rect(chart.x + 8, legenda_y - 3, 8, 8, fillColor=colors.HexColor('#0057B8'), 
-                           strokeColor=colors.black, strokeWidth=0.5))
+                        strokeColor=colors.black, strokeWidth=0.5))
             drawing.add(Rect(chart.x + 148, legenda_y - 3, 8, 8, fillColor=colors.HexColor('#EA580C'), 
-                           strokeColor=colors.black, strokeWidth=0.5))
+                        strokeColor=colors.black, strokeWidth=0.5))
             
             return drawing
             
