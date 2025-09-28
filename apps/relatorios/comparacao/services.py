@@ -26,7 +26,18 @@ class ComparacaoService:
         return resultado
 
     @staticmethod
-    def soma_horas_por_dev_mes(ano, nome_projeto=None):
+    def soma_horas_por_dev_mes(ano: int, nome_projeto: str = None) -> dict:
+        """
+        Soma as horas do mês de cada dev naquele projeto
+
+        Args:
+            ano (int): Ano para geração do relatório.
+            nome_projeto (str): Nome do projeto.
+            
+        Returns:
+            soma_horas_por_dev_mes (dict): Soma de horas por mês do dev no projet/ ano.
+        """
+
         queryset = ControleHorasEquipe.objects.filter(mes__year=ano)
         
         if nome_projeto:
@@ -447,6 +458,16 @@ class ComparacaoService:
 
     @staticmethod
     def _get_projeto_id(nome_projeto: str) -> int:
+        """
+        Busca projeto_id
+
+        Args:
+            nome_projeto (str): Nome do projeto.
+            
+        Returns:
+            projeto_id (int): Identificado único do projeto.
+        """
+
         try:
             projeto_id = (
                 Projeto.objects
@@ -458,10 +479,21 @@ class ComparacaoService:
             print(f"Id do projeto não encontrado: {e}")
             return 0
         
-        return projeto_id[0]['id'] if projeto_id else 0
+        return projeto_id[0]['id']
 
     @staticmethod
     def get_horas_previstas_projeto(ano:int, nome_projeto: str) -> float:
+        """
+        Lê registro de horas previstas para o projeto especificado
+
+        Args:
+            ano (int): Ano para geração do relatório.
+            nome_projeto (str): Nome do projeto.
+            
+        Returns:
+            horas_previstas (float): Quantidade de horas previstas para o relatório no ano.
+        """
+
         try:
             try:
                 meta_individual = MetaTempoControle.objects.get(
@@ -481,6 +513,18 @@ class ComparacaoService:
 
     @staticmethod
     def set_horas_previstas_projeto(nome_projeto: str, ano: int, horas_previstas: float) -> (HttpResponse | Exception):
+        """
+        Inclui registro de horas previstas para o projeto especificado
+
+        Args:
+            nome_projeto (str): Nome do projeto.
+            ano (int): Ano para geração do relatório.
+            horas_previstas (float): Quantidade de horas previstas para o ano em questão.
+            
+        Returns:
+            Status_da_escrita (HttpResponse | Exception): Falha ou sucesso ao escreve no banco.
+        """
+
         try:
             print(f"set_horas_previstas_projeto(): 1")
             horas_previstas_obj, created = MetaTempoControle.objects.get_or_create(

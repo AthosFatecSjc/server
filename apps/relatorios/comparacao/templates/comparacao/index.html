@@ -240,8 +240,8 @@
             
             let totalPlanned = currentData.horas_planejadas_projeto || 0;
 
-            const percentage = totalPlanned > 0 ? (totalRealized / totalPlanned) * 100 : 0;
-            const deficit = Math.max(0, totalPlanned - totalRealized); 
+            const percentage = totalRealized == 0 ? 0 : totalPlanned > 0 ? (totalPlanned / totalRealized) * 100 : 0;
+            const deficit = Math.max(0, totalRealized - totalPlanned); 
 
             document.getElementById('performancePercentage').textContent = percentage.toFixed(1) + '%';
             document.getElementById('performanceBar').style.width = Math.min(percentage, 100) + '%';
@@ -387,12 +387,6 @@
                 sum + dev.totais.total_realizado, 0);
 
             const totalPlanned = currentData.horas_planejadas_projeto || 0;
-
-            console.log('Dados do gráfico:', {
-                realizado: totalRealized,
-                planejado: totalPlanned,
-                horas_planejadas_projeto: currentData.horas_planejadas_projeto
-            });
 
             barChartInstance = createChartInstance(ctx, {
                 type: 'bar',
