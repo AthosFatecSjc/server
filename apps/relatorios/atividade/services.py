@@ -4,10 +4,14 @@ from apps.relatorios.models import ControleHorasEquipe
 from datetime import datetime
 from io import BytesIO
 from reportlab.lib.pagesizes import landscape, legal
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import inch
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from PIL import Image as PILImage
 
 
 class AtividadeService:
@@ -325,16 +329,12 @@ class AtividadeService:
         Returns:
             dict: Dados formatados e prontos para geração do relatório.
         """
-        # Buscar dados do banco
         queryset = AtividadeService._buscar_dados_base(ano, mes)
         
-        # Processar dados por colaborador
         dados_por_colaborador, projetos_nomes, dados_tabela = AtividadeService._processar_dados_por_colaborador(queryset)
         
-        # Calcular totais por projeto
         resumo_projetos, totais_por_projeto, total_geral_horas = AtividadeService._calcular_totais_projeto(queryset, projetos_nomes)
         
-        # Gerar dados para cards
         dados_cards = AtividadeService._gerar_dados_cards(resumo_projetos, total_geral_horas)
 
         return {
@@ -344,6 +344,100 @@ class AtividadeService:
             'totais_por_projeto': totais_por_projeto,
             'total_geral': total_geral_horas
         }
+
+    @staticmethod
+    def _gerar_grafico_pizza(dados, titulo, label_key, value_key):
+        """
+        Método genérico para gerar gráficos de pizza.
+        
+        Args:
+            dados (list): Lista de dicionários com os dados.
+            titulo (str): Título do gráfico.
+            label_key (str): Chave para extrair os labels dos dados.
+            value_key (str): Chave para extrair os valores dos dados.
+            
+        Returns:
+            BytesIO: Buffer com a imagem do gráfico em formato PNG ou None se não há dados.
+        """
+        if not dados or len(dados) == 0:
+            return None
+            
+        plt.rcParams['font.family'] = 'sans-serif'
+        plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
+        
+        fig, ax = plt.subplots(figsize=(8, 6))
+        
+        labels = [item[label_key] for item in dados]
+        sizes = [item[value_key] for item in dados]
+        
+        colors_palette = [
+            '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+            '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#6b7280',
+            '#d97706', '#0ea5e9', '#9333ea', '#22c55e', '#dc2626'
+        ]
+        colors_list = [colors_palette[i % len(colors_palette)] for i in range(len(labels))]
+        
+
+        wedges, texts, autotexts = ax.pie(
+            sizes, 
+            labels=labels,
+            colors=colors_list,
+            autopct='%1.1f%%',
+            startangle=90,
+            textprops={'fontsize': 10, 'color': 'black'}
+        )
+        
+        for autotext in autotexts:
+            autotext.set_color('white')
+            autotext.set_fontweight('bold')
+            autotext.set_fontsize(9)
+        
+        ax.set_title(titulo, fontsize=14, fontweight='bold', pad=20)
+        
+        ax.axis('equal')
+        
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        plt.close()
+        buffer.seek(0)
+        
+        return buffer
+
+    @staticmethod
+    def _gerar_grafico_pizza_projetos(dados_cards):
+        """
+        Gera um gráfico de pizza para distribuição de horas por projeto.
+        
+        Args:
+            dados_cards (list): Lista de dicionários com dados dos projetos.
+            
+        Returns:
+            BytesIO: Buffer com a imagem do gráfico em formato PNG.
+        """
+        return AtividadeService._gerar_grafico_pizza(
+            dados_cards,
+            'Distribuição de Horas por Projeto',
+            'projeto_nome',
+            'total_horas'
+        )
+
+    @staticmethod
+    def _gerar_grafico_pizza_desenvolvedores(dados_tabela):
+        """
+        Gera um gráfico de pizza para distribuição de horas por desenvolvedor.
+        
+        Args:
+            dados_tabela (list): Lista de dicionários com dados dos desenvolvedores.
+            
+        Returns:
+            BytesIO: Buffer com a imagem do gráfico em formato PNG.
+        """
+        return AtividadeService._gerar_grafico_pizza(
+            dados_tabela,
+            'Distribuição de Horas por Desenvolvedor',
+            'colaborador_nome',
+            'total_colaborador'
+        )
 
     @staticmethod
     def _gerar_tabela_horas_por_dev_e_projeto(dados, styles):
@@ -451,6 +545,52 @@ class AtividadeService:
         return elements
 
     @staticmethod
+    def _gerar_secao_grafico_projetos(dados, styles):
+        """
+        Gera a seção do gráfico de pizza para distribuição por projeto.
+        
+        Args:
+            dados (dict): Dados processados do relatório.
+            styles: Estilos do ReportLab.
+            
+        Returns:
+            list: Lista de elementos do ReportLab para o gráfico.
+        """
+        elements = []
+        
+        grafico_buffer = AtividadeService._gerar_grafico_pizza_projetos(dados['dados_cards'])
+        
+        if grafico_buffer:
+            img = Image(grafico_buffer, width=6*inch, height=4.5*inch)
+            elements.append(img)
+            elements.append(Spacer(1, 0.3*inch))
+        
+        return elements
+
+    @staticmethod
+    def _gerar_secao_grafico_desenvolvedores(dados, styles):
+        """
+        Gera a seção do gráfico de pizza para distribuição por desenvolvedor.
+        
+        Args:
+            dados (dict): Dados processados do relatório.
+            styles: Estilos do ReportLab.
+            
+        Returns:
+            list: Lista de elementos do ReportLab para o gráfico.
+        """
+        elements = []
+        
+        grafico_buffer = AtividadeService._gerar_grafico_pizza_desenvolvedores(dados['dados_tabela'])
+        
+        if grafico_buffer:
+            img = Image(grafico_buffer, width=6*inch, height=4.5*inch)
+            elements.append(img)
+            elements.append(Spacer(1, 0.3*inch))
+        
+        return elements
+
+    @staticmethod
     def _gerar_footer(styles):
         """
         Cria o parágrafo de rodapé para o relatório PDF.
@@ -530,9 +670,14 @@ class AtividadeService:
             list: Lista completa de elementos para o PDF.
         """
         elements = []
+        
         elements += AtividadeService._gerar_tabela_horas_por_dev_e_projeto(dados, styles)
         elements += AtividadeService._gerar_tabela_total_horas_por_dev(dados, styles)
         elements += AtividadeService._gerar_tabela_total_horas_por_projeto(dados, styles)
+        
+        elements += AtividadeService._gerar_secao_grafico_projetos(dados, styles)
+        elements += AtividadeService._gerar_secao_grafico_desenvolvedores(dados, styles)
+
         elements.append(AtividadeService._gerar_footer(styles))
         return elements
 
@@ -558,12 +703,10 @@ class AtividadeService:
         doc = AtividadeService._configurar_documento_pdf(buffer)
         styles = getSampleStyleSheet()
         
-        # Criar elementos do documento
         elements = []
         elements += AtividadeService._criar_titulo_relatorio(mes, ano, styles)
         elements += AtividadeService._combinar_elementos_relatorio(dados, styles)
 
-        # Gerar PDF
         doc.build(elements)
         pdf = buffer.getvalue()
         buffer.close()
