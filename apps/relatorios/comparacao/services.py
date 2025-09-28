@@ -26,21 +26,28 @@ class ComparacaoService:
         return resultado
 
     @staticmethod
-    def soma_horas_por_dev_mes(ano):
+    def soma_horas_por_dev_mes(ano, nome_projeto=None):
+        queryset = ControleHorasEquipe.objects.filter(mes__year=ano)
+        
+        if nome_projeto:
+            projeto_id = ComparacaoService._get_projeto_id(nome_projeto)
+            if projeto_id:
+                queryset = queryset.filter(projeto_id=projeto_id)
+        
         queryset = (
-            ControleHorasEquipe.objects
-            .filter(mes__year=ano)
+            queryset
             .values("funcionario__nome", "mes__month")
             .annotate(total_horas=Sum("horas"))
             .order_by("funcionario__nome", "mes__month")
         )
+        
         return ComparacaoService._processar_queryset_horas(
             queryset, 
             {'dev': 'funcionario__nome', 'mes': 'mes__month', 'horas': 'total_horas'}
         )
 
     @staticmethod
-    def soma_horas_previstas_por_dev_mes(ano, *, source='tempo_controle_valores', field_name=None):
+    def soma_horas_previstas_por_dev_mes(ano, nome_projeto=None, *, source='tempo_controle_valores', field_name=None):
         campos_map = {
             'tempo_controle_valores': {
                 'model': TempoControleValores,
@@ -62,9 +69,15 @@ class ComparacaoService:
             raise RuntimeError("Fonte inválida. Use 'tempo_controle_valores' ou 'tempo_gasto'.")
         
         config = campos_map[source]
+        qs = config['model'].objects.filter(**{config['filtro']: ano})
+        
+        if nome_projeto and hasattr(config['model'], 'projeto'):
+            projeto_id = ComparacaoService._get_projeto_id(nome_projeto)
+            if projeto_id:
+                qs = qs.filter(projeto_id=projeto_id)
+        
         qs = (
-            config['model'].objects
-            .filter(**{config['filtro']: ano})
+            qs
             .values(config['dev'], config['mes'])
             .annotate(total_previstas=Sum(config['campo_sum']))
             .order_by(config['dev'], config['mes'])
@@ -80,9 +93,9 @@ class ComparacaoService:
         return sum(sum(meses.values()) for meses in dicionario.values()) if dicionario else 0.0
 
     @staticmethod
-    def totais_anuais_e_diferenca(ano):
-        realizados = ComparacaoService.soma_horas_por_dev_mes(ano)
-        previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano)
+    def totais_anuais_e_diferenca(ano, nome_projeto=None):
+        realizados = ComparacaoService.soma_horas_por_dev_mes(ano, nome_projeto)
+        previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano, nome_projeto)
         devs = set(list(realizados.keys()) + list(previstos.keys()))
         
         return {
@@ -117,7 +130,7 @@ class ComparacaoService:
 
     @staticmethod
     def exportar_relatorio_pdf(ano: int, projeto_nome: str, horas_planejadas: float) -> HttpResponse:
-        current_data = ComparacaoService._preparar_dados_para_relatorio(ano)
+        current_data = ComparacaoService._preparar_dados_para_relatorio(ano, projeto_nome)
         buffer = ComparacaoService._gerar_pdf(current_data, horas_planejadas, projeto_nome, ano)
         
         response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
@@ -126,10 +139,10 @@ class ComparacaoService:
         return response
 
     @staticmethod
-    def _preparar_dados_para_relatorio(ano):
-        realizados = ComparacaoService.soma_horas_por_dev_mes(ano)
-        previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano)
-        resumo = ComparacaoService.totais_anuais_e_diferenca(ano)
+    def _preparar_dados_para_relatorio(ano, nome_projeto=None):
+        realizados = ComparacaoService.soma_horas_por_dev_mes(ano, nome_projeto)
+        previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano, nome_projeto)
+        resumo = ComparacaoService.totais_anuais_e_diferenca(ano, nome_projeto)
 
         return {
             "ano": ano,
@@ -214,7 +227,6 @@ class ComparacaoService:
 
     @staticmethod
     def _obter_metricas_resumo(current_data):
-        """Obtém métricas padronizadas para resumo"""
         if not current_data.get('por_dev'):
             return 0, 0
         return (
@@ -435,16 +447,6 @@ class ComparacaoService:
 
     @staticmethod
     def _get_projeto_id(nome_projeto: str) -> int:
-        """
-        Busca projeto_id
-
-        Args:
-            nome_projeto (str): Nome do projeto.
-            
-        Returns:
-            projeto_id (int): Identificado único do projeto.
-        """
-
         try:
             projeto_id = (
                 Projeto.objects
@@ -456,21 +458,10 @@ class ComparacaoService:
             print(f"Id do projeto não encontrado: {e}")
             return 0
         
-        return projeto_id[0]['id']
+        return projeto_id[0]['id'] if projeto_id else 0
 
     @staticmethod
     def get_horas_previstas_projeto(ano:int, nome_projeto: str) -> float:
-        """
-        Lê registro de horas previstas para o projeto especificado
-
-        Args:
-            ano (int): Ano para geração do relatório.
-            nome_projeto (str): Nome do projeto.
-            
-        Returns:
-            horas_previstas (float): Quantidade de horas previstas para o relatório no ano.
-        """
-
         try:
             try:
                 meta_individual = MetaTempoControle.objects.get(
@@ -490,18 +481,6 @@ class ComparacaoService:
 
     @staticmethod
     def set_horas_previstas_projeto(nome_projeto: str, ano: int, horas_previstas: float) -> (HttpResponse | Exception):
-        """
-        Inclui registro de horas previstas para o projeto especificado
-
-        Args:
-            nome_projeto (str): Nome do projeto.
-            ano (int): Ano para geração do relatório.
-            horas_previstas (float): Quantidade de horas previstas para o ano em questão.
-            
-        Returns:
-            Status_da_escrita (HttpResponse | Exception): Falha ou sucesso ao escreve no banco.
-        """
-
         try:
             print(f"set_horas_previstas_projeto(): 1")
             horas_previstas_obj, created = MetaTempoControle.objects.get_or_create(

@@ -29,13 +29,13 @@ def relatorio_anual_comparacao(request: any):
         ano = datetime.date.today().year
     
     try:
-        nome_projeto = str(request.GET.get('nome_projeto'))
+        nome_projeto = str(request.GET.get('nome_projeto', ''))
     except (TypeError, ValueError):
-        return HttpResponse("Nome do projeto inválido")
-    
-    realizados = ComparacaoService.soma_horas_por_dev_mes(ano)
-    previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano)
-    resumo = ComparacaoService.totais_anuais_e_diferenca(ano)
+        nome_projeto = ''
+
+    realizados = ComparacaoService.soma_horas_por_dev_mes(ano, nome_projeto) 
+    previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano, nome_projeto)  
+    resumo = ComparacaoService.totais_anuais_e_diferenca(ano, nome_projeto)  
 
     por_dev = {}
     for dev in sorted(set(list(realizados.keys()) + list(previstos.keys()))):
