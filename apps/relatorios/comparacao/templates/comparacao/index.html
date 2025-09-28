@@ -539,13 +539,32 @@
             document.getElementById('plannedHoursModal').classList.add('hidden');
         }
 
-        function savePlannedHours() {
+        async function savePlannedHours() {
             totalPlannedHours = parseFloat(document.getElementById('newPlannedHours').value) || 0;
             document.getElementById('totalPlanned').textContent = formatHours(totalPlannedHours);
 
             const totalRealized = parseFloat(document.getElementById('totalRealized').textContent) || 0;
             const deficit = totalPlannedHours - totalRealized;
             document.getElementById('deficit').textContent = 'Déficit: ' + formatHours(deficit);
+
+            const year = document.getElementById('yearFilter').value;
+            const project = document.getElementById('projectFilter').value;
+
+            const response = await fetch('/relatorios/comparacao/horas-previstas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        nome_projeto: project,
+                        ano: year,
+                        horas_previstas: totalPlannedHours
+                    })
+                });
+            
+            currentData.horas_planejadas_projeto = totalPlannedHours
+            totalPlanned = totalPlannedHours
             
             closePlannedHoursModal();
             renderBarChart();

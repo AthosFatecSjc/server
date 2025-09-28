@@ -74,3 +74,16 @@ def exportar_pdf(request):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+@require_POST
+def set_horas_previstas_projeto(request: any) -> (HttpResponse | JsonResponse | Exception):
+    try:
+        data = json.loads(request.body)
+        nome_projeto = data.get('nome_projeto', '')
+        ano = int(data.get('ano', datetime.date.today().year))
+        horas_previstas = float(data.get('horas_previstas', 0))
+        
+        return ComparacaoService.set_horas_previstas_projeto(nome_projeto, ano, horas_previstas)
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

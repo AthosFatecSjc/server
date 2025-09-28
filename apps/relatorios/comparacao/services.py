@@ -487,3 +487,38 @@ class ComparacaoService:
         except Exception as e:
             print(f"Erro ao obter meta: {e}")
             return 0
+
+    @staticmethod
+    def set_horas_previstas_projeto(nome_projeto: str, ano: int, horas_previstas: float) -> (HttpResponse | Exception):
+        """
+        Inclui registro de horas previstas para o projeto especificado
+
+        Args:
+            nome_projeto (str): Nome do projeto.
+            ano (int): Ano para geração do relatório.
+            horas_previstas (float): Quantidade de horas previstas para o ano em questão.
+            
+        Returns:
+            Status_da_escrita (HttpResponse | Exception): Falha ou sucesso ao escreve no banco.
+        """
+
+        try:
+            print(f"set_horas_previstas_projeto(): 1")
+            horas_previstas_obj, created = MetaTempoControle.objects.get_or_create(
+                objetivo_clt=f"META_{ComparacaoService._get_projeto_id(nome_projeto)}_{ano}",
+                defaults={
+                    'objetivo_estagiario': str(horas_previstas)
+                }
+            )
+            print(f"set_horas_previstas_projeto(): 2")
+            
+            if not created:
+                horas_previstas_obj.objetivo_estagiario = str(horas_previstas)
+                horas_previstas_obj.save()
+            print(f"set_horas_previstas_projeto(): 3")
+
+            return HttpResponse()
+
+        except Exception as e:
+            print(f"Erro ao atualizar meta: {e}")
+            return e
