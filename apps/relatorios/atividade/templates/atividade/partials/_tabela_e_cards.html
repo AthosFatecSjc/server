@@ -1,4 +1,16 @@
 <div id="tabela_e_cards">
+    <div class="cards-container" id="cards-resumo">
+        {% for card in dados.dados_cards %}
+        {% cycle 'color-1' 'color-2' 'color-3' 'color-4' as card_color silent %}
+        <div class="card {{ card_color }}">
+            <h3>{{ card.projeto_nome }}</h3>
+            <p>{{ card.total_horas|floatformat:2 }}h</p>
+            <span>{{ card.percentual }}% do total do mês</span><br>
+            <span>{{ card.desenvolvedores }} desenvolvedor(es)</span>
+        </div>
+        {% endfor %}
+    </div>
+
     <div class="table-wrapper">
         <h2>Horas por Desenvolvedor e Projeto</h2>
         <p style="margin-top: -10px; color: #666;">Distribuição de horas trabalhadas</p>
@@ -37,18 +49,6 @@
                 </tr>
             </tfoot>
         </table>
-    </div>
-
-    <div class="cards-container" id="cards-resumo">
-        {% for card in dados.dados_cards %}
-        {% cycle 'color-1' 'color-2' 'color-3' 'color-4' as card_color silent %}
-        <div class="card {{ card_color }}">
-            <h3>{{ card.projeto_nome }}</h3>
-            <p>{{ card.total_horas|floatformat:2 }}h</p>
-            <span>{{ card.percentual }}% do total do mês</span><br>
-            <span>{{ card.desenvolvedores }} desenvolvedor(es)</span>
-        </div>
-        {% endfor %}
     </div>
 
     {# A LINHA ABAIXO FOI REMOVIDA PARA CORRIGIR A DUPLICAÇÃO #}
