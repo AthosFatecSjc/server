@@ -347,17 +347,20 @@ class AtividadeService:
         }
 
     @staticmethod
-    def _gerar_grafico_pizza_projetos(dados_cards):
+    def _gerar_grafico_pizza(dados, titulo, label_key, value_key):
         """
-        Gera um gráfico de pizza para distribuição de horas por projeto.
+        Método genérico para gerar gráficos de pizza.
         
         Args:
-            dados_cards (list): Lista de dicionários com dados dos projetos.
+            dados (list): Lista de dicionários com os dados.
+            titulo (str): Título do gráfico.
+            label_key (str): Chave para extrair os labels dos dados.
+            value_key (str): Chave para extrair os valores dos dados.
             
         Returns:
-            BytesIO: Buffer com a imagem do gráfico em formato PNG.
+            BytesIO: Buffer com a imagem do gráfico em formato PNG ou None se não há dados.
         """
-        if not dados_cards or len(dados_cards) == 0:
+        if not dados or len(dados) == 0:
             return None
             
         plt.rcParams['font.family'] = 'sans-serif'
@@ -365,8 +368,8 @@ class AtividadeService:
         
         fig, ax = plt.subplots(figsize=(8, 6))
         
-        labels = [item['projeto_nome'] for item in dados_cards]
-        sizes = [item['total_horas'] for item in dados_cards]
+        labels = [item[label_key] for item in dados]
+        sizes = [item[value_key] for item in dados]
         
         colors_palette = [
             '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
@@ -375,6 +378,7 @@ class AtividadeService:
         ]
         colors_list = [colors_palette[i % len(colors_palette)] for i in range(len(labels))]
         
+
         wedges, texts, autotexts = ax.pie(
             sizes, 
             labels=labels,
@@ -389,7 +393,7 @@ class AtividadeService:
             autotext.set_fontweight('bold')
             autotext.set_fontsize(9)
         
-        ax.set_title('Distribuição de Horas por Projeto', fontsize=14, fontweight='bold', pad=20)
+        ax.set_title(titulo, fontsize=14, fontweight='bold', pad=20)
         
         ax.axis('equal')
         
@@ -399,6 +403,24 @@ class AtividadeService:
         buffer.seek(0)
         
         return buffer
+
+    @staticmethod
+    def _gerar_grafico_pizza_projetos(dados_cards):
+        """
+        Gera um gráfico de pizza para distribuição de horas por projeto.
+        
+        Args:
+            dados_cards (list): Lista de dicionários com dados dos projetos.
+            
+        Returns:
+            BytesIO: Buffer com a imagem do gráfico em formato PNG.
+        """
+        return AtividadeService._gerar_grafico_pizza(
+            dados_cards,
+            'Distribuição de Horas por Projeto',
+            'projeto_nome',
+            'total_horas'
+        )
 
     @staticmethod
     def _gerar_grafico_pizza_desenvolvedores(dados_tabela):
@@ -411,48 +433,12 @@ class AtividadeService:
         Returns:
             BytesIO: Buffer com a imagem do gráfico em formato PNG.
         """
-        if not dados_tabela or len(dados_tabela) == 0:
-            return None
-            
-        plt.rcParams['font.family'] = 'sans-serif'
-        plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
-        
-        fig, ax = plt.subplots(figsize=(8, 6))
-        
-        labels = [item['colaborador_nome'] for item in dados_tabela]
-        sizes = [item['total_colaborador'] for item in dados_tabela]
-
-        colors_palette = [
-            '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-            '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#6b7280',
-            '#d97706', '#0ea5e9', '#9333ea', '#22c55e', '#dc2626'
-        ]
-        colors_list = [colors_palette[i % len(colors_palette)] for i in range(len(labels))]
-        
-        wedges, texts, autotexts = ax.pie(
-            sizes, 
-            labels=labels,
-            colors=colors_list,
-            autopct='%1.1f%%',
-            startangle=90,
-            textprops={'fontsize': 10, 'color': 'black'}
+        return AtividadeService._gerar_grafico_pizza(
+            dados_tabela,
+            'Distribuição de Horas por Desenvolvedor',
+            'colaborador_nome',
+            'total_colaborador'
         )
-        
-        for autotext in autotexts:
-            autotext.set_color('white')
-            autotext.set_fontweight('bold')
-            autotext.set_fontsize(9)
-        
-        ax.set_title('Distribuição de Horas por Desenvolvedor', fontsize=14, fontweight='bold', pad=20)
-        
-        ax.axis('equal')
-        
-        buffer = BytesIO()
-        plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
-        plt.close()
-        buffer.seek(0)
-        
-        return buffer
 
     @staticmethod
     def _gerar_tabela_horas_por_dev_e_projeto(dados, styles):
