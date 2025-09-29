@@ -1,0 +1,145 @@
+<div id="tabela_e_cards">
+
+    <div class="cards-container" id="cards-resumo">
+        {% for card in dados.dados_cards %}
+        {% cycle 'color-1' 'color-2' 'color-3' 'color-4' as card_color silent %}
+        <div class="card {{ card_color }}">
+            <h3>{{ card.projeto_nome }}</h3>
+            <p>{{ card.total_horas|floatformat:2 }}h</p>
+            <span>{{ card.percentual }}% do total do mês</span><br>
+            <span>{{ card.desenvolvedores }} desenvolvedor(es)</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="table-wrapper">
+        <h2>Horas por Desenvolvedor e Projeto</h2>
+        <p style="margin-top: -10px; color: #666;">{{ cabecalho.subtitulo }}</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Desenvolvedor</th>
+                    {% for projeto in dados.projetos_nomes %}
+                    <th>{{ projeto }}</th>
+                    {% endfor %}
+                    <th class="total-col">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for linha in dados.dados_tabela %}
+                <tr>
+                    <td>{{ linha.colaborador_nome }}</td>
+                    {% for hora in linha.horas %}
+                    <td>{{ hora|floatformat:2|default:"0.00" }}h</td>
+                    {% endfor %}
+                    <td class="total-col">{{ linha.total_colaborador|floatformat:2 }}h</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{{ dados.projetos_nomes|length|add:2 }}">Nenhum dado encontrado para o período selecionado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>TOTAL GERAL</td>
+                    {% for total in dados.totais_por_projeto %}
+                    <td>{{ total|floatformat:2 }}h</td>
+                    {% endfor %}
+                    <td class="total-col">{{ dados.total_geral|floatformat:2 }}h</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+</div>
+
+<style>
+    h2 { 
+        font-weight: 500; 
+        font-size: 1.2em;
+        margin-top: 30px; 
+        margin-bottom: 15px;
+        padding-bottom: 10px; 
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .table-wrapper {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+    }
+    th, td { 
+        padding: 12px 15px; 
+        text-align: left; 
+        border: none;
+    }
+    thead tr {
+        background-color: #0000FF;
+        color: #ffffff;
+        text-align: left;
+    }
+    tbody tr {
+        border-bottom: 5px solid #f0f0f0;
+    }
+    tbody tr:last-of-type {
+        border-bottom: none;
+    }
+    tfoot tr {
+        font-weight: bold; 
+        background-color: #0000FF;
+        color: #ffffff;
+    }
+    .total-col { 
+        font-weight: bold; 
+    }
+    .cards-container { 
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px; 
+        /* Ajuste de margem: agora o espaço é embaixo, para separar da tabela */
+        margin-bottom: 30px; 
+    }
+    .card { 
+        background: #fff; 
+        padding: 20px; 
+        border-radius: 8px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        border-top: 4px solid #3b82f6;
+    }
+    .card h3 { margin: 0 0 10px; font-size: 1em; color: #555; }
+    .card p { margin: 0 0 8px; font-size: 28px; font-weight: bold; color: #0f172a; }
+    .card span { font-size: 14px; color: #666; }
+    .card.color-1 { border-top-color: #3b82f6; }
+    .card.color-2 { border-top-color: #10b981; }
+    .card.color-3 { border-top-color: #f59e0b; }
+    .card.color-4 { border-top-color: #ef4444; }
+
+    .horas-dev-wrapper {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        
+        margin-top: 20px;
+        border-top: 7px solid #3b82f6;
+        overflow: hidden;
+    }
+
+    .horas-dev-wrapper h2 {
+        margin-top: 0;
+        font-size: 1.4em;
+        font-weight: 600;
+    }
+
+    .horas-dev-content {
+        padding: 20px;
+    }
+
+    .horas-dev-wrapper table thead th:first-child {
+        border-right: 1px solid rgba(255, 255, 255, 0.3);
+    }
+</style>
