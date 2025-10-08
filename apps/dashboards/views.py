@@ -1,8 +1,10 @@
 from django.shortcuts import render
+from django.views.decorators.http import require_http_methods
 from .services import JiraService
 
+@require_http_methods(["GET"])  
 def dashboard_view(request):
-    """View simples para o dashboard"""
+    """View para exibição do dashboard JIRA"""
     jira_service = JiraService()
     projetos_com_tasks = jira_service.get_all_tasks_data()
     
