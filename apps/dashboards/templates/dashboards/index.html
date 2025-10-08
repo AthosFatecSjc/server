@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard JIRA</title>
+    <style>
+        .dashboard {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .stats {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .project-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            background: white;
+        }
+        .project-header {
+            background: #0052cc;
+            color: white;
+            padding: 15px;
+            cursor: pointer;
+        }
+        .project-header h3 {
+            margin: 0;
+        }
+        .project-content {
+            padding: 0;
+            display: none;
+        }
+        .project-content.show {
+            display: block;
+        }
+        .tasks-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .tasks-table th,
+        .tasks-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .tasks-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .tasks-table tr:hover {
+            background: #f8f9fa;
+        }
+        .refresh-btn {
+            background: #0052cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .no-tasks {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="stats">
+            <h2>Dashboard JIRA</h2>
+            <p><strong>{{ total_projetos }}</strong> Projetos | <strong>{{ total_tasks_geral }}</strong> Tasks</p>
+            <button class="refresh-btn" onclick="window.location.reload()">
+                Atualizar Dados
+            </button>
+        </div>
+
+        <div class="projects-list">
+            {% for projeto in projetos_com_tasks %}
+            <div class="project-card">
+                <div class="project-header" onclick="toggleProject(this)">
+                    <h3>
+                         {{ projeto.name }} 
+                        <small>({{ projeto.key }})</small>
+                        <span style="float: right;">
+                            {{ projeto.total_tasks }} tasks
+                            {% if projeto.total_tasks > 0 %} {% else %} {% endif %}
+                        </span>
+                    </h3>
+                </div>
+                
+                <div class="project-content">
+                    {% if projeto.tasks %}
+                    <table class="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Summary</th>
+                                <th>Type</th>
+                                <th>Assignee</th>
+                                <th>Time Spent</th>
+                                <th>Time Estimate</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in projeto.tasks %}
+                            <tr>
+                                <td><strong>{{ task.key }}</strong></td>
+                                <td>{{ task.summary }}</td>
+                                <td>
+                                    <span style="padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-size: 12px;">
+                                        {{ task.issue_type }}
+                                    </span>
+                                </td>
+                                <td>{{ task.assignee }}</td>
+                                <td>{{ task.time_spent }}</td>
+                                <td>{{ task.time_estimate }}</td>
+                                <td>
+                                    <span style="padding: 2px 8px; background: #d4edda; border-radius: 3px; font-size: 12px;">
+                                        {{ task.status }}
+                                    </span>
+                                </td>
+                                <td>{{ task.created }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="no-tasks">
+                         Nenhuma task encontrada neste projeto
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <h3> Nenhum projeto encontrado</h3>
+                <p>Verifique as configurações do JIRA</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function toggleProject(element) {
+            const projectContent = element.closest('.project-card').querySelector('.project-content');
+            projectContent.classList.toggle('show');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstProject = document.querySelector('.project-card');
+            if (firstProject) {
+                firstProject.querySelector('.project-content').classList.add('show');
+            }
+        });
+    </script>
+</body>
+</html>
