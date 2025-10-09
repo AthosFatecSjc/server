@@ -163,5 +163,5 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CRONJOBS = [
-    ('0 * * * *', 'apps.utils.cron.buscar_dados_api'),
+    (env("CRON_BUSCAR_DADOS"), 'apps.utils.cron.buscar_dados_api'),
 ]
