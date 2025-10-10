@@ -3,6 +3,7 @@ import json
 import logging
 from typing import List, Dict, Any
 from django.conf import settings
+import sentry_sdk
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class JiraService:
             return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(f"Erro ao buscar projetos: {e}")
+            sentry_sdk.capture_exception(e)
             return []
     
     def get_tasks_by_project(self, project_key: str, max_results: int = 100) -> List[Dict]:
@@ -67,6 +69,7 @@ class JiraService:
             return response.json().get('issues', [])
         except requests.exceptions.RequestException as e:
             logger.error(f"Erro ao buscar tasks do projeto {project_key}: {e}")
+            sentry_sdk.capture_exception(e)
             return []
     
     def get_all_tasks_data(self) -> List[Dict]:
