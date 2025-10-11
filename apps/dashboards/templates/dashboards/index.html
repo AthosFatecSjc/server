@@ -26,6 +26,11 @@
             color: white;
             padding: 15px;
             cursor: pointer;
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+            font-size: inherit;
         }
         .project-header h3 {
             margin: 0;
@@ -83,6 +88,10 @@
             white-space: nowrap;
             border: 0;
         }
+        .project-header:focus {
+            outline: 2px solid #ffa500;
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body>
@@ -98,14 +107,13 @@
         <div class="projects-list">
             {% for projeto in projetos_com_tasks %}
             <div class="project-card">
-                <div class="project-header" 
+                <button class="project-header"
                      onclick="toggleProject(this)"
                      onkeydown="handleProjectKeyPress(event, this)"
                      tabindex="0"
-                     role="button"
                      aria-expanded="false"
                      aria-controls="project-content-{{ forloop.counter }}">
-                    <h2>
+                    <h2 style="margin: 0; color: white;">
                         {{ projeto.name }} 
                         <small>({{ projeto.key }})</small>
                         <span style="float: right;">
@@ -113,11 +121,10 @@
                         </span>
                     </h2>
                     <span class="sr-only">Clique ou pressione Enter para expandir/recolher</span>
-                </div>
+                </button>
                 
-                <div class="project-content" 
+                <section class="project-content" 
                      id="project-content-{{ forloop.counter }}"
-                     role="region"
                      aria-label="Tarefas do projeto {{ projeto.name }}">
                     {% if projeto.tasks %}
                     <table class="tasks-table">
@@ -161,7 +168,7 @@
                         Nenhuma task encontrada neste projeto
                     </div>
                     {% endif %}
-                </div>
+                </section>
             </div>
             {% empty %}
             <div style="text-align: center; padding: 40px; color: #666;" role="alert">
