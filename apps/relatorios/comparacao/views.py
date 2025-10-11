@@ -1,9 +1,12 @@
 import datetime
 import json
-from django.http import JsonResponse, HttpResponse
+
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
+
 from .services import ComparacaoService
+
 
 @require_GET
 def index(request):
@@ -18,6 +21,7 @@ def index(request):
 
     return render(request, 'comparacao/index.html', context)
 
+
 @require_GET
 def relatorio_anual_comparacao(request: any):
     """
@@ -27,15 +31,16 @@ def relatorio_anual_comparacao(request: any):
         ano = int(request.GET.get('ano'))
     except (TypeError, ValueError):
         ano = datetime.date.today().year
-    
+
     try:
         nome_projeto = str(request.GET.get('nome_projeto', ''))
     except (TypeError, ValueError):
         nome_projeto = ''
 
-    realizados = ComparacaoService.soma_horas_por_dev_mes(ano, nome_projeto) 
-    previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(ano, nome_projeto)  
-    resumo = ComparacaoService.totais_anuais_e_diferenca(ano, nome_projeto)  
+    realizados = ComparacaoService.soma_horas_por_dev_mes(ano, nome_projeto)
+    previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(
+        ano, nome_projeto)
+    resumo = ComparacaoService.totais_anuais_e_diferenca(ano, nome_projeto)
 
     por_dev = {}
     for dev in sorted(set(list(realizados.keys()) + list(previstos.keys()))):
@@ -55,11 +60,13 @@ def relatorio_anual_comparacao(request: any):
 
     payload = {
         "ano": ano,
-        "horas_planejadas_projeto": ComparacaoService.get_horas_previstas_projeto(ano, nome_projeto), 
-        "por_dev": por_dev
-    }
+        "horas_planejadas_projeto": ComparacaoService.get_horas_previstas_projeto(
+            ano,
+            nome_projeto),
+        "por_dev": por_dev}
 
     return JsonResponse(payload, safe=True)
+
 
 @require_POST
 def exportar_pdf(request):
@@ -68,22 +75,26 @@ def exportar_pdf(request):
         ano = int(data.get('year', datetime.date.today().year))
         projeto_nome = data.get('project_name', '')
         horas_planejadas = float(data.get('total_planned_hours', 0))
-        
-        response = ComparacaoService.exportar_relatorio_pdf(ano, projeto_nome, horas_planejadas)
+
+        response = ComparacaoService.exportar_relatorio_pdf(
+            ano, projeto_nome, horas_planejadas)
         return response
-        
+
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+
 @require_POST
-def set_horas_previstas_projeto(request: any) -> (HttpResponse | JsonResponse | Exception):
+def set_horas_previstas_projeto(
+        request: any) -> (HttpResponse | JsonResponse | Exception):
     try:
         data = json.loads(request.body)
         nome_projeto = data.get('nome_projeto', '')
         ano = int(data.get('ano', datetime.date.today().year))
         horas_previstas = float(data.get('horas_previstas', 0))
-        
-        return ComparacaoService.set_horas_previstas_projeto(nome_projeto, ano, horas_previstas)
-        
+
+        return ComparacaoService.set_horas_previstas_projeto(
+            nome_projeto, ano, horas_previstas)
+
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

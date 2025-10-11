@@ -44,7 +44,8 @@ class Projeto(models.Model):
 
 class ControleHorasEquipeResumo(models.Model):
     total_dev = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-    total_projeto = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    total_projeto = models.DecimalField(
+        max_digits=6, decimal_places=2, default=0)
 
     class Meta:
         db_table = 'controle_horas_equipe_resumo'
@@ -70,7 +71,11 @@ class ControleHorasEquipe(models.Model):
         db_table = 'controle_horas_equipe'
 
     def __str__(self):
-        return f"{self.funcionario} - {self.projeto} - {self.mes.strftime('%m/%Y')} - {self.horas}h"
+        return f"{
+            self.funcionario} - {
+            self.projeto} - {
+            self.mes.strftime('%m/%Y')} - {
+                self.horas}h"
 
 
 class MetaTempoControle(models.Model):
@@ -81,7 +86,9 @@ class MetaTempoControle(models.Model):
         db_table = 'meta_tempo_controle'
 
     def __str__(self):
-        return f"objetivo clt: {self.objetivo_clt} | objetivo estagiario: {self.objetivo_estagiario}"
+        return f"objetivo clt: {
+            self.objetivo_clt} | objetivo estagiario: {
+            self.objetivo_estagiario}"
 
 
 class TempoGastoEquipe(models.Model):
@@ -90,21 +97,30 @@ class TempoGastoEquipe(models.Model):
     mes = models.DateField()
     funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
     tempo_gasto = models.DecimalField(max_digits=6, decimal_places=2)
-    meta = models.ForeignKey(MetaTempoControle, on_delete=models.SET_NULL, null=True, blank=True)
+    meta = models.ForeignKey(
+        MetaTempoControle,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True)
 
     class Meta:
         db_table = 'controle_tempo_equipe'
 
     def __str__(self):
-        return f"{self.funcionario} - {self.mes.strftime('%m/%Y')} - {self.tempo_gasto}h"
+        return f"{
+            self.funcionario} - {
+            self.mes.strftime('%m/%Y')} - {
+            self.tempo_gasto}h"
 
 
 class TempoControleValores(models.Model):
-    controle_tempo_equipe = models.ForeignKey(TempoGastoEquipe, on_delete=models.CASCADE)
+    controle_tempo_equipe = models.ForeignKey(
+        TempoGastoEquipe, on_delete=models.CASCADE)
     realizado_equipe = models.DecimalField(max_digits=6, decimal_places=2)
     total_real = models.DecimalField(max_digits=6, decimal_places=2)
     total_meta = models.DecimalField(max_digits=6, decimal_places=2)
-    aproveitamento = models.DecimalField(max_digits=5, decimal_places=2)  # Percentual
+    aproveitamento = models.DecimalField(
+        max_digits=5, decimal_places=2)  # Percentual
 
     class Meta:
         db_table = 'controle_tempo_resumo'

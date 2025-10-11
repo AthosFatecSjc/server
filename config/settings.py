@@ -10,10 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import datetime
 import os
 from pathlib import Path
-import environ
 
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -120,7 +121,6 @@ JIRA_TOKEN = env('JIRA_TOKEN')
 # }
 
 
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -168,3 +168,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CRONJOBS = [
     (env("CRON_BUSCAR_DADOS"), 'apps.utils.cron.buscar_dados_api'),
 ]
+
+# Configuração de cache personalizado para dados do JIRA
+CACHE_JIRA = {
+    'data': {},  # Dados serão preenchidos pelo CRON
+    'timestamp': None,
+    'validade': datetime.timedelta(minutes=10)
+}
