@@ -1,3 +1,5 @@
+"""URLs do relatório de comparação anual."""
+
 from django.urls import path
 
 from . import views

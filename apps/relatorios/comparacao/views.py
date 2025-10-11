@@ -1,3 +1,5 @@
+"""Views do relatório de comparação anual."""
+
 import datetime
 import json
 
@@ -10,6 +12,7 @@ from .services import ComparacaoService
 
 @require_GET
 def index(request):
+    """Renderiza a página inicial do relatório de comparação anual."""
     hoje = datetime.date.today()
     anos_disponiveis = range(hoje.year - 5, hoje.year + 2)
 
@@ -25,7 +28,8 @@ def index(request):
 @require_GET
 def relatorio_anual_comparacao(request: any):
     """
-    Método de consolidação de dados e geração das informações utilizadas no Relatório de Comparação Anual.
+    Método de consolidação de dados e geração das informações
+    utilizadas no Relatório de Comparação Anual.
     """
     try:
         ano = int(request.GET.get('ano'))
@@ -70,6 +74,7 @@ def relatorio_anual_comparacao(request: any):
 
 @require_POST
 def exportar_pdf(request):
+    """Exporta o relatório de comparação anual em PDF."""
     try:
         data = json.loads(request.body)
         ano = int(data.get('year', datetime.date.today().year))
@@ -87,6 +92,7 @@ def exportar_pdf(request):
 @require_POST
 def set_horas_previstas_projeto(
         request: any) -> (HttpResponse | JsonResponse | Exception):
+    """Define as horas previstas para um projeto em um determinado ano."""
     try:
         data = json.loads(request.body)
         nome_projeto = data.get('nome_projeto', '')

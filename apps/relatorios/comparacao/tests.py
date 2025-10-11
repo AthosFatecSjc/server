@@ -1,16 +1,17 @@
+"""Testes do relatório de comparação anual."""
 from datetime import date
 
 from django.test import TestCase
 
-from apps.relatorios.comparacao.services import (
-    soma_horas_por_dev_mes, soma_horas_previstas_por_dev_mes,
-    totais_anuais_e_diferenca)
+from apps.relatorios.comparacao.services import (ComparacaoService)
 from apps.relatorios.models import (Cargo, ControleHorasEquipe, Funcionario,
                                     Projeto, TempoControleValores,
                                     TempoGastoEquipe)
 
 
 class SomaHorasTest(TestCase):
+    """Testa os serviços de soma de horas do relatório de comparação anual."""
+
     def setUp(self):
         # dados comuns
         self.cargo = Cargo.objects.create(sigla="DEV")
@@ -84,14 +85,16 @@ class SomaHorasTest(TestCase):
         )
 
     def test_soma_horas_realizadas(self):
-        resultado = soma_horas_por_dev_mes(2025)
+        """Testa a soma das horas realizadas por desenvolvedor e mês."""
+        resultado = ComparacaoService.soma_horas_por_dev_mes(2025)
         self.assertIn("Renato", resultado)
         self.assertIn("Maria", resultado)
         self.assertEqual(resultado["Renato"][1], 15.0)
         self.assertEqual(resultado["Maria"][2], 8.0)
 
     def test_soma_horas_previstas(self):
-        previsto = soma_horas_previstas_por_dev_mes(
+        """Testa a soma das horas previstas por desenvolvedor e mês."""
+        previsto = ComparacaoService.soma_horas_previstas_por_dev_mes(
             2025)  # usa TempoControleValores por padrão
         self.assertIn("Renato", previsto)
         self.assertIn("Maria", previsto)
@@ -99,7 +102,8 @@ class SomaHorasTest(TestCase):
         self.assertEqual(previsto["Maria"][2], 8.0)
 
     def test_totais_anuais_e_diferenca(self):
-        resumo = totais_anuais_e_diferenca(2025)
+        """Testa o cálculo dos totais anuais e diferença."""
+        resumo = ComparacaoService.totais_anuais_e_diferenca(2025)
         # Renato: previsto 20, realizado 15 -> diferença 5
         self.assertIn("Renato", resumo)
         self.assertAlmostEqual(resumo["Renato"]["total_previsto"], 20.0)

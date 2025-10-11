@@ -10,6 +10,7 @@ from .services import AtividadeService
 
 
 def index(request):
+    """Renderiza a página inicial do relatório de atividades."""
     hoje = datetime.date.today()
     anos_disponiveis = range(hoje.year - 5, hoje.year + 2)
 
@@ -24,6 +25,7 @@ def index(request):
 
 @require_GET
 def relatorio_tabela_e_cards(request):
+    """Renderiza o relatório de atividades em formato de tabela e cards."""
     hoje = datetime.date.today()
 
     try:
@@ -54,6 +56,7 @@ def relatorio_tabela_e_cards(request):
 
 
 def get_tabela_horas_projeto(context, request):
+    """Renderiza a tabela de horas por projeto."""
     context.update({'cabecalho': {
         'titulo': 'Horas por Desenvolvedor e Projeto',
         'subtitulo': f'Distribuição de horas trabalhadas - {context.get("mes_nome")}/{context.get("ano")}'
@@ -65,6 +68,7 @@ def get_tabela_horas_projeto(context, request):
 
 
 def get_grafico_horas_projeto(context, request):
+    """Renderiza o gráfico de horas por projeto."""
     context.update(
         {
             'cabecalho': {
@@ -85,6 +89,7 @@ def get_grafico_horas_projeto(context, request):
 
 
 def get_tabela_horas_por_dev(context, request):
+    """Renderiza a tabela de horas por desenvolvedor."""
     context.update({'cabecalho': {
         'titulo': 'Total de Horas por Desenvolvedor',
         'subtitulo': f'{context.get("mes_nome")}/{context.get("ano")}'
@@ -96,6 +101,7 @@ def get_tabela_horas_por_dev(context, request):
 
 
 def get_grafico_horas_por_dev(context, request):
+    """Renderiza o gráfico de horas por desenvolvedor."""
     context.update({'cabecalho': {
         'titulo': 'Distribuição de Horas por Desenvolvedor',
         'subtitulo': f'{context.get("mes_nome")}/{context.get("ano")}'
@@ -115,6 +121,7 @@ def get_grafico_horas_por_dev(context, request):
 
 @require_GET
 def exportar_pdf(request):
+    """Exporta o relatório de atividades em PDF."""
     hoje = datetime.date.today()
 
     try:

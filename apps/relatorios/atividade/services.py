@@ -9,7 +9,6 @@ from io import BytesIO
 import matplotlib
 import matplotlib.pyplot as plt
 from django.db.models import Count, Sum
-from PIL import Image as PILImage  # noqa: F401
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, legal
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -386,7 +385,7 @@ class AtividadeService:
         plt.rcParams['font.family'] = 'sans-serif'
         plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
 
-        fig, ax = plt.subplots(figsize=(8, 6))  # noqa: F841
+        _, ax = plt.subplots(figsize=(8, 6))  # noqa: F841
 
         labels = [item[label_key] for item in dados]
         sizes = [item[value_key] for item in dados]

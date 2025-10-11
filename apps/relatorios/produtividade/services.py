@@ -6,6 +6,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import legal
 from reportlab.platypus import (Paragraph, SimpleDocTemplate, Spacer, Table,
                                 TableStyle)
 
@@ -14,14 +15,13 @@ from apps.relatorios.models import (Funcionario, MetaTempoControle,
 
 
 def calcular_spends_por_dev(mes, ano):
+    """Calcula os gastos de tempo por desenvolvedor para um mês e ano específicos."""
     funcionarios = Funcionario.objects.all()
     resultados = []
 
     total_real = 0.0
     total_meta = 0.0
     soma_diaria_total = {d: 0.0 for d in range(1, 32)}
-
-    data_mes = datetime(ano, mes, 1).date()
 
     for func in funcionarios:
         registros = TempoGastoEquipe.objects.filter(
@@ -95,13 +95,14 @@ def calcular_spends_por_dev(mes, ano):
 
 
 def atualizar_codigo_especial(funcionario_id, mes, ano, dia, codigo):
-    from datetime import date
+    """Atualiza o código especial (FE, AT, FO, FA, LI, CO) para um funcionário em um dia específico."""
     try:
-        data_mes = date(ano, mes, 1)
+        data_mes = datetime(ano, mes, 1)
         funcionario = Funcionario.objects.get(id=funcionario_id)
 
         print(
-            f"Atualizando código especial: funcionario_id={funcionario_id}, mes={mes}, ano={ano}, dia={dia}, codigo={codigo}")
+            f"""Atualizando código especial: funcionario_id={funcionario_id},
+                mes={mes}, ano={ano}, dia={dia}, codigo={codigo}""")
 
         codigo_map = {
             'FE': -1,
@@ -127,7 +128,7 @@ def atualizar_codigo_especial(funcionario_id, mes, ano, dia, codigo):
                 valor_especial = -1
 
             try:
-                dia_data = date(ano, mes, dia)
+                dia_data = datetime(ano, mes, dia)
                 dias_semana = [
                     'Segunda',
                     'Terça',
@@ -160,10 +161,8 @@ def atualizar_codigo_especial(funcionario_id, mes, ano, dia, codigo):
 
 
 def atualizar_meta_funcionario(funcionario_id, mes, ano, meta):
-    from datetime import date
+    """Atualiza a meta de horas para um funcionário em um mês específico."""
     try:
-        data_mes = date(ano, mes, 1)
-        funcionario = Funcionario.objects.get(id=funcionario_id)
 
         meta_obj, created = MetaTempoControle.objects.get_or_create(
             objetivo_clt=f"META_{funcionario_id}_{ano}_{mes:02d}",
@@ -183,6 +182,7 @@ def atualizar_meta_funcionario(funcionario_id, mes, ano, meta):
 
 
 def atualizar_multiplos_dias(funcionario_id, mes, ano, dias, codigo):
+    """Atualiza múltiplos dias com um código especial para um funcionário."""
     success_count = 0
     for dia in dias:
         if atualizar_codigo_especial(funcionario_id, mes, ano, dia, codigo):
@@ -192,19 +192,14 @@ def atualizar_multiplos_dias(funcionario_id, mes, ano, dias, codigo):
 
 
 def obter_meta_funcionario(funcionario_id, mes, ano):
-    from datetime import date
     try:
-        try:
-            meta_individual = MetaTempoControle.objects.get(
-                objetivo_clt=f"META_{funcionario_id}_{ano}_{mes:02d}"
-            )
-            meta_valor = meta_individual.objetivo_estagiario
-            if meta_valor and meta_valor.strip():
-                return float(meta_valor)
-            else:
-                return 154.0
-        except MetaTempoControle.DoesNotExist:
-            return 154.0
+        meta_individual = MetaTempoControle.objects.get(
+            objetivo_clt=f"META_{funcionario_id}_{ano}_{mes:02d}"
+        )
+        meta_valor = meta_individual.objetivo_estagiario
+        if meta_valor and meta_valor.strip():
+            return float(meta_valor)
+        return 154.0
 
     except Exception as e:
         print(f"Erro ao obter meta: {e}")
@@ -212,13 +207,12 @@ def obter_meta_funcionario(funcionario_id, mes, ano):
 
 
 def exportar_produtividade_pdf(mes, ano, resultados):
+    """Gera um relatório PDF de produtividade mensal."""
     MESES_PORTUGUES = {
         1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
         5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
         9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
     }
-
-    from reportlab.lib.pagesizes import legal
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=landscape(legal),
                             leftMargin=0.2 * inch,
@@ -277,7 +271,6 @@ def exportar_produtividade_pdf(mes, ano, resultados):
         row.append(f"{resultado['percentual']}%")
         table_data.append(row)
 
-    num_cols = len(table_data[0])
     page_width = landscape(legal)[0] - 0.4 * inch
     dev_col_width = 1.2 * inch
     day_col_width = (page_width - dev_col_width - 1.5 * inch) / 31
@@ -333,4 +326,5 @@ def exportar_produtividade_pdf(mes, ano, resultados):
 
 
 def calcular_spends_por_dev_com_legendas(mes, ano):
+    """Calcula os gastos de tempo por desenvolvedor para um mês e ano específicos, incluindo legendas."""
     return calcular_spends_por_dev(mes, ano)

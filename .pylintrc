@@ -1,0 +1,56 @@
+[MASTER]
+# Lista de extensões que o Pylint deve considerar
+extension-pkg-allow-list=django
+
+# Adiciona o diretório do projeto ao path
+init-hook='import sys; sys.path.append("/home/soares/workspace/server")'
+
+[MESSAGES CONTROL]
+# Desabilita mensagens específicas
+disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    too-few-public-methods,
+    import-error,
+    invalid-name,
+    line-too-long,
+    broad-exception-caught,
+    too-many-locals,
+    too-many-statements,
+    import-outside-toplevel,
+    no-name-in-module,
+    unrecognized-inline-option,
+    f-string-without-interpolation,
+    no-member
+
+[FORMAT]
+# Tamanho máximo de linha
+max-line-length=120
+
+[DESIGN]
+# Número mínimo de métodos públicos
+min-public-methods=0
+
+# Número máximo de variáveis locais
+max-locals=20
+
+# Número máximo de statements
+max-statements=60
+
+[BASIC]
+# Padrões de nomes permitidos
+const-naming-style=any
+variable-naming-style=snake_case
+argument-naming-style=snake_case
+attr-naming-style=snake_case
+method-naming-style=snake_case
+class-naming-style=PascalCase
+module-naming-style=any
+
+# Permite nomes como setUp (usado em testes Django)
+good-names=i,j,k,ex,Run,_,id,setUp
+
+[IMPORTS]
+# Permite imports no meio do código (útil em alguns casos do Django)
+allow-any-import-level=yes

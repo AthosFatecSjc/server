@@ -4,14 +4,16 @@ from datetime import datetime
 
 from django.db.models import Sum
 from django.http import HttpResponse
+
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import Table, TableStyle
 from reportlab.platypus import (PageBreak, Paragraph, SimpleDocTemplate,
-                                Spacer, Table, TableStyle)
+                                Spacer)
 
 from apps.relatorios.models import (ControleHorasEquipe, MetaTempoControle,
                                     Projeto, TempoControleValores,
@@ -68,6 +70,7 @@ class ComparacaoService:
             *,
             source='tempo_controle_valores',
             field_name=None):
+        """soma as horas previstas do mês de cada dev naquele projeto"""
         campos_map = {
             'tempo_controle_valores': {
                 'model': TempoControleValores,
@@ -117,6 +120,7 @@ class ComparacaoService:
 
     @staticmethod
     def totais_anuais_e_diferenca(ano, nome_projeto=None):
+        """Calcula totais anuais e diferença entre previsto e realizado."""
         realizados = ComparacaoService.soma_horas_por_dev_mes(
             ano, nome_projeto)
         previstos = ComparacaoService.soma_horas_previstas_por_dev_mes(
@@ -125,8 +129,10 @@ class ComparacaoService:
 
         return {
             dev: {
-                'total_previsto': float(ComparacaoService._calcular_soma_valores({dev: previstos.get(dev, {})})),
-                'total_realizado': float(ComparacaoService._calcular_soma_valores({dev: realizados.get(dev, {})})),
+                'total_previsto': float(
+                    ComparacaoService._calcular_soma_valores({dev: previstos.get(dev, {})})),
+                'total_realizado': float(
+                    ComparacaoService._calcular_soma_valores({dev: realizados.get(dev, {})})),
                 'diferenca': float(
                     ComparacaoService._calcular_soma_valores({dev: previstos.get(dev, {})}) -
                     ComparacaoService._calcular_soma_valores(
@@ -138,6 +144,7 @@ class ComparacaoService:
 
     @staticmethod
     def get_nome_projetos() -> list[str]:
+        """Retorna a lista de nomes de projetos ordenados."""
         return list(
             Projeto.objects.values_list(
                 "nome",
@@ -149,7 +156,7 @@ class ComparacaoService:
 
     @staticmethod
     def _criar_container_tabela(elemento, largura_total):
-        from reportlab.platypus import Table, TableStyle
+
         container = Table([[elemento]], colWidths=[largura_total])
         container.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -162,6 +169,7 @@ class ComparacaoService:
             ano: int,
             projeto_nome: str,
             horas_planejadas: float) -> HttpResponse:
+        """Exporta o relatório de comparação em PDF."""
         current_data = ComparacaoService._preparar_dados_para_relatorio(
             ano, projeto_nome)
         buffer = ComparacaoService._gerar_pdf(
@@ -195,7 +203,8 @@ class ComparacaoService:
                         }
                         for m in range(1, 13)
                     },
-                    "totais": resumo.get(dev, {"total_previsto": 0.0, "total_realizado": 0.0, "diferenca": 0.0}),
+                    "totais": resumo.get(dev, {"total_previsto": 0.0,
+                                               "total_realizado": 0.0, "diferenca": 0.0}),
                 }
                 for dev in sorted(set(list(realizados.keys()) + list(previstos.keys())))
             }
@@ -274,7 +283,6 @@ class ComparacaoService:
     def _criar_cards_resumo(
             current_data: dict,
             total_planned_hours: float) -> list:
-        from reportlab.platypus import Table, TableStyle
 
         total_realized, collaborators_count = ComparacaoService._obter_metricas_resumo(
             current_data)
@@ -329,7 +337,6 @@ class ComparacaoService:
             descricao: str,
             cor: colors.Color,
             info_extra: str = None) -> Table:
-        from reportlab.platypus import Table, TableStyle
 
         card_data = [[titulo], [valor], [descricao]]
         if info_extra:
@@ -369,7 +376,6 @@ class ComparacaoService:
         if not current_data.get('por_dev'):
             return []
 
-        from reportlab.platypus import Table
         meses = [
             'JAN',
             'FEV',
@@ -564,6 +570,7 @@ class ComparacaoService:
             return drawing
 
         except Exception as e:
+            print(f"Erro ao criar gráfico de pizza: {e}")
             return None
 
     @staticmethod
@@ -697,21 +704,17 @@ class ComparacaoService:
         """
 
         try:
-            try:
-                meta_individual = MetaTempoControle.objects.get(
-                    objetivo_clt=f"META_{ComparacaoService._get_projeto_id(nome_projeto)}_{ano}"
-                )
-                meta_valor = meta_individual.objetivo_estagiario
-                if meta_valor and meta_valor.strip():
-                    return float(meta_valor)
-                else:
-                    return 0
-            except MetaTempoControle.DoesNotExist:
-                return 0
-
+            # pylint:no-object-exception
+            meta_individual = MetaTempoControle.objects.get(
+                objetivo_clt=f"META_{ComparacaoService._get_projeto_id(nome_projeto)}_{ano}"
+            )
+            meta_valor = meta_individual.objetivo_estagiario
+            if meta_valor and meta_valor.strip():
+                return float(meta_valor)
+            return 0.0
         except Exception as e:
-            print(f"Erro ao obter meta: {e}")
-            return 0
+            print(f"Meta individual não encontrada: {e}")
+            return 0.0
 
     @staticmethod
     def set_horas_previstas_projeto(
@@ -729,17 +732,17 @@ class ComparacaoService:
         """
 
         try:
-            print(f"set_horas_previstas_projeto(): 1")
+            print(f"set_horas_previstas_projeto: %s", 1)
             horas_previstas_obj, created = MetaTempoControle.objects.get_or_create(
                 objetivo_clt=f"META_{
                     ComparacaoService._get_projeto_id(nome_projeto)}_{ano}", defaults={
                     'objetivo_estagiario': str(horas_previstas)})
-            print(f"set_horas_previstas_projeto(): 2")
+            print("set_horas_previstas_projeto: %s", 2)
 
             if not created:
                 horas_previstas_obj.objetivo_estagiario = str(horas_previstas)
                 horas_previstas_obj.save()
-            print(f"set_horas_previstas_projeto(): 3")
+            print("set_horas_previstas_projeto: %s", str(horas_previstas))
 
             return HttpResponse()
 

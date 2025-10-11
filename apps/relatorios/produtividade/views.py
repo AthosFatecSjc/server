@@ -1,16 +1,15 @@
+"""Views for the produtividade report."""
 import json
 from datetime import datetime
 
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.relatorios.models import TempoGastoEquipe
-from apps.relatorios.produtividade.services import (
-    atualizar_codigo_especial, atualizar_meta_funcionario,
-    atualizar_multiplos_dias, calcular_spends_por_dev,
-    calcular_spends_por_dev_com_legendas, exportar_produtividade_pdf)
+from apps.relatorios.produtividade.services import (atualizar_meta_funcionario,
+                                                    atualizar_multiplos_dias,
+                                                    calcular_spends_por_dev_com_legendas, exportar_produtividade_pdf)
 
 
 @require_GET
