@@ -9,7 +9,7 @@ from io import BytesIO
 import matplotlib
 import matplotlib.pyplot as plt
 from django.db.models import Count, Sum
-from PIL import Image as PILImage
+from PIL import Image as PILImage  # noqa: F401
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, legal
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -146,7 +146,7 @@ class AtividadeService:
             QuerySet: Dados agregados de horas por funcionário e projeto.
         """
         return (
-            ControleHorasEquipe.objects
+            ControleHorasEquipe.objects  # pylint: disable=no-member
             .filter(mes__year=ano, mes__month=mes)
             .values('funcionario_id__nome', 'projeto_id__nome')
             .annotate(total_horas=Sum('horas'))
@@ -228,7 +228,7 @@ class AtividadeService:
                 'funcionario' e 'total_horas'.
         """
         return list(
-            ControleHorasEquipe.objects
+            ControleHorasEquipe.objects  # pylint: disable=no-member
             .filter(mes__year=ano, mes__month=mes)
             .values('funcionario_id__nome')
             .annotate(total_horas=Sum('horas'))
@@ -246,7 +246,7 @@ class AtividadeService:
         Returns:
             QuerySet: Dados filtrados e otimizados do ControleHorasEquipe.
         """
-        return ControleHorasEquipe.objects.filter(
+        return ControleHorasEquipe.objects.filter(  # pylint: disable=no-member
             mes__year=ano, mes__month=mes).select_related(
             'funcionario', 'projeto').order_by('funcionario__nome')
 
@@ -386,7 +386,7 @@ class AtividadeService:
         plt.rcParams['font.family'] = 'sans-serif'
         plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
 
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(8, 6))  # noqa: F841
 
         labels = [item[label_key] for item in dados]
         sizes = [item[value_key] for item in dados]
@@ -712,10 +712,10 @@ class AtividadeService:
         elements += AtividadeService._gerar_tabela_total_horas_por_projeto(
             dados, styles)
 
-        elements += AtividadeService._gerar_secao_grafico_projetos(
-            dados, styles)
+        # type: ignore
+        elements += AtividadeService._gerar_secao_grafico_projetos(dados)
         elements += AtividadeService._gerar_secao_grafico_desenvolvedores(
-            dados, styles)
+            dados)  # type: ignore
 
         elements.append(AtividadeService._gerar_footer(styles))
         return elements

@@ -1,6 +1,7 @@
 
 """Serviço para interagir com a API do Jira"""
 
+import datetime
 import json
 import logging
 from typing import Dict, List
@@ -137,3 +138,31 @@ class JiraService:
             })
 
         return projetos_com_tasks
+
+    def get_dashboard_context(self, include_timestamp: bool = False) -> Dict:
+        """
+        Busca e processa os dados completos para o dashboard.
+
+        Args:
+            include_timestamp: Se True, inclui 'ultima_atualizacao' no contexto.
+
+        Returns:
+            Dict com projetos_com_tasks, total_projetos, total_tasks_geral
+            e opcionalmente ultima_atualizacao.
+        """
+        projetos_com_tasks = self.get_all_tasks_data()
+
+        total_projetos = len(projetos_com_tasks)
+        total_tasks_geral = sum(proj['total_tasks']
+                                for proj in projetos_com_tasks)
+
+        context = {
+            'projetos_com_tasks': projetos_com_tasks,
+            'total_projetos': total_projetos,
+            'total_tasks_geral': total_tasks_geral,
+        }
+
+        if include_timestamp:
+            context['ultima_atualizacao'] = datetime.datetime.now().isoformat()
+
+        return context
