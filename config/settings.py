@@ -103,6 +103,12 @@ DATABASES = {
     }
 }
 
+if os.environ.get('TEST_DB_ENGINE'):
+    DATABASES['default'] = {
+        'ENGINE': os.environ['TEST_DB_ENGINE'],
+        'NAME': os.environ.get('TEST_DB_NAME', ':memory:'),
+    }
+
 JIRA_BASE_URL = env('JIRA_BASE_URL', default='http://localhost')
 JIRA_USER = env('JIRA_USER', default='user')
 JIRA_TOKEN = env('JIRA_TOKEN', default='token')
