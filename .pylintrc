@@ -2,8 +2,8 @@
 # Lista de extensões que o Pylint deve considerar
 extension-pkg-allow-list=django
 
-# Adiciona o diretório do projeto ao path
-init-hook='import sys; sys.path.append("/home/soares/workspace/server")'
+# Adiciona o diretório do projeto ao path e configura Django
+init-hook='import sys, os; project_root = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, project_root); os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")'
 
 [MESSAGES CONTROL]
 # Desabilita mensagens específicas
