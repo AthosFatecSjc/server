@@ -8,74 +8,129 @@ import sentry_sdk
 logger = logging.getLogger(__name__)
 
 class JiraService:
+    """
+    Camada de serviço para interagir com a API do Jira, com monitorização
+    integrada ao Sentry para falhas de comunicação.
+    """
     def __init__(self):
+        """Inicializa o serviço com as credenciais e URLs do Jira."""
         self.base_url = settings.JIRA_BASE_URL
         self.auth = (settings.JIRA_USER, settings.JIRA_TOKEN)
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         }
-    
+
+    def _enrich_sentry_scope(self, url: str, payload: Dict = None):
+        """
+        Adiciona contexto extra (tags e dados) ao escopo do Sentry para
+        facilitar a depuração de erros relacionados ao Jira.
+        """
+        with sentry_sdk.configure_scope() as scope:
+            scope.set_tag("integration", "jira")
+            scope.set_tag("integration.url", self.base_url)
+            scope.set_extra("jira_api_endpoint", url)
+            if payload:
+                scope.set_extra("jira_request_payload", payload)
+
     def get_projects(self) -> List[Dict]:
-        """Busca todos os projetos do Jira"""
+        """
+        Busca todos os projetos do Jira.
+
+        Captura falhas de conexão, erros HTTP e respostas vazias, reportando-os
+        ao Sentry.
+        """
         url = f"{self.base_url}/rest/api/3/project"
-        
+        self._enrich_sentry_scope(url)
+
         try:
             response = requests.get(
-                url, 
-                auth=self.auth, 
+                url,
+                auth=self.auth,
                 headers=self.headers,
-                timeout=30
+                timeout=15  # Timeout reduzido para uma resposta mais rápida
             )
-            response.raise_for_status()
-            return response.json()
+            response.raise_for_status()  # Levanta exceção para erros 4xx/5xx
+
+            projects = response.json()
+
+            if not projects:
+                sentry_sdk.capture_message(
+                    "A API do Jira retornou uma lista de projetos vazia.",
+                    level="warning"
+                )
+                return []
+
+            return projects
+
         except requests.exceptions.RequestException as e:
-            logger.error(f"Erro ao buscar projetos: {e}")
+            logger.error(f"Erro ao buscar projetos do Jira: {e}")
             sentry_sdk.capture_exception(e)
             return []
-    
+
     def get_tasks_by_project(self, project_key: str, max_results: int = 100) -> List[Dict]:
-        """Busca tasks de um projeto específico"""
-        url = f"{self.base_url}/rest/api/3/search/jql"
+        """
+        Busca tasks de um projeto específico usando o método GET.
+
+        Captura falhas de conexão, erros HTTP e respostas vazias, reportando-os
+        ao Sentry.
+        """
+        url = f"{self.base_url}/rest/api/3/search"
         
-        jql_query = f"project = {project_key}"
-        
-        payload = {
-            "jql": jql_query,
-            "fields": [
-                "summary", 
-                "assignee", 
-                "timetracking", 
-                "issuetype", 
-                "timeoriginalestimate", 
-                "timeestimate", 
+        # Parâmetros para um pedido GET são passados via 'params'
+        params = {
+            'jql': f"project = '{project_key}'",
+            'fields': ','.join([  # Os campos devem ser uma string separada por vírgulas
+                "summary",
+                "assignee",
+                "timetracking",
+                "issuetype",
+                "timeoriginalestimate",
+                "timeestimate",
                 "timespent",
                 "status",
                 "created",
                 "updated"
-            ],
-            "maxResults": max_results
+            ]),
+            'maxResults': max_results
         }
+
+        self._enrich_sentry_scope(url, payload=params) # O payload agora são os params
         
         try:
-            response = requests.post(
+            # Alterado de requests.post para requests.get
+            response = requests.get(
                 url,
                 auth=self.auth,
                 headers=self.headers,
-                data=json.dumps(payload),
-                timeout=30
+                params=params, # Alterado de 'data' para 'params'
+                timeout=15
             )
             response.raise_for_status()
-            return response.json().get('issues', [])
+            
+            issues = response.json().get('issues', [])
+
+            if not issues:
+                sentry_sdk.capture_message(
+                    f"Nenhuma task encontrada para o projeto '{project_key}'.",
+                    level="info"
+                )
+
+            return issues
         except requests.exceptions.RequestException as e:
             logger.error(f"Erro ao buscar tasks do projeto {project_key}: {e}")
             sentry_sdk.capture_exception(e)
             return []
-    
+
+
     def get_all_tasks_data(self) -> List[Dict]:
-        """Busca todos os projetos e suas tasks para o dashboard"""
+        """Busca todos os projetos e suas tasks para o dashboard."""
         projetos = self.get_projects()
         
+        # Se a busca de projetos falhar, retorna uma lista vazia para evitar mais erros.
+        if not projetos:
+            return []
+            
         projetos_com_tasks = []
         for projeto in projetos:
             project_key = projeto['key']
