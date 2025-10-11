@@ -1,3 +1,4 @@
+"""Configuração da aplicação de comparação de relatórios."""
 from django.apps import AppConfig
 
 

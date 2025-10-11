@@ -1,4 +1,8 @@
+
+"  ""Serviços para geração de relatórios de atividade."""
+
 from collections import defaultdict
+
 from datetime import datetime
 from io import BytesIO
 
@@ -14,6 +18,7 @@ from reportlab.platypus import (Image, Paragraph, SimpleDocTemplate, Spacer,
                                 Table, TableStyle)
 
 from apps.relatorios.models import ControleHorasEquipe
+
 
 matplotlib.use('Agg')
 
@@ -272,7 +277,7 @@ class AtividadeService:
             for colaborador, projetos in dados_por_colaborador.items()
         ]
 
-        return dados_por_colaborador, projetos_nomes, dados_tabela
+        return projetos_nomes, dados_tabela
 
     @staticmethod
     def _calcular_totais_projeto(queryset, projetos_nomes):
@@ -344,7 +349,7 @@ class AtividadeService:
         """
         queryset = AtividadeService._buscar_dados_base(ano, mes)
 
-        dados_por_colaborador, projetos_nomes, dados_tabela = AtividadeService._processar_dados_por_colaborador(
+        projetos_nomes, dados_tabela = AtividadeService._processar_dados_por_colaborador(
             queryset)
 
         resumo_projetos, totais_por_projeto, total_geral_horas = AtividadeService._calcular_totais_projeto(
@@ -394,7 +399,7 @@ class AtividadeService:
         colors_list = [colors_palette[i %
                                       len(colors_palette)] for i in range(len(labels))]
 
-        wedges, texts, autotexts = ax.pie(
+        _, _, autotexts = ax.pie(
             sizes,
             labels=labels,
             colors=colors_list,
@@ -521,7 +526,8 @@ class AtividadeService:
         elements = AtividadeService._criar_subtitulo(
             "Total de Horas por Desenvolvedor", styles)
         table_data = [["Desenvolvedor", "Total de Horas"]] + [
-            [registro['colaborador_nome'], f"{registro['total_colaborador']:.1f}h"]
+            [registro['colaborador_nome'],
+                f"{registro['total_colaborador']:.1f}h"]
             for registro in dados['dados_tabela']
         ]
         table_data.append(["TOTAL GERAL", f"{dados['total_geral']:.1f}h"])
@@ -572,13 +578,12 @@ class AtividadeService:
         return elements
 
     @staticmethod
-    def _gerar_secao_grafico_projetos(dados, styles):
+    def _gerar_secao_grafico_projetos(dados):
         """
         Gera a seção do gráfico de pizza para distribuição por projeto.
 
         Args:
             dados (dict): Dados processados do relatório.
-            styles: Estilos do ReportLab.
 
         Returns:
             list: Lista de elementos do ReportLab para o gráfico.
@@ -596,13 +601,12 @@ class AtividadeService:
         return elements
 
     @staticmethod
-    def _gerar_secao_grafico_desenvolvedores(dados, styles):
+    def _gerar_secao_grafico_desenvolvedores(dados):
         """
         Gera a seção do gráfico de pizza para distribuição por desenvolvedor.
 
         Args:
             dados (dict): Dados processados do relatório.
-            styles: Estilos do ReportLab.
 
         Returns:
             list: Lista de elementos do ReportLab para o gráfico.

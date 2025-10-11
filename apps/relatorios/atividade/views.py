@@ -1,3 +1,4 @@
+"""Views para a aplicação de relatórios de atividade."""
 import datetime
 
 from django.http import HttpResponse
@@ -101,7 +102,8 @@ def get_grafico_horas_por_dev(context, request):
     }})
 
     context['dados']['dados_grafico_pizza'] = [
-        {"label": registro["colaborador_nome"], "data": registro["total_colaborador"]}
+        {"label": registro["colaborador_nome"],
+            "data": registro["total_colaborador"]}
         for registro in context['dados']['dados_tabela']
     ]
 

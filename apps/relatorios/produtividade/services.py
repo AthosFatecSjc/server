@@ -1,10 +1,9 @@
+"""Serviços para geração de relatórios de produtividade."""
 from datetime import datetime
 from io import BytesIO
 
-from django.db.models import Q, Sum
-from django.http import HttpResponse
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import landscape, letter
+from reportlab.lib.pagesizes import landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import (Paragraph, SimpleDocTemplate, Spacer, Table,

@@ -1,3 +1,4 @@
+"""URLs para a aplicação de relatórios de atividade."""
 from django.urls import path
 
 from . import views

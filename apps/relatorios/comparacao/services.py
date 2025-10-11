@@ -1,5 +1,5 @@
+"""Serviços para geração de relatórios de comparação."""
 import io
-import json
 from datetime import datetime
 
 from django.db.models import Sum
@@ -19,7 +19,7 @@ from apps.relatorios.models import (ControleHorasEquipe, MetaTempoControle,
 
 
 class ComparacaoService:
-
+    """Serviços para geração de relatórios de comparação."""
     @staticmethod
     def _processar_queryset_horas(queryset, campos):
         resultado = {}
@@ -106,7 +106,8 @@ class ComparacaoService:
 
         return ComparacaoService._processar_queryset_horas(
             qs,
-            {'dev': config['dev'], 'mes': config['mes'], 'horas': 'total_previstas'}
+            {'dev': config['dev'], 'mes': config['mes'],
+                'horas': 'total_previstas'}
         )
 
     @staticmethod
@@ -128,7 +129,8 @@ class ComparacaoService:
                 'total_realizado': float(ComparacaoService._calcular_soma_valores({dev: realizados.get(dev, {})})),
                 'diferenca': float(
                     ComparacaoService._calcular_soma_valores({dev: previstos.get(dev, {})}) -
-                    ComparacaoService._calcular_soma_valores({dev: realizados.get(dev, {})})
+                    ComparacaoService._calcular_soma_valores(
+                        {dev: realizados.get(dev, {})})
                 ),
             }
             for dev in devs
@@ -315,7 +317,8 @@ class ComparacaoService:
         if not current_data.get('por_dev'):
             return 0, 0
         return (
-            sum(dev['totais']['total_realizado'] for dev in current_data['por_dev'].values()),
+            sum(dev['totais']['total_realizado']
+                for dev in current_data['por_dev'].values()),
             len(current_data['por_dev'])
         )
 
@@ -392,7 +395,8 @@ class ComparacaoService:
             table_data.append(row)
 
         totais_mensais = [
-            sum(dev_data['mensal'][m]['realizado'] for dev_data in current_data['por_dev'].values())
+            sum(dev_data['mensal'][m]['realizado']
+                for dev_data in current_data['por_dev'].values())
             for m in range(1, 13)
         ]
         table_data.append(
@@ -421,7 +425,8 @@ class ComparacaoService:
             ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#F8FAFC')]),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -2),
+             [colors.white, colors.HexColor('#F8FAFC')]),
         ])
 
     @staticmethod
