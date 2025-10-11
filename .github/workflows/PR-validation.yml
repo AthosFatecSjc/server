@@ -26,16 +26,7 @@ jobs:
 
       - name: Analisar Codigo com Pylint (Django)
         env:
-          DJANGO_SETTINGS_MODULE: config.settings
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_HOST: ${{ secrets.DB_HOST }}
-          POSTGRES_PORT: ${{ secrets.DB_PORT }}
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_USER: ${{ secrets.JIRA_USER }}
-          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          SECRET_KEY: fake-secret-key-for-pylint
         run: |
           pip install pylint pylint-django
           pylint --django-settings-module=config.settings $(git ls-files '*.py')

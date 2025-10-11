@@ -95,17 +95,17 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('POSTGRES_DB'),
-        'USER': env('POSTGRES_USER'),
-        'PASSWORD': env('POSTGRES_PASSWORD'),
-        'HOST': env('POSTGRES_HOST'),
-        'PORT': env('POSTGRES_PORT'),
+        'NAME': env('POSTGRES_DB', default='postgres'),
+        'USER': env('POSTGRES_USER', default='postgres'),
+        'PASSWORD': env('POSTGRES_PASSWORD', default='postgres'),
+        'HOST': env('POSTGRES_HOST', default='localhost'),
+        'PORT': env('POSTGRES_PORT', default='5432'),
     }
 }
 
-JIRA_BASE_URL = env('JIRA_BASE_URL')
-JIRA_USER = env('JIRA_USER')
-JIRA_TOKEN = env('JIRA_TOKEN')
+JIRA_BASE_URL = env('JIRA_BASE_URL', default='http://localhost')
+JIRA_USER = env('JIRA_USER', default='user')
+JIRA_TOKEN = env('JIRA_TOKEN', default='token')
 
 # DATABASES = {
 #     'default': {
