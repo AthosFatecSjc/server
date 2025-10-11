@@ -5,8 +5,11 @@ extension-pkg-allow-list=django
 # Carrega o plugin do Django automaticamente
 load-plugins=pylint_django
 
-# Adiciona o diretório do projeto ao path e configura Django
-init-hook='import sys, os; project_root = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, project_root); os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")'
+# Configuração do Django para pylint-django
+django-settings-module=config.settings
+
+# Adiciona o diretório do projeto ao path
+init-hook='import sys, os; project_root = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, project_root)'
 
 [MESSAGES CONTROL]
 # Desabilita mensagens específicas

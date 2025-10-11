@@ -38,7 +38,7 @@ jobs:
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
           pip install pylint pylint-django
-          pylint $(git ls-files '*.py')
+          pylint --django-settings-module=config.settings $(git ls-files '*.py')
 
 
       - name: Verificacao de Seguranca com Bandit
