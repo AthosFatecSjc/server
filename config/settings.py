@@ -166,7 +166,8 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CRONJOBS = [
-    (env("CRON_BUSCAR_DADOS"), 'apps.utils.cron.buscar_dados_api'),
+    (env("CRON_BUSCAR_DADOS", default="* * * * *"),
+     'apps.utils.cron.buscar_dados_api'),
 ]
 
 # Configuração de cache personalizado para dados do JIRA
