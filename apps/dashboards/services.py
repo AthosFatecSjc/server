@@ -70,40 +70,44 @@ class JiraService:
 
     def get_tasks_by_project(self, project_key: str, max_results: int = 100) -> List[Dict]:
         """
-        Busca tasks de um projeto específico usando o método GET.
-
+        Busca tasks de um projeto específico usando o método POST.
         Captura falhas de conexão, erros HTTP e respostas vazias, reportando-os
         ao Sentry.
         """
-        url = f"{self.base_url}/rest/api/3/search"
+        # ALTERAÇÃO 1: O URL foi atualizado para o endpoint específico de JQL.
+        url = f"{self.base_url}/rest/api/3/search/jql"
         
-        # Parâmetros para um pedido GET são passados via 'params'
-        params = {
-            'jql': f"project = '{project_key}'",
-            'fields': ','.join([  # Os campos devem ser uma string separada por vírgulas
-                "summary",
-                "assignee",
-                "timetracking",
-                "issuetype",
-                "timeoriginalestimate",
-                "timeestimate",
+        # A consulta JQL agora é mais simples, sem aspas extras que podem causar problemas.
+        jql_query = f"project = {project_key}"
+        
+        # ALTERAÇÃO 2: O payload é um dicionário que será enviado no corpo da requisição.
+        payload = {
+            "jql": jql_query,
+            "fields": [
+                "summary", 
+                "assignee", 
+                "timetracking", 
+                "issuetype", 
+                "timeoriginalestimate", 
+                "timeestimate", 
                 "timespent",
                 "status",
                 "created",
                 "updated"
-            ]),
-            'maxResults': max_results
+            ],
+            "maxResults": max_results
         }
 
-        self._enrich_sentry_scope(url, payload=params) # O payload agora são os params
+        self._enrich_sentry_scope(url, payload=payload)
         
         try:
-            # Alterado de requests.post para requests.get
-            response = requests.get(
+            # ALTERAÇÃO 3: A requisição agora usa requests.post().
+            response = requests.post(
                 url,
                 auth=self.auth,
                 headers=self.headers,
-                params=params, # Alterado de 'data' para 'params'
+                # ALTERAÇÃO 4: Os dados são enviados como JSON no corpo da requisição.
+                data=json.dumps(payload),
                 timeout=15
             )
             response.raise_for_status()
