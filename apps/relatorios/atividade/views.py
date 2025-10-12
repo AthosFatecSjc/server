@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_safe, require_GET
 import datetime
 from .services import AtividadeService
 
+@require_safe
 def index(request):
     hoje = datetime.date.today()
     anos_disponiveis = range(hoje.year - 5, hoje.year + 2)
