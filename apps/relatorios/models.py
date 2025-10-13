@@ -94,6 +94,12 @@ class TempoGastoEquipe(models.Model):
 
     class Meta:
         db_table = 'controle_tempo_equipe'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['funcionario', 'dia_mes', 'mes'],
+                name='unique_funcionario_dia_mes'
+            )
+        ]
 
     def __str__(self):
         return f"{self.funcionario} - {self.mes.strftime('%m/%Y')} - {self.tempo_gasto}h"

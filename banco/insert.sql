@@ -68,7 +68,67 @@ INSERT INTO funcionario (nome, time, cargo_id, gerente_id, data_criacao) VALUES
 ('Lucas Paiva', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE),
 ('Sérgio Casas', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE);
 
+-- ==================================================================================================
 -- 5. Inserção na Tabela 'controle_tempo_equipe'
+-- ==================================================================================================
+-- ==================================================================================================
+-- 5.1. Dados diários para vários funcionários durante todo o mês de agosto de 2025.
+-- A soma das horas diárias para cada funcionário no mês de agosto se aproxima do total no relatório.
+-- ==================================================================================================
+
+INSERT INTO controle_tempo_equipe (dia_semana, dia_mes, mes, tempo_gasto, funcionario_id, meta_id) VALUES
+-- Dados para Aline Dominique
+('Segunda', 4, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Terça', 5, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quarta', 6, '2025-08-01', 8.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quinta', 7, '2025-08-01', 7.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Sexta', 8, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Segunda', 11, '2025-08-01', 7.8, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Terça', 12, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quarta', 13, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quinta', 14, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Sexta', 15, '2025-08-01', 8.3, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Segunda', 18, '2025-08-01', 7.6, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Terça', 19, '2025-08-01', 7.8, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quarta', 20, '2025-08-01', 8.1, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quinta', 21, '2025-08-01', 8.4, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Sexta', 22, '2025-08-01', 7.7, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Segunda', 25, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Terça', 26, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quarta', 27, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quinta', 28, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Sexta', 29, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+
+-- Dados para Felipe Faria
+('Segunda', 4, '2025-08-01', 7.0, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Terça', 5, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quarta', 6, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quinta', 7, '2025-08-01', 6.8, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Sexta', 8, '2025-08-01', 7.2, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Segunda', 11, '2025-08-01', 8.1, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Terça', 12, '2025-08-01', 7.4, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quarta', 13, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quinta', 14, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Sexta', 15, '2025-08-01', 7.8, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+
+-- Dados para Eric Lourenço
+('Segunda', 4, '2025-08-01', 8.5, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Terça', 5, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quarta', 6, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quinta', 7, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Sexta', 8, '2025-08-01', 8.3, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+
+-- Dados para Lucas Paiva
+('Segunda', 4, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Terça', 5, '2025-08-01', 8.5, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quarta', 6, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Quinta', 7, '2025-08-01', 8.3, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
+('Sexta', 8, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1));
+
+-- ==================================================================================================
+-- 5.2. Geração de dados randomizados vários funcionários durante os meses de 2025.
+-- A soma das horas diárias para cada funcionário no mês de agosto se aproxima do total no relatório.
+-- ==================================================================================================
 INSERT INTO CONTROLE_TEMPO_EQUIPE (
     DIA_SEMANA,
     DIA_MES,
@@ -81,24 +141,32 @@ SELECT
     TRIM(TO_CHAR(D, 'Day')) AS DIA_SEMANA,
     EXTRACT(DAY FROM D)::INT AS DIA_MES,
     DATE_TRUNC('month', D)::DATE AS MES,
-    F.id AS FUNCIONARIO_ID,
+	n.FUNCIONARIO_ID AS FUNCIONARIO_ID,
     ROUND(
         CASE
             WHEN EXTRACT(DOW FROM D) IN (0,6) THEN 0
-            WHEN F.id % 2 = 0 THEN (4 + RANDOM() * 2)::NUMERIC
+            WHEN n.FUNCIONARIO_ID % 2 = 0 THEN (4 + RANDOM() * 2)::NUMERIC
             ELSE (6 + RANDOM() * 3)::NUMERIC
         END
     , 1) AS TEMPO_GASTO,
     CASE
-        WHEN F.id % 2 = 0 THEN (SELECT id FROM meta_tempo_controle WHERE objetivo_estagiario = '6')
+        WHEN n.FUNCIONARIO_ID % 2 = 0 THEN (SELECT id FROM meta_tempo_controle WHERE objetivo_estagiario = '6')
         ELSE (SELECT id FROM meta_tempo_controle WHERE objetivo_clt = '7')
     END AS META_ID
-FROM
-    GENERATE_SERIES('2025-01-01'::DATE, '2025-12-31'::DATE, '1 day') D
-    CROSS JOIN funcionario F
-ORDER BY
-    D,
-    F.id;
+FROM (
+    SELECT
+        D,
+        F.id AS FUNCIONARIO_ID
+    FROM
+        GENERATE_SERIES('2025-01-01'::DATE, '2025-12-31'::DATE, '1 day') D
+        CROSS JOIN funcionario F
+) AS n
+LEFT JOIN CONTROLE_TEMPO_EQUIPE cte
+    ON n.FUNCIONARIO_ID = cte.FUNCIONARIO_ID
+    AND EXTRACT(DAY FROM D)::INT = cte.dia_mes
+    AND DATE_TRUNC('month', D)::DATE = cte.mes
+WHERE cte.FUNCIONARIO_ID IS NULL
+ON CONFLICT (funcionario_id, dia_mes, mes) DO NOTHING;
 
 -- 6. Inserção na Tabela 'controle_tempo_resumo'
 INSERT INTO controle_tempo_resumo (
@@ -241,59 +309,6 @@ INSERT INTO controle_horas_equipe (mes, horas, funcionario_id, projeto_id, resum
 ('2025-07-01', 70, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM projeto WHERE nome = 'Incra'), NULL),
 ('2025-07-01', 110, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM projeto WHERE nome = 'Ed'), NULL),
 ('2025-07-01', 130, (SELECT id FROM funcionario WHERE nome = 'Alison Americo'), (SELECT id FROM projeto WHERE nome = 'LNO'), NULL);
-
--- 7. Inserção na Tabela 'controle_tempo_equipe'
--- Dados diários para vários funcionários durante todo o mês de agosto de 2025.
--- A soma das horas diárias para cada funcionário no mês de agosto se aproxima do total no relatório.
-
-INSERT INTO controle_tempo_equipe (dia_semana, dia_mes, mes, tempo_gasto, funcionario_id, meta_id) VALUES
--- Dados para Aline Dominique
-('Segunda', 4, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 5, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 6, '2025-08-01', 8.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 7, '2025-08-01', 7.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 8, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Segunda', 11, '2025-08-01', 7.8, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 12, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 13, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 14, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 15, '2025-08-01', 8.3, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Segunda', 18, '2025-08-01', 7.6, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 19, '2025-08-01', 7.8, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 20, '2025-08-01', 8.1, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 21, '2025-08-01', 8.4, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 22, '2025-08-01', 7.7, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Segunda', 25, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 26, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 27, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 28, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 29, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-
--- Dados para Felipe Faria
-('Segunda', 4, '2025-08-01', 7.0, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 5, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 6, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 7, '2025-08-01', 6.8, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 8, '2025-08-01', 7.2, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Segunda', 11, '2025-08-01', 8.1, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 12, '2025-08-01', 7.4, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 13, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 14, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 15, '2025-08-01', 7.8, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-
--- Dados para Eric Lourenço
-('Segunda', 4, '2025-08-01', 8.5, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 5, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 6, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 7, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 8, '2025-08-01', 8.3, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-
--- Dados para Lucas Paiva
-('Segunda', 4, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 5, '2025-08-01', 8.5, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 6, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 7, '2025-08-01', 8.3, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 8, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1));
 
 -- 8. Inserção na Tabela 'controle_tempo_resumo'
 -- Dados de resumo diário com base nos dados de 'controle_tempo_equipe'.
