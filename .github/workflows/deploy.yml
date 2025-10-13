@@ -3,75 +3,82 @@ name: 🚀 Deploy to Azure VM
 on:
   push:
     branches:
-      - develop   # 🔹 gatilho para testes de deploy automático
+      - develop # 🔹 Gatilho para deploy automático ao fazer push na branch develop
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
+      AZURE_VM_USER: ${{ secrets.AZURE_VM_USER }}
+      AZURE_VM_KEY: ${{ secrets.AZURE_VM_KEY }}
+
     steps:
-      # 1️⃣ Baixa o código
+      # 1️⃣ Checkout do código
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Gera a versão automaticamente
+      # 2️⃣ Geração de versão automática
       - name: Set version tag
-        id: vars
         run: |
           BASE_VERSION=v2.0.0
           BUILD_NUM=${{ github.run_number }}
-          echo "VERSION=${BASE_VERSION%.*}.$((${BASE_VERSION##*.} + $BUILD_NUM))" >> $GITHUB_ENV
+          VERSION="${BASE_VERSION%.*}.$(( ${BASE_VERSION##*.} + BUILD_NUM ))"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "🧩 Nova versão: $VERSION"
 
-      # 3️⃣ Faz login no Docker Hub
+      # 3️⃣ Login no Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
 
       # 4️⃣ Build e push da imagem Docker
       - name: Build and push Docker image
         run: |
           echo "🚀 Gerando imagem com tags: $VERSION e latest"
-          docker build --pull --no-cache -t ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:${VERSION} .
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:${VERSION} ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:${VERSION}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:latest
+          docker build --pull --no-cache -t $DOCKERHUB_USERNAME/minha-app:$VERSION .
+          docker tag $DOCKERHUB_USERNAME/minha-app:$VERSION $DOCKERHUB_USERNAME/minha-app:latest
+          docker push $DOCKERHUB_USERNAME/minha-app:$VERSION
+          docker push $DOCKERHUB_USERNAME/minha-app:latest
 
-      # 5️⃣ Faz deploy na VM da Azure
+      # 5️⃣ Deploy na VM da Azure
       - name: Deploy to Azure VM
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.AZURE_VM_IP }}
-          username: ${{ secrets.AZURE_VM_USER }}
-          key: ${{ secrets.AZURE_VM_KEY }}
+          host: ${{ env.AZURE_VM_IP }}
+          username: ${{ env.AZURE_VM_USER }}
+          key: ${{ env.AZURE_VM_KEY }}
           script: |
             echo "📦 Atualizando aplicação na VM..."
             cd ~/app
             git fetch origin develop
-            git reset --hard origin/develop   # 🔹 garante que o compose local está atualizado
+            git reset --hard origin/develop
             docker compose pull
             docker compose down --remove-orphans
             docker compose up -d
 
-      # 6️⃣ Roda migrations Django
+      # 6️⃣ Migrations do Django
       - name: Run Django migrations
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.AZURE_VM_IP }}
-          username: ${{ secrets.AZURE_VM_USER }}
-          key: ${{ secrets.AZURE_VM_KEY }}
+          host: ${{ env.AZURE_VM_IP }}
+          username: ${{ env.AZURE_VM_USER }}
+          key: ${{ env.AZURE_VM_KEY }}
           script: |
             echo "⚙️ Executando migrations..."
             docker exec django-app python manage.py migrate
 
-      # 7️⃣ (Opcional) Mostra containers ativos
+      # 7️⃣ Verificação dos containers ativos
       - name: Check running containers
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.AZURE_VM_IP }}
-          username: ${{ secrets.AZURE_VM_USER }}
-          key: ${{ secrets.AZURE_VM_KEY }}
+          host: ${{ env.AZURE_VM_IP }}
+          username: ${{ env.AZURE_VM_USER }}
+          key: ${{ env.AZURE_VM_KEY }}
           script: |
             docker ps
