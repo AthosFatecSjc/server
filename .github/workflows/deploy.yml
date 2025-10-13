@@ -1,39 +1,45 @@
-name: Deploy to Azure VM
+name: 🚀 Deploy to Azure VM
 
 on:
   push:
     branches:
-      - develop
+      - develop   # 🔹 gatilho para testes de deploy automático
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Baixa o código
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Gera a versão automaticamente
       - name: Set version tag
         id: vars
         run: |
-          BASE_VERSION=v1.0.1
+          BASE_VERSION=v2.0.0
           BUILD_NUM=${{ github.run_number }}
           echo "VERSION=${BASE_VERSION%.*}.$((${BASE_VERSION##*.} + $BUILD_NUM))" >> $GITHUB_ENV
+          echo "🧩 Nova versão: $VERSION"
 
+      # 3️⃣ Faz login no Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # 4️⃣ Build e push da imagem Docker
       - name: Build and push Docker image
         run: |
           echo "🚀 Gerando imagem com tags: $VERSION e latest"
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:${VERSION} .
+          docker build --pull --no-cache -t ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:${VERSION} .
           docker tag ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:${VERSION} ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:${VERSION}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/minha-app:latest
 
+      # 5️⃣ Faz deploy na VM da Azure
       - name: Deploy to Azure VM
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -41,11 +47,15 @@ jobs:
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_KEY }}
           script: |
+            echo "📦 Atualizando aplicação na VM..."
             cd ~/app
+            git fetch origin develop
+            git reset --hard origin/develop   # 🔹 garante que o compose local está atualizado
             docker compose pull
-            docker compose down
+            docker compose down --remove-orphans
             docker compose up -d
 
+      # 6️⃣ Roda migrations Django
       - name: Run Django migrations
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -53,4 +63,15 @@ jobs:
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_KEY }}
           script: |
+            echo "⚙️ Executando migrations..."
             docker exec django-app python manage.py migrate
+
+      # 7️⃣ (Opcional) Mostra containers ativos
+      - name: Check running containers
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_KEY }}
+          script: |
+            docker ps
