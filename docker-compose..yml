@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  app:
+    container_name: django-app
+    image: ruthmira/minha-app:latest
+    command: gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    restart: always
