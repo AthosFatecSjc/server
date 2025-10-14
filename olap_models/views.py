@@ -1,3 +1,3 @@
-from django.shortcuts import render
+"""Views for olap_models app."""
 
 # Create your views here.

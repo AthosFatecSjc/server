@@ -55,71 +55,34 @@ INSERT INTO meta_tempo_controle (objetivo_clt, objetivo_estagiario) VALUES
 ('7', '6');
 
 -- 4. Inserção na Tabela 'funcionario'
-INSERT INTO funcionario (nome, time, cargo_id, gerente_id, valor_hora, data_criacao) VALUES
-('Daniel Maturana', 'Squad A',
-    (SELECT id FROM cargo WHERE sigla = 'Gerente de Projetos'),
-    NULL,
-    120.00,
-    CURRENT_DATE),
-('Aline Dominique', 'Squad A',
-    (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'),
-    (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'),
-    70.00,
-    CURRENT_DATE),
-
-('Felipe Faria', 'Squad A',
-    (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'),
-    (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'),
-    70.00,
-    CURRENT_DATE),
-
-('Eric Lourenço', 'Squad A',
-    (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'),
-    (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'),
-    90.00,
-    CURRENT_DATE),
-
-('Alison Americo', 'Squad B',
-    (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'),
-    (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'),
-    70.00,
-    CURRENT_DATE),
-
-('Francisco Bustamante', 'Squad B',
-    (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'),
-    (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'),
-    70.00,
-    CURRENT_DATE),
-
-('Helena Benevenuto', 'Squad B',
-    (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'),
-    (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'),
-    70.00,
-    CURRENT_DATE),
-
-('João V Menezes', 'Squad B',
-    (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'),
-    (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'),
-    90.00,
-    CURRENT_DATE),
-
-('Jose Thomazini', 'Squad C',
-    (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'),
-    (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'),
-    70.00,
-    CURRENT_DATE),
-
-('Lucas Paiva', 'Squad C',
-    (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'),
-    (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'),
-    90.00,
-    CURRENT_DATE),
-
-('Sérgio Casas', 'Squad C',
-    (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'),
-    (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'),
-    70.00,
-    CURRENT_DATE);
+-- Inserimos o gerente primeiro e reaproveitamos o id dele para os demais
+WITH daniel AS (
+    INSERT INTO funcionario (nome, time, cargo_id, gerente_id, valor_hora, data_criacao)
+    VALUES (
+        'Daniel Maturana', 'Squad A',
+        (SELECT id FROM cargo WHERE sigla = 'Gerente de Projetos'),
+        NULL,
+        120.00,
+        CURRENT_DATE
+    )
+    RETURNING id
+)
+INSERT INTO funcionario (nome, time, cargo_id, gerente_id, valor_hora, data_criacao)
+SELECT v.nome, v.time, c.id, d.id, v.valor_hora, CURRENT_DATE
+FROM (VALUES
+    ('Aline Dominique', 'Squad A', 'Membro de Equipe', 70.00),
+    ('Felipe Faria', 'Squad A', 'Membro de Equipe', 70.00),
+    ('Eric Lourenço', 'Squad A', 'Lider de Equipe', 90.00),
+    ('Alison Americo', 'Squad B', 'Membro de Equipe', 70.00),
+    ('Francisco Bustamante', 'Squad B', 'Membro de Equipe', 70.00),
+    ('Helena Benevenuto', 'Squad B', 'Membro de Equipe', 70.00),
+    ('João V Menezes', 'Squad B', 'Lider de Equipe', 90.00),
+    ('Jose Thomazini', 'Squad C', 'Membro de Equipe', 70.00),
+    ('Lucas Paiva', 'Squad C', 'Lider de Equipe', 90.00),
+    ('Sérgio Casas', 'Squad C', 'Membro de Equipe', 70.00)
+) AS v(nome, time, cargo_sig, valor_hora)
+JOIN cargo c ON c.sigla = v.cargo_sig
+CROSS JOIN daniel d;
 
 -- 5. Inserção na Tabela 'controle_tempo_equipe'
 INSERT INTO CONTROLE_TEMPO_EQUIPE (
@@ -129,6 +92,11 @@ INSERT INTO CONTROLE_TEMPO_EQUIPE (
     FUNCIONARIO_ID,
     TEMPO_GASTO,
     META_ID
+)
+WITH metas AS (
+    SELECT
+        (SELECT id FROM meta_tempo_controle WHERE objetivo_estagiario = '6') AS estagiario_id,
+        (SELECT id FROM meta_tempo_controle WHERE objetivo_clt = '7') AS clt_id
 )
 SELECT
     TRIM(TO_CHAR(D, 'Day')) AS DIA_SEMANA,
@@ -143,12 +111,13 @@ SELECT
         END
     , 1) AS TEMPO_GASTO,
     CASE
-        WHEN F.id % 2 = 0 THEN (SELECT id FROM meta_tempo_controle WHERE objetivo_estagiario = '6')
-        ELSE (SELECT id FROM meta_tempo_controle WHERE objetivo_clt = '7')
+        WHEN F.id % 2 = 0 THEN metas.estagiario_id
+        ELSE metas.clt_id
     END AS META_ID
 FROM
     GENERATE_SERIES('2025-01-01'::DATE, '2025-12-31'::DATE, '1 day') D
     CROSS JOIN funcionario F
+    CROSS JOIN metas
 ORDER BY
     D,
     F.id;

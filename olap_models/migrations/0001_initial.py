@@ -1,6 +1,9 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
+# Disable pylint duplicate-code for generated migration file
+# pylint: disable=duplicate-code
+
 
 class Migration(migrations.Migration):
 
