@@ -99,6 +99,9 @@ DATABASES = {
     }
 }
 
+JIRA_BASE_URL = env('JIRA_BASE_URL')
+JIRA_USER = env('JIRA_USER')
+JIRA_TOKEN = env('JIRA_TOKEN')
 
 # DATABASES = {
 #     'default': {
