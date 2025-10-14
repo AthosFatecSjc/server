@@ -1,6 +1,7 @@
-from pathlib import Path
-import os
 import datetime
+import os
+from pathlib import Path
+
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -17,7 +18,6 @@ SECRET_KEY = env('SECRET_KEY')
 
 DEBUG = env('DEBUG', default=True)
 
-# ✅ Lendo ALLOWED_HOSTS do .env e convertendo em lista
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
 # Application definition
@@ -142,9 +142,8 @@ CRONJOBS = [
      'apps.utils.cron.buscar_dados_api'),
 ]
 
-# Configuração de cache personalizado para dados do JIRA
 CACHE_JIRA = {
-    'data': {},  # Dados serão preenchidos pelo CRON
+    'data': {},  
     'timestamp': None,
     'validade': datetime.timedelta(minutes=10)
 }
