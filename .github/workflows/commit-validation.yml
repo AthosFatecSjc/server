@@ -2,7 +2,8 @@ name: Commit validation
 
 on:
   push:
-    branches: [ "ATHOS-**" ]
+    branches:
+      - "ATHOS-**"
 
 jobs:
   quick-validation:
