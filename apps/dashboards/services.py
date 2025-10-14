@@ -1,7 +1,7 @@
 import requests
 import json
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict
 from django.conf import settings
 import sentry_sdk
 
@@ -10,12 +10,7 @@ logger = logging.getLogger(__name__)
 class JiraService:
     """
     Interage com a API do Jira para buscar projetos e tarefas.
-
-    Esta classe encapsula a lógica de negócio para a comunicação com o Jira,
-    incluindo a validação de credenciais, a formatação de requisições e o
-    tratamento de erros, com integração ao Sentry para monitorização.
     """
-
     def __init__(self):
         """
         Inicializa o serviço, valida as credenciais e configura os cabeçalhos.
@@ -36,10 +31,6 @@ class JiraService:
     def _enrich_sentry_scope(self, url: str, payload: Dict = None):
         """
         Adiciona contexto extra ao escopo do Sentry para depuração.
-
-        Args:
-            url (str): O endpoint da API do Jira que está a ser acedido.
-            payload (Dict, optional): O corpo da requisição enviado ao Jira.
         """
         with sentry_sdk.configure_scope() as scope:
             scope.set_tag("integration", "jira")
@@ -51,13 +42,6 @@ class JiraService:
     def get_projects(self) -> List[Dict] | None:
         """
         Busca todos os projetos do Jira, monitorizando a performance.
-
-        Retorna uma lista de projetos em caso de sucesso. Em caso de falha de
-        comunicação ou credenciais inválidas, retorna None.
-
-        Returns:
-            List[Dict] | None: Uma lista de dicionários, onde cada um representa
-            um projeto, ou None se ocorrer um erro.
         """
         if not self.credentials_are_valid:
             return None
@@ -66,7 +50,6 @@ class JiraService:
         self._enrich_sentry_scope(url)
 
         try:
-            # SUGESTÃO 2: Monitoramento de Performance (APM)
             with sentry_sdk.start_span(op="http.client", description="Request Jira Projects"):
                 response = requests.get(url, auth=self.auth, headers=self.headers, timeout=15)
             
@@ -81,21 +64,13 @@ class JiraService:
             return projects or []
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Erro ao buscar projetos do Jira: {e}")
+            logger.error("Erro ao buscar projetos do Jira: %s", e)
             sentry_sdk.capture_exception(e)
             return None
 
     def get_tasks_by_project(self, project_key: str, max_results: int = 100) -> List[Dict]:
         """
         Busca tarefas de um projeto específico, validando a resposta da API.
-
-        Args:
-            project_key (str): A chave do projeto no Jira (ex: 'PROJ').
-            max_results (int): O número máximo de tarefas a serem retornadas.
-
-        Returns:
-            List[Dict]: Uma lista de tarefas (issues) encontradas, ou uma lista
-            vazia se ocorrer um erro ou se nenhuma tarefa for encontrada.
         """
         url = f"{self.base_url}/rest/api/3/search/jql"
         jql_query = f"project = {project_key}"
@@ -125,7 +100,6 @@ class JiraService:
             
             data = response.json()
 
-            # SUGESTÃO 1: Monitoramento de Respostas Inesperadas
             if 'issues' not in data:
                 sentry_sdk.capture_message(
                     f"A resposta da API do Jira para o projeto {project_key} não continha a chave 'issues'.",
@@ -142,21 +116,13 @@ class JiraService:
             return issues
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Erro ao buscar tasks do projeto {project_key}: {e}")
+            logger.error("Erro ao buscar tasks do projeto %s: %s", project_key, e)
             sentry_sdk.capture_exception(e)
             return []
 
     def get_all_tasks_data(self) -> List[Dict] | None:
         """
         Busca todos os projetos e formata os dados das suas tarefas.
-
-        Este método orquestra a busca de projetos e, para cada um, busca as
-        suas tarefas, consolidando tudo numa única estrutura de dados para
-        ser usada no dashboard.
-
-        Returns:
-            List[Dict] | None: Uma lista contendo os dados formatados de cada
-            projeto e as suas tarefas, ou None se a busca inicial de projetos falhar.
         """
         projetos = self.get_projects()
         

@@ -26,9 +26,19 @@
             color: white;
             padding: 15px;
             cursor: pointer;
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+            font-size: inherit;
         }
-        .project-header h3 {
+        .project-header:focus {
+            outline: 2px solid #ffa500;
+            outline-offset: 2px;
+        }
+        .project-header h2 {
             margin: 0;
+            color: white;
         }
         .project-content {
             padding: 0;
@@ -127,13 +137,12 @@
         <div class="projects-list">
             {% for projeto in projetos_com_tasks %}
             <div class="project-card">
-                <div class="project-header"
-                     onclick="toggleProject(this)"
-                     onkeydown="handleProjectKeyPress(event, this)"
-                     tabindex="0"
-                     role="button"
-                     aria-expanded="false"
-                     aria-controls="project-content-{{ forloop.counter }}">
+                <button class="project-header"
+                        onclick="toggleProject(this)"
+                        onkeydown="handleProjectKeyPress(event, this)"
+                        tabindex="0"
+                        aria-expanded="false"
+                        aria-controls="project-content-{{ forloop.counter }}">
                     <h2>
                         {{ projeto.name }}
                         <small>({{ projeto.key }})</small>
@@ -142,11 +151,10 @@
                         </span>
                     </h2>
                     <span class="sr-only">Clique ou pressione Enter para expandir/recolher</span>
-                </div>
+                </button>
 
-                <div class="project-content"
+                <section class="project-content"
                      id="project-content-{{ forloop.counter }}"
-                     role="region"
                      aria-label="Tarefas do projeto {{ projeto.name }}">
                     {% if projeto.tasks %}
                     <table class="tasks-table">
@@ -190,7 +198,7 @@
                         Nenhuma task encontrada neste projeto
                     </div>
                     {% endif %}
-                </div>
+                </section>
             </div>
             {% empty %}
                 {% if not error_message %}
