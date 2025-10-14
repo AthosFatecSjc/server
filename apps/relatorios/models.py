@@ -21,13 +21,10 @@ class Funcionario(models.Model):
     time = models.CharField(max_length=100, blank=True)
     cargo = models.ForeignKey(Cargo, on_delete=models.SET_NULL, null=True)
     gerente = models.ForeignKey(
-        'self',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='subordinados'
-    )
+        'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subordinados')
     data_criacao = models.DateField(auto_now_add=True)
+    valor_hora = models.DecimalField(
+        max_digits=8, decimal_places=2, default=40.00, help_text="Valor/hora do desenvolvedor (R$)")
 
     class Meta:
         """Meta dados do modelo Funcionario"""
@@ -71,11 +68,7 @@ class ControleHorasEquipe(models.Model):
     funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
     horas = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     resumo = models.ForeignKey(
-        ControleHorasEquipeResumo,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
+        ControleHorasEquipeResumo, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         """Meta dados do modelo ControleHorasEquipe"""
