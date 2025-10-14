@@ -1,8 +1,7 @@
-from django.contrib import admin
-
 # Registrando models.
 from django.contrib import admin
-from .models import Funcionario, Projeto, ControleHorasEquipe, Cargo
+
+from .models import Cargo, ControleHorasEquipe, Funcionario, Projeto
 
 admin.site.register(Funcionario)
 admin.site.register(Projeto)
