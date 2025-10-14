@@ -1,3 +1,3 @@
-from django.contrib import admin
+"""Admin configuration for olap_models app."""
 
 # Register your models here.
