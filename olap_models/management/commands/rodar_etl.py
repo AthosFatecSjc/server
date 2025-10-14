@@ -6,6 +6,7 @@ from django.db import transaction
 from apps.relatorios.models import Projeto, Cargo, Funcionario, ControleHorasEquipe
 from olap_models.models import DimProjeto, DimCargo, DimFuncionario, DimTempo, FatoRegistroHoras
 
+
 class Command(BaseCommand):
     """
     Executa o processo de ETL (Extract, Transform, Load) completo para popular
@@ -18,15 +19,17 @@ class Command(BaseCommand):
         """
         Método principal do comando. Orquestra a sequência de execução do ETL.
         """
-        self.stdout.write('Iniciando o processo de ETL para o Data Warehouse...')
-        
+        self.stdout.write(
+            'Iniciando o processo de ETL para o Data Warehouse...')
+
         self.limpar_tabelas_olap()
         self.popular_dim_tempo()
         self.popular_dimensoes_simples()
         self.popular_dim_funcionario()
         self.popular_fato_registro_horas()
-        
-        self.stdout.write(self.style.SUCCESS('Processo de ETL concluído com sucesso!'))
+
+        self.stdout.write(self.style.SUCCESS(
+            'Processo de ETL concluído com sucesso!'))
 
     def limpar_tabelas_olap(self):
         """
@@ -74,13 +77,15 @@ class Command(BaseCommand):
         """
         self.stdout.write('Populando Dimensão Cargo...')
         for cargo in Cargo.objects.all():
-            DimCargo.objects.using('olap').update_or_create(id=cargo.id, defaults={'nome_cargo': cargo.sigla})
+            DimCargo.objects.using('olap').update_or_create(
+                id=cargo.id, defaults={'nome_cargo': cargo.sigla})
 
         self.stdout.write('Populando Dimensão Projeto...')
         for projeto in Projeto.objects.all():
             DimProjeto.objects.using('olap').update_or_create(
                 id=projeto.id,
-                defaults={'nome_projeto': projeto.nome, 'data_criacao': projeto.data_criacao}
+                defaults={'nome_projeto': projeto.nome,
+                          'data_criacao': projeto.data_criacao}
             )
 
     def popular_dim_funcionario(self):
@@ -91,11 +96,13 @@ class Command(BaseCommand):
         """
         self.stdout.write('Populando Dimensão Funcionário...')
         for func in Funcionario.objects.all():
-            cargo_dim = DimCargo.objects.using('olap').filter(id=func.cargo_id).first()
-            
+            cargo_dim = DimCargo.objects.using(
+                'olap').filter(id=func.cargo_id).first()
+
             gerente_dim = None
             if func.gerente:
-                 gerente_dim = DimFuncionario.objects.using('olap').filter(id=func.gerente.id).first()
+                gerente_dim = DimFuncionario.objects.using(
+                    'olap').filter(id=func.gerente.id).first()
 
             DimFuncionario.objects.using('olap').update_or_create(
                 id=func.id,
@@ -121,11 +128,14 @@ class Command(BaseCommand):
         """
         self.stdout.write('Populando Tabela Fato Registro Horas...')
         for registro in ControleHorasEquipe.objects.all().iterator():
-            projeto_dim = DimProjeto.objects.using('olap').filter(id=registro.projeto_id).first()
-            func_dim = DimFuncionario.objects.using('olap').filter(id=registro.funcionario_id).first()
+            projeto_dim = DimProjeto.objects.using(
+                'olap').filter(id=registro.projeto_id).first()
+            func_dim = DimFuncionario.objects.using(
+                'olap').filter(id=registro.funcionario_id).first()
             data_dim_id = int(registro.mes.strftime('%Y%m%d'))
-            data_dim = DimTempo.objects.using('olap').filter(id=data_dim_id).first()
-            
+            data_dim = DimTempo.objects.using(
+                'olap').filter(id=data_dim_id).first()
+
             if projeto_dim and func_dim and data_dim:
                 FatoRegistroHoras.objects.using('olap').create(
                     projeto=projeto_dim,
