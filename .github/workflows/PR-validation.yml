@@ -43,6 +43,9 @@ jobs:
             POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
             POSTGRES_HOST: ${{ secrets.DB_HOST }}
             POSTGRES_PORT: ${{ secrets.DB_PORT }}
+            JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+            JIRA_USER: ${{ secrets.JIRA_USER }}
+            JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
           pip install coverage
           coverage run --source='.' manage.py test
