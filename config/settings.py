@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_htmx',
+    'olap_models',
     'apps.usuarios',
     'apps.relatorios',
     'apps.dashboards',
@@ -92,14 +93,30 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+
 DATABASES = {
+    # Conexão Padrão (OLTP - Normalizado)
+    # O Django usará esta por padrão para tudo, a menos que você diga o contrário.
+    # Vamos chamá-la de 'default'.
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('POSTGRES_DB', default='postgres'),
-        'USER': env('POSTGRES_USER', default='postgres'),
-        'PASSWORD': env('POSTGRES_PASSWORD', default='postgres'),
-        'HOST': env('POSTGRES_HOST', default='localhost'),
-        'PORT': env('POSTGRES_PORT', default='5432'),
+        'NAME': os.getenv('DB_OLTP_NAME'),
+        'USER': os.getenv('DB_OLTP_USER'),
+        'PASSWORD': os.getenv('DB_OLTP_PASSWORD'),
+        'HOST': os.getenv('DB_OLTP_HOST'),
+        'PORT': os.getenv('DB_OLTP_PORT'),
+    },
+
+    # Segunda Conexão (OLAP - Snow/Estrela)
+    # Damos a ela um nome (apelido) para usarmos no código.
+    # Vamos chamá-la de 'olap'.
+    'olap': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_OLAP_NAME'),
+        'USER': os.getenv('DB_OLAP_USER'),
+        'PASSWORD': os.getenv('DB_OLAP_PASSWORD'),
+        'HOST': os.getenv('DB_OLAP_HOST'),
+        'PORT': os.getenv('DB_OLAP_PORT'),
     }
 }
 
@@ -182,3 +199,7 @@ CACHE_JIRA = {
     'timestamp': None,
     'validade': datetime.timedelta(minutes=10)
 }
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+DATABASE_ROUTERS = ['config.routers.OlapRouter']
