@@ -1,5 +1,5 @@
 -- # Script de Limpeza e Inserção de Dados -
-TRUNCATE TABLE 
+TRUNCATE TABLE
     cargo,
     funcionario,
     projeto,

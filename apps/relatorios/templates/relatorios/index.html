@@ -378,11 +378,11 @@
         document.addEventListener('DOMContentLoaded', function() {
             const cards = document.querySelectorAll('.card');
             const infoItems = document.querySelectorAll('.info-item');
-            
+
             cards.forEach((card, index) => {
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(20px)';
-                
+
                 setTimeout(() => {
                     card.style.transition = 'all 0.5s ease';
                     card.style.opacity = '1';
@@ -393,7 +393,7 @@
             infoItems.forEach((item, index) => {
                 item.style.opacity = '0';
                 item.style.transform = 'translateY(15px)';
-                
+
                 setTimeout(() => {
                     item.style.transition = 'all 0.4s ease';
                     item.style.opacity = '1';
