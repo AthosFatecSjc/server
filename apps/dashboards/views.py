@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
+
 from .services import JiraService
 
 # from apps.utils.cache import SimpleCache  # Descomente se for usar o cache

@@ -4,16 +4,14 @@ from datetime import datetime
 
 from django.db.models import Sum
 from django.http import HttpResponse
-
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import Table, TableStyle
 from reportlab.platypus import (PageBreak, Paragraph, SimpleDocTemplate,
-                                Spacer)
+                                Spacer, Table, TableStyle)
 
 from apps.relatorios.models import (ControleHorasEquipe, MetaTempoControle,
                                     Projeto, TempoControleValores,

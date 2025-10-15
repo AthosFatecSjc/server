@@ -1,32 +1,42 @@
-import requests
 import json
 import logging
-from typing import List, Dict
-from django.conf import settings
+from typing import Dict, List
+
+import requests
 import sentry_sdk
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
 
 class JiraService:
     """
     Interage com a API do Jira para buscar projetos e tarefas.
     """
+
     def __init__(self):
         """
         Inicializa o serviço, valida as credenciais e configura os cabeçalhos.
         """
         self.base_url = settings.JIRA_BASE_URL
-        self.user = getattr(settings, 'JIRA_USER', None)
-        self.token = getattr(settings, 'JIRA_TOKEN', None)
-        
+        self.user = getattr(settings, "JIRA_USER", None)
+        self.token = getattr(settings, "JIRA_TOKEN", None)
+
         self.credentials_are_valid = self.user and self.token
 
         if not self.credentials_are_valid:
-            logger.error("Credenciais do JIRA (JIRA_USER ou JIRA_TOKEN) não estão configuradas.")
-            sentry_sdk.capture_message("As credenciais do JIRA não foram encontradas.", level="error")
+            logger.error(
+                "Credenciais do JIRA (JIRA_USER ou JIRA_TOKEN) não estão configuradas."
+            )
+            sentry_sdk.capture_message(
+                "As credenciais do JIRA não foram encontradas.", level="error"
+            )
 
         self.auth = (self.user, self.token)
-        self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        self.headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
 
     def _enrich_sentry_scope(self, url: str, payload: Dict = None):
         """
@@ -50,16 +60,20 @@ class JiraService:
         self._enrich_sentry_scope(url)
 
         try:
-            with sentry_sdk.start_span(op="http.client", description="Request Jira Projects"):
-                response = requests.get(url, auth=self.auth, headers=self.headers, timeout=15)
-            
+            with sentry_sdk.start_span(
+                op="http.client", description="Request Jira Projects"
+            ):
+                response = requests.get(
+                    url, auth=self.auth, headers=self.headers, timeout=15
+                )
+
             response.raise_for_status()
-            
+
             projects = response.json()
             if not projects:
                 sentry_sdk.capture_message(
                     "A API do Jira retornou uma lista de projetos vazia.",
-                    level="warning"
+                    level="warning",
                 )
             return projects or []
 
@@ -68,50 +82,61 @@ class JiraService:
             sentry_sdk.capture_exception(e)
             return None
 
-    def get_tasks_by_project(self, project_key: str, max_results: int = 100) -> List[Dict]:
+    def get_tasks_by_project(
+        self, project_key: str, max_results: int = 100
+    ) -> List[Dict]:
         """
         Busca tarefas de um projeto específico, validando a resposta da API.
         """
         url = f"{self.base_url}/rest/api/3/search/jql"
         jql_query = f"project = {project_key}"
-        
+
         payload = {
             "jql": jql_query,
             "fields": [
-                "summary", "assignee", "timetracking", "issuetype", 
-                "timeoriginalestimate", "timeestimate", "timespent",
-                "status", "created", "updated"
+                "summary",
+                "assignee",
+                "timetracking",
+                "issuetype",
+                "timeoriginalestimate",
+                "timeestimate",
+                "timespent",
+                "status",
+                "created",
+                "updated",
             ],
-            "maxResults": max_results
+            "maxResults": max_results,
         }
 
         self._enrich_sentry_scope(url, payload=payload)
-        
+
         try:
-            with sentry_sdk.start_span(op="http.client", description=f"Request Jira Tasks for {project_key}"):
+            with sentry_sdk.start_span(
+                op="http.client", description=f"Request Jira Tasks for {project_key}"
+            ):
                 response = requests.post(
                     url,
                     auth=self.auth,
                     headers=self.headers,
                     data=json.dumps(payload),
-                    timeout=15
+                    timeout=15,
                 )
             response.raise_for_status()
-            
+
             data = response.json()
 
-            if 'issues' not in data:
+            if "issues" not in data:
                 sentry_sdk.capture_message(
                     f"A resposta da API do Jira para o projeto {project_key} não continha a chave 'issues'.",
-                    level="warning"
+                    level="warning",
                 )
                 return []
 
-            issues = data.get('issues', [])
+            issues = data.get("issues", [])
             if not issues:
                 sentry_sdk.capture_message(
                     f"Nenhuma task encontrada para o projeto '{project_key}'.",
-                    level="info"
+                    level="info",
                 )
             return issues
 
@@ -125,35 +150,55 @@ class JiraService:
         Busca todos os projetos e formata os dados das suas tarefas.
         """
         projetos = self.get_projects()
-        
+
         if projetos is None:
             return None
-            
+
         projetos_com_tasks = []
         for projeto in projetos:
-            project_key = projeto['key']
+            project_key = projeto["key"]
             tasks = self.get_tasks_by_project(project_key, max_results=100)
-            
+
             tasks_formatadas = []
             for task in tasks:
-                fields = task.get('fields', {})
-                
-                tasks_formatadas.append({
-                    'key': task.get('key'),
-                    'summary': fields.get('summary', 'Sem título'),
-                    'issue_type': fields.get('issuetype', {}).get('name', 'Sem tipo'),
-                    'assignee': fields.get('assignee', {}).get('displayName', 'Sem responsável') if fields.get('assignee') else 'Sem responsável',
-                    'time_spent': fields.get('timetracking', {}).get('timeSpent', '0h'),
-                    'time_estimate': fields.get('timetracking', {}).get('timeEstimate', '0h'),
-                    'status': fields.get('status', {}).get('name', 'N/A'),
-                    'created': fields.get('created', 'N/A')[:10] if fields.get('created') else 'N/A'
-                })
-            
-            projetos_com_tasks.append({
-                'key': project_key,
-                'name': projeto.get('name', 'Sem nome'),
-                'total_tasks': len(tasks),
-                'tasks': tasks_formatadas
-            })
-        
+                fields = task.get("fields", {})
+
+                tasks_formatadas.append(
+                    {
+                        "key": task.get("key"),
+                        "summary": fields.get("summary", "Sem título"),
+                        "issue_type": fields.get("issuetype", {}).get(
+                            "name", "Sem tipo"
+                        ),
+                        "assignee": (
+                            fields.get("assignee", {}).get(
+                                "displayName", "Sem responsável"
+                            )
+                            if fields.get("assignee")
+                            else "Sem responsável"
+                        ),
+                        "time_spent": fields.get("timetracking", {}).get(
+                            "timeSpent", "0h"
+                        ),
+                        "time_estimate": fields.get("timetracking", {}).get(
+                            "timeEstimate", "0h"
+                        ),
+                        "status": fields.get("status", {}).get("name", "N/A"),
+                        "created": (
+                            fields.get("created", "N/A")[:10]
+                            if fields.get("created")
+                            else "N/A"
+                        ),
+                    }
+                )
+
+            projetos_com_tasks.append(
+                {
+                    "key": project_key,
+                    "name": projeto.get("name", "Sem nome"),
+                    "total_tasks": len(tasks),
+                    "tasks": tasks_formatadas,
+                }
+            )
+
         return projetos_com_tasks
