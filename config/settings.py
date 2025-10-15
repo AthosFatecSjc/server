@@ -1,8 +1,11 @@
 import datetime
 import os
 from pathlib import Path
+from sentry_sdk.integrations.django import DjangoIntegration
 
 import environ
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +23,6 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
 # Application definition
 INSTALLED_APPS = [
-
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -133,6 +135,7 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Cron Jobs
 CRONJOBS = [
     (env("CRON_BUSCAR_DADOS", default="*/1 * * * *"),
      'apps.utils.cron.buscar_dados_api'),
@@ -143,3 +146,16 @@ CACHE_JIRA = {
     'timestamp': None,
     'validade': datetime.timedelta(minutes=10)
 }
+
+# Sentry Configuration
+SENTRY_DSN = env('SENTRY_DSN', default='')
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(),
+        ],
+        traces_sample_rate=1.0,
+        send_default_pii=True
+    )
