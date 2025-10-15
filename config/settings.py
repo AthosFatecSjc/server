@@ -1,7 +1,6 @@
 import datetime
 import os
 from pathlib import Path
-from sentry_sdk.integrations.django import DjangoIntegration
 
 import environ
 import sentry_sdk
