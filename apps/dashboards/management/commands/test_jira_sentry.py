@@ -1,7 +1,9 @@
-import sentry_sdk
 from unittest.mock import patch
+
+import sentry_sdk
 from django.core.management.base import BaseCommand, CommandError
 from requests.exceptions import ConnectTimeout, HTTPError
+
 from apps.dashboards.services import JiraService
 
 class Command(BaseCommand):

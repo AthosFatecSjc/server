@@ -1,8 +1,7 @@
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 from .services import JiraService
-# A linha abaixo pode ser necessária dependendo de onde o SimpleCache foi implementado.
-# from apps.utils.cache import SimpleCache
+# from apps.utils.cache import SimpleCache  # Descomente se for usar o cache
 
 @require_http_methods(["GET"])
 def dashboard_view(request):
