@@ -1,5 +1,7 @@
 """Views for the produtividade report."""
 
+# pylint: disable=duplicate-code
+
 import json
 from datetime import datetime
 
