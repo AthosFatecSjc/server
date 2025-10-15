@@ -7,11 +7,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, legal
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import (Paragraph, SimpleDocTemplate, Spacer, Table,
-                                TableStyle)
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from apps.relatorios.models import (Funcionario, MetaTempoControle,
-                                    TempoGastoEquipe)
+from apps.relatorios.models import Funcionario, MetaTempoControle, TempoGastoEquipe
 
 
 def calcular_spends_por_dev(mes, ano):

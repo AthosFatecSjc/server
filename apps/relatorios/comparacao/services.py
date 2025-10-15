@@ -11,12 +11,22 @@ from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import (PageBreak, Paragraph, SimpleDocTemplate,
-                                Spacer, Table, TableStyle)
+from reportlab.platypus import (
+    PageBreak,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
-from apps.relatorios.models import (ControleHorasEquipe, MetaTempoControle,
-                                    Projeto, TempoControleValores,
-                                    TempoGastoEquipe)
+from apps.relatorios.models import (
+    ControleHorasEquipe,
+    MetaTempoControle,
+    Projeto,
+    TempoControleValores,
+    TempoGastoEquipe,
+)
 
 
 class ComparacaoService:
