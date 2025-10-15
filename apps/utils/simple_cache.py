@@ -9,11 +9,7 @@ from django.conf import settings
 class SimpleCache:
     """Gerenciador de cache simples usando variável em memória."""
 
-    _cache_storage = {
-        'data': {},
-        'timestamp': None,
-        'validade': None
-    }
+    _cache_storage = {"data": {}, "timestamp": None, "validade": None}
 
     @classmethod
     def set(cls, data: Dict[str, Any]) -> None:
@@ -23,9 +19,9 @@ class SimpleCache:
         Args:
             data: Dicionário com os dados a serem cacheados
         """
-        cls._cache_storage['data'] = data
-        cls._cache_storage['timestamp'] = datetime.datetime.now()
-        cls._cache_storage['validade'] = settings.CACHE_JIRA['validade']
+        cls._cache_storage["data"] = data
+        cls._cache_storage["timestamp"] = datetime.datetime.now()
+        cls._cache_storage["validade"] = settings.CACHE_JIRA["validade"]
 
     @classmethod
     def get(cls) -> Optional[Dict[str, Any]]:
@@ -35,19 +31,18 @@ class SimpleCache:
         Returns:
             Dados do cache ou None se expirado ou vazio
         """
-        if not cls._cache_storage['timestamp']:
+        if not cls._cache_storage["timestamp"]:
             return None
 
         # Verificar se o cache ainda é válido
-        tempo_decorrido = datetime.datetime.now(
-        ) - cls._cache_storage['timestamp']
+        tempo_decorrido = datetime.datetime.now() - cls._cache_storage["timestamp"]
 
-        if tempo_decorrido > cls._cache_storage['validade']:
+        if tempo_decorrido > cls._cache_storage["validade"]:
             # Cache expirado
             cls.clear()
             return None
 
-        return cls._cache_storage['data']
+        return cls._cache_storage["data"]
 
     @classmethod
     def is_valid(cls) -> bool:
@@ -67,7 +62,7 @@ class SimpleCache:
         Returns:
             Datetime do cache ou None se vazio
         """
-        return cls._cache_storage['timestamp']
+        return cls._cache_storage["timestamp"]
 
     @classmethod
     def get_tempo_restante(cls) -> Optional[datetime.timedelta]:
@@ -77,12 +72,11 @@ class SimpleCache:
         Returns:
             Timedelta com tempo restante ou None se cache vazio/expirado
         """
-        if not cls._cache_storage['timestamp']:
+        if not cls._cache_storage["timestamp"]:
             return None
 
-        tempo_decorrido = datetime.datetime.now(
-        ) - cls._cache_storage['timestamp']
-        tempo_restante = cls._cache_storage['validade'] - tempo_decorrido
+        tempo_decorrido = datetime.datetime.now() - cls._cache_storage["timestamp"]
+        tempo_restante = cls._cache_storage["validade"] - tempo_decorrido
 
         if tempo_restante.total_seconds() <= 0:
             return None
@@ -92,9 +86,9 @@ class SimpleCache:
     @classmethod
     def clear(cls) -> None:
         """Limpa todos os dados do cache."""
-        cls._cache_storage['data'] = {}
-        cls._cache_storage['timestamp'] = None
-        cls._cache_storage['validade'] = None
+        cls._cache_storage["data"] = {}
+        cls._cache_storage["timestamp"] = None
+        cls._cache_storage["validade"] = None
 
     @classmethod
     def get_info(cls) -> Dict[str, Any]:
@@ -107,9 +101,9 @@ class SimpleCache:
         tempo_restante = cls.get_tempo_restante()
 
         return {
-            'esta_valido': cls.is_valid(),
-            'timestamp': cls._cache_storage['timestamp'],
-            'tempo_restante': tempo_restante,
-            'validade_configurada': cls._cache_storage['validade'],
-            'tem_dados': bool(cls._cache_storage['data'])
+            "esta_valido": cls.is_valid(),
+            "timestamp": cls._cache_storage["timestamp"],
+            "tempo_restante": tempo_restante,
+            "validade_configurada": cls._cache_storage["validade"],
+            "tem_dados": bool(cls._cache_storage["data"]),
         }

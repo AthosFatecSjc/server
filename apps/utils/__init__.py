@@ -1,2 +1,1 @@
-
 """Utils da aplicação"""

@@ -1,4 +1,5 @@
 """Filtros personalizados para templates Django."""
+
 from django.template import Library
 
 register = Library()
