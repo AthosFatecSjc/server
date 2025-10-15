@@ -3,8 +3,7 @@ from django.views.decorators.http import require_http_methods
 
 from .services import JiraService
 
-# from apps.utils.cache import SimpleCache
-
+# from apps.utils.cache import SimpleCache  # NOSONAR: Mantido para futura reativação de cache
 
 @require_http_methods(["GET"])
 def dashboard_view(request):
