@@ -134,8 +134,13 @@ class TempoGastoEquipe(models.Model):
 
     class Meta:
         """Meta dados do modelo TempoGastoEquipe"""
-
-        db_table = "controle_tempo_equipe"
+        db_table = 'controle_tempo_equipe'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['funcionario', 'dia_mes', 'mes'],
+                name='unique_funcionario_dia_mes'
+            )
+        ]
 
     def __str__(self) -> str:
 
