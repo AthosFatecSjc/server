@@ -3,7 +3,7 @@ name: Commit validation
 on:
   push:
     branches:
-      - "ATHOS-**"
+      - ATHOS-**
 
 jobs:
   quick-validation:
