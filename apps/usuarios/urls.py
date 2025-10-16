@@ -1,5 +1,5 @@
-from django.urls import path
+"""URLs for the usuarios app."""
 
 urlpatterns = [
-	# Add your URL patterns here
+    # Add your URL patterns here
 ]

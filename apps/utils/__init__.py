@@ -1,0 +1,2 @@
+
+"""Utils da aplicação"""

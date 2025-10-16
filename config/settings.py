@@ -10,9 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
-import environ
+import datetime
 import os
+from pathlib import Path
+from sentry_sdk.integrations.django import DjangoIntegration
+
+import environ
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,7 +42,6 @@ DEBUG = env('DEBUG')
 # Application definition
 
 INSTALLED_APPS = [
-    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,6 +55,8 @@ INSTALLED_APPS = [
     'apps.relatorios.produtividade',
     'apps.relatorios.comparacao.apps.ComparacaoConfig',
     'apps.relatorios.atividade',
+    'apps.utils',
+    'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -90,29 +96,23 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('POSTGRES_DB'),
-        'USER': env('POSTGRES_USER'),
-        'PASSWORD': env('POSTGRES_PASSWORD'),
-        'HOST': env('POSTGRES_HOST'),
-        'PORT': env('POSTGRES_PORT'),
+        'NAME': env('POSTGRES_DB', default='postgres'),
+        'USER': env('POSTGRES_USER', default='postgres'),
+        'PASSWORD': env('POSTGRES_PASSWORD', default='postgres'),
+        'HOST': env('POSTGRES_HOST', default='localhost'),
+        'PORT': env('POSTGRES_PORT', default='5432'),
     }
 }
 
+if os.environ.get('TEST_DB_ENGINE'):
+    DATABASES['default'] = {
+        'ENGINE': os.environ['TEST_DB_ENGINE'],
+        'NAME': os.environ.get('TEST_DB_NAME', ':memory:'),
+    }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': env('DB_NAME', default='meu_banco'),
-#         'USER': env('DB_USER', default='usuario'),
-#         'PASSWORD': env('DB_PASSWORD', default='senha'),
-#         'HOST': env('DB_HOST', default='localhost'),
-#         'PORT': env('DB_PORT', default='5432'),
-#         # Em provedores na nuvem, muitas vezes é necessário:
-#         # 'OPTIONS': {'sslmode': 'require'},
-#     }
-# }
-
-
+JIRA_BASE_URL = env('JIRA_BASE_URL', default='http://localhost')
+JIRA_USER = env('JIRA_USER', default='user')
+JIRA_TOKEN = env('JIRA_TOKEN', default='token')
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -157,3 +157,29 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Cron Jobs
+CRONJOBS = [
+    (env("CRON_BUSCAR_DADOS", default="*/1 * * * *"),
+     'apps.utils.cron.buscar_dados_api'),
+]
+
+# Configuração de cache personalizado para dados do JIRA
+CACHE_JIRA = {
+    'data': {},  # Dados serão preenchidos pelo CRON
+    'timestamp': None,
+    'validade': datetime.timedelta(minutes=10)
+}
+
+# Sentry Configuration
+SENTRY_DSN = env('SENTRY_DSN', default='')
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(),
+        ],
+        traces_sample_rate=1.0,
+        send_default_pii=True
+    )
