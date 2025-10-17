@@ -35,7 +35,6 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: config.settings
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DJANGO_SETTINGS_MODULE: config.settings
           TEST_DB_ENGINE: django.db.backends.sqlite3
           TEST_DB_NAME: ":memory:"
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
