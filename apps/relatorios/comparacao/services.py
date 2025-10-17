@@ -184,7 +184,6 @@ class ComparacaoService:
             current_data, horas_planejadas, projeto_nome, ano
         )
 
-        response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
         filename = (
             f"relatorio_horas_{projeto_nome.replace(' ', '_')}_{ano}.pdf"
         )
@@ -822,8 +821,10 @@ class ComparacaoService:
             Status_da_escrita (HttpResponse | Exception): Falha ou sucesso ao escreve no banco.
         """
 
+        LOG_PREFIX = "set_horas_previstas_projeto: %s"
+
         try:
-            print("set_horas_previstas_projeto: %s", 1)
+            print(LOG_PREFIX, 1)
 
             objetivo_clt = (
                 f"META_{ComparacaoService._get_projeto_id(nome_projeto)}_{ano}"
@@ -834,12 +835,13 @@ class ComparacaoService:
                 defaults={"objetivo_estagiario": str(horas_previstas)},
             )
 
-            print("set_horas_previstas_projeto: %s", 2)
+            print(LOG_PREFIX, 2)
 
             if not created:
                 horas_previstas_obj.objetivo_estagiario = str(horas_previstas)
                 horas_previstas_obj.save()
-            print("set_horas_previstas_projeto: %s", str(horas_previstas))
+
+            print(LOG_PREFIX, str(horas_previstas))
 
             return HttpResponse()
 
