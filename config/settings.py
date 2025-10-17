@@ -83,12 +83,20 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("POSTGRES_DB", default="postgres"),
-        "USER": env("POSTGRES_USER", default="postgres"),
-        "PASSWORD": env("POSTGRES_PASSWORD", default="postgres"),
-        "HOST": env("POSTGRES_HOST", default="localhost"),
-        "PORT": env("POSTGRES_PORT", default="5432"),
-    }
+        "NAME": os.getenv("DB_OLTP_NAME"),
+        "USER": os.getenv("DB_OLTP_USER"),
+        "PASSWORD": os.getenv("DB_OLTP_PASSWORD"),
+        "HOST": os.getenv("DB_OLTP_HOST"),
+        "PORT": os.getenv("DB_OLTP_PORT"),
+    },
+    "olap": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_OLAP_NAME"),
+        "USER": os.getenv("DB_OLAP_USER"),
+        "PASSWORD": os.getenv("DB_OLAP_PASSWORD"),
+        "HOST": os.getenv("DB_OLAP_HOST"),
+        "PORT": os.getenv("DB_OLAP_PORT"),
+    },
 }
 
 if os.environ.get("TEST_DB_ENGINE"):
