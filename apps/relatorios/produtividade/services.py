@@ -324,7 +324,6 @@ def exportar_produtividade_pdf(mes, ano, resultados):
 
     elements.append(Spacer(1, 0.1 * inch))
 
-    data_hora = datetime.now().strftime("%d/%m/%Y %H:%M")
     gen_date = Paragraph(
         f"Gerado em: {
             datetime.now().strftime('%d/%m/%Y %H:%M')}",

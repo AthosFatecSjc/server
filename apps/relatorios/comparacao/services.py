@@ -835,10 +835,6 @@ class ComparacaoService:
         try:
             print(LOG_PREFIX, 1)
 
-            objetivo_clt = (
-                f"META_{ComparacaoService._get_projeto_id(nome_projeto)}_{ano}"
-            )
-
             horas_previstas_obj, created = MetaTempoControle.objects.get_or_create(
                 objetivo_clt=f"META_{
                     ComparacaoService._get_projeto_id(nome_projeto)}_{ano}",
