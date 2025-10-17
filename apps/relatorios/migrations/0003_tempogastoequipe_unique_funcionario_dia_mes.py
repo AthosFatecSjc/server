@@ -6,12 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('relatorios', '0002_rename_objetivo_estagirario_metatempocontrole_objetivo_estagiario'),
+        (
+            "relatorios",
+            "0002_rename_objetivo_estagirario_metatempocontrole_objetivo_estagiario",
+        ),
     ]
 
     operations = [
         migrations.AddConstraint(
-            model_name='tempogastoequipe',
-            constraint=models.UniqueConstraint(fields=('funcionario', 'dia_mes', 'mes'), name='unique_funcionario_dia_mes'),
+            model_name="tempogastoequipe",
+            constraint=models.UniqueConstraint(
+                fields=("funcionario", "dia_mes", "mes"),
+                name="unique_funcionario_dia_mes",
+            ),
         ),
     ]
