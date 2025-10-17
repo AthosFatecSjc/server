@@ -41,7 +41,7 @@ jobs:
           DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
         run: |
           echo "::notice title=Build::Gerando imagem com tags: $VERSION e latest"
-          docker build --pull --no-cache -t $DOCKERHUB_USERNAME/minha-app:$VERSION -f server/Dockerfile server/
+          docker build --pull --no-cache -t $DOCKERHUB_USERNAME/minha-app:$VERSION .
           docker tag $DOCKERHUB_USERNAME/minha-app:$VERSION $DOCKERHUB_USERNAME/minha-app:latest
           docker push $DOCKERHUB_USERNAME/minha-app:$VERSION
           docker push $DOCKERHUB_USERNAME/minha-app:latest
@@ -54,7 +54,6 @@ jobs:
           password: ${{ env.AZURE_VM_PASSWORD }}
           script: |
             echo "Atualizando aplicação na VM..."
-
             cd ~/app/server
 
             if [ -d .git ]; then
