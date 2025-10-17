@@ -1,52 +1,94 @@
-
-"""Serviço para interagir com a API do Jira"""
-
-import datetime
 import json
 import logging
 from typing import Dict, List
 
 import requests
+import sentry_sdk
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 
 class JiraService:
-    """Serviço para interagir com a API do Jira"""
+    """
+    Interage com a API do Jira para buscar projetos e tarefas.
+    """
 
     def __init__(self):
+        """
+        Inicializa o serviço, valida as credenciais e configura os cabeçalhos.
+        """
         self.base_url = settings.JIRA_BASE_URL
-        self.auth = (settings.JIRA_USER, settings.JIRA_TOKEN)
+        self.user = getattr(settings, "JIRA_USER", None)
+        self.token = getattr(settings, "JIRA_TOKEN", None)
+
+        self.credentials_are_valid = self.user and self.token
+
+        if not self.credentials_are_valid:
+            logger.error(
+                "Credenciais do JIRA (JIRA_USER ou JIRA_TOKEN) não estão configuradas."
+            )
+            sentry_sdk.capture_message(
+                "As credenciais do JIRA não foram encontradas.", level="error"
+            )
+
+        self.auth = (self.user, self.token)
         self.headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            "Accept": "application/json",
+            "Content-Type": "application/json",
         }
 
-    def get_projects(self) -> List[Dict]:
-        """Busca todos os projetos do Jira"""
+    def _enrich_sentry_scope(self, url: str, payload: Dict = None):
+        """
+        Adiciona contexto extra ao escopo do Sentry para depuração.
+        """
+        with sentry_sdk.configure_scope() as scope:
+            scope.set_tag("integration", "jira")
+            scope.set_tag("integration.url", self.base_url)
+            scope.set_extra("jira_api_endpoint", url)
+            if payload:
+                scope.set_extra("jira_request_payload", payload)
+
+    def get_projects(self) -> List[Dict] | None:
+        """
+        Busca todos os projetos do Jira, monitorizando a performance.
+        """
+        if not self.credentials_are_valid:
+            return None
+
         url = f"{self.base_url}/rest/api/3/project"
+        self._enrich_sentry_scope(url)
 
         try:
-            response = requests.get(
-                url,
-                auth=self.auth,
-                headers=self.headers,
-                timeout=30
-            )
+            with sentry_sdk.start_span(
+                op="http.client", description="Request Jira Projects"
+            ):
+                response = requests.get(
+                    url, auth=self.auth, headers=self.headers, timeout=15
+                )
+
             response.raise_for_status()
-            return response.json()
+
+            projects = response.json()
+            if not projects:
+                sentry_sdk.capture_message(
+                    "A API do Jira retornou uma lista de projetos vazia.",
+                    level="warning",
+                )
+            return projects or []
+
         except requests.exceptions.RequestException as e:
-            logger.error("Erro ao buscar projetos: %s", e)
-            return []
+            logger.error("Erro ao buscar projetos do Jira: %s", e)
+            sentry_sdk.capture_exception(e)
+            return None
 
     def get_tasks_by_project(
-            self,
-            project_key: str,
-            max_results: int = 100) -> List[Dict]:
-        """Busca tasks de um projeto específico"""
+        self, project_key: str, max_results: int = 100
+    ) -> List[Dict]:
+        """
+        Busca tarefas de um projeto específico, validando a resposta da API.
+        """
         url = f"{self.base_url}/rest/api/3/search/jql"
-
         jql_query = f"project = {project_key}"
 
         payload = {
@@ -61,108 +103,102 @@ class JiraService:
                 "timespent",
                 "status",
                 "created",
-                "updated"
+                "updated",
             ],
-            "maxResults": max_results
+            "maxResults": max_results,
         }
 
+        self._enrich_sentry_scope(url, payload=payload)
+
         try:
-            response = requests.post(
-                url,
-                auth=self.auth,
-                headers=self.headers,
-                data=json.dumps(payload),
-                timeout=30
-            )
+            with sentry_sdk.start_span(
+                op="http.client", description=f"Request Jira Tasks for {project_key}"
+            ):
+                response = requests.post(
+                    url,
+                    auth=self.auth,
+                    headers=self.headers,
+                    data=json.dumps(payload),
+                    timeout=15,
+                )
             response.raise_for_status()
-            return response.json().get('issues', [])
+
+            data = response.json()
+
+            if "issues" not in data:
+                sentry_sdk.capture_message(
+                    f"A resposta da API do Jira para o projeto {project_key} não continha a chave 'issues'.",
+                    level="warning",
+                )
+                return []
+
+            issues = data.get("issues", [])
+            if not issues:
+                sentry_sdk.capture_message(
+                    f"Nenhuma task encontrada para o projeto '{project_key}'.",
+                    level="info",
+                )
+            return issues
+
         except requests.exceptions.RequestException as e:
-            logger.error("Erro ao buscar tasks do projeto %s: %s",
-                         project_key, e)
+            logger.error("Erro ao buscar tasks do projeto %s: %s", project_key, e)
+            sentry_sdk.capture_exception(e)
             return []
 
-    def get_all_tasks_data(self) -> List[Dict]:
-        """Busca todos os projetos e suas tasks para o dashboard"""
+    def get_all_tasks_data(self) -> List[Dict] | None:
+        """
+        Busca todos os projetos e formata os dados das suas tarefas.
+        """
         projetos = self.get_projects()
+
+        if projetos is None:
+            return None
 
         projetos_com_tasks = []
         for projeto in projetos:
-            project_key = projeto['key']
+            project_key = projeto["key"]
             tasks = self.get_tasks_by_project(project_key, max_results=100)
 
             tasks_formatadas = []
             for task in tasks:
-                fields = task.get('fields', {})
+                fields = task.get("fields", {})
 
                 tasks_formatadas.append(
                     {
-                        'key': task.get('key'),
-                        'summary': fields.get(
-                            'summary',
-                            'Sem título'),
-                        'issue_type': fields.get(
-                            'issuetype',
-                            {}).get(
-                            'name',
-                            'Sem tipo'),
-                        'assignee': fields.get(
-                            'assignee',
-                            {}).get(
-                            'displayName',
-                            'Sem responsável') if fields.get('assignee') else 'Sem responsável',
-                        'time_spent': fields.get(
-                                'timetracking',
-                                {}).get(
-                                    'timeSpent',
-                                    '0h'),
-                        'time_estimate': fields.get(
-                            'timetracking',
-                            {}).get(
-                            'timeEstimate',
-                            '0h'),
-                        'status': fields.get(
-                            'status',
-                            {}).get(
-                            'name',
-                            'N/A'),
-                        'created': fields.get(
-                            'created',
-                            'N/A')[
-                            :10] if fields.get('created') else 'N/A'})
+                        "key": task.get("key"),
+                        "summary": fields.get("summary", "Sem título"),
+                        "issue_type": fields.get("issuetype", {}).get(
+                            "name", "Sem tipo"
+                        ),
+                        "assignee": (
+                            fields.get("assignee", {}).get(
+                                "displayName", "Sem responsável"
+                            )
+                            if fields.get("assignee")
+                            else "Sem responsável"
+                        ),
+                        "time_spent": fields.get("timetracking", {}).get(
+                            "timeSpent", "0h"
+                        ),
+                        "time_estimate": fields.get("timetracking", {}).get(
+                            "timeEstimate", "0h"
+                        ),
+                        "status": fields.get("status", {}).get("name", "N/A"),
+                        "created": (
+                            fields.get("created", "N/A")[:10]
+                            if fields.get("created")
+                            else "N/A"
+                        ),
+                    }
+                )
 
-            projetos_com_tasks.append({
-                'key': project_key,
-                'name': projeto.get('name', 'Sem nome'),
-                'total_tasks': len(tasks),
-                'tasks': tasks_formatadas
-            })
+            projetos_com_tasks.append(
+                {
+                    "key": project_key,
+                    "name": projeto.get("name", "Sem nome"),
+                    "total_tasks": len(tasks),
+                    "tasks": tasks_formatadas,
+                }
+            )
 
         return projetos_com_tasks
-
-    def get_dashboard_context(self, include_timestamp: bool = False) -> Dict:
-        """
-        Busca e processa os dados completos para o dashboard.
-
-        Args:
-            include_timestamp: Se True, inclui 'ultima_atualizacao' no contexto.
-
-        Returns:
-            Dict com projetos_com_tasks, total_projetos, total_tasks_geral
-            e opcionalmente ultima_atualizacao.
-        """
-        projetos_com_tasks = self.get_all_tasks_data()
-
-        total_projetos = len(projetos_com_tasks)
-        total_tasks_geral = sum(proj['total_tasks']
-                                for proj in projetos_com_tasks)
-
-        context = {
-            'projetos_com_tasks': projetos_com_tasks,
-            'total_projetos': total_projetos,
-            'total_tasks_geral': total_tasks_geral,
-        }
-
-        if include_timestamp:
-            context['ultima_atualizacao'] = datetime.datetime.now().isoformat()
-
-        return context

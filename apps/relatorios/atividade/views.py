@@ -4,9 +4,10 @@ import datetime
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
-from django.views.decorators.http import require_safe, require_GET
+from django.views.decorators.http import require_GET, require_safe
 
 from .services import AtividadeService
+
 
 @require_safe
 def index(request):
