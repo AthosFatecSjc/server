@@ -23,8 +23,8 @@
         .bg-gray-200 { background-color: #e5e7eb; }
         .text-gray-600 { color: #4b5563; }
         .text-muted-foreground { color: #6b7280; }
-        .bg-purple-50 { background-color: #faf5ff; } 
-        
+        .bg-purple-50 { background-color: #faf5ff; }
+
         .progress-bar {
             width: 100%;
             height: 0.5rem;
@@ -32,16 +32,16 @@
             border-radius: 0.25rem;
             overflow: hidden;
         }
-        
+
         .progress-fill {
             height: 100%;
             border-radius: 0.25rem;
         }
-        
+
         .select-container {
             position: relative;
         }
-        
+
         .select-trigger {
             width: 100%;
             padding: 0.5rem 0.75rem;
@@ -53,7 +53,7 @@
             justify-content: space-between;
             cursor: pointer;
         }
-        
+
         .select-content {
             display: none;
             position: absolute;
@@ -68,20 +68,20 @@
             max-height: 300px;
             overflow-y: auto;
         }
-        
+
         .select-item {
             padding: 0.5rem 0.75rem;
             cursor: pointer;
         }
-        
+
         .select-item:hover {
             background-color: #f3f4f6;
         }
-        
+
         .select-content.show {
             display: block;
         }
-        
+
         .icon {
             width: 1.75rem;
             height: 1.75rem;
@@ -91,7 +91,7 @@
             stroke-linejoin: round;
             fill: none;
         }
-        
+
         .modal-overlay {
             display: none;
             position: fixed;
@@ -106,12 +106,12 @@
             opacity: 0;
             transition: opacity 0.3s ease;
         }
-        
+
         .modal-overlay.active {
             display: flex;
             opacity: 1;
         }
-        
+
         .modal-content {
             background-color: white;
             border-radius: 0.5rem;
@@ -122,26 +122,26 @@
             transform: translateY(-20px);
             transition: transform 0.3s ease;
         }
-        
+
         .modal-overlay.active .modal-content {
             transform: translateY(0);
         }
-        
+
         .cell-selectable {
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        
+
         .cell-selectable:hover {
             transform: scale(1.05);
             box-shadow: 0 0 0 2px #40b114d3;
         }
-        
+
         .cell-selected {
             background-color: #bbfdb3 !important;
             box-shadow: 0 0 0 2px #5cf32eab;
         }
-        
+
         .legenda-option {
             padding: 0.5rem;
             margin: 0.25rem 0;
@@ -149,20 +149,20 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        
+
         .legenda-option:hover {
             background-color: #f3f4f6;
         }
-        
+
         .meta-option {
             padding: 0.5rem;
             cursor: pointer;
         }
-        
+
         .meta-option:hover {
             background-color: #f3f4f6;
         }
-        
+
         .btn-legenda {
             position: sticky;
             top: 10px;
@@ -179,24 +179,24 @@
             transition: all 0.3s ease;
             border: none;
         }
-        
+
         .btn-legenda.show {
             display: inline-flex;
             align-items: center;
             gap: 8px;
         }
-        
+
         .btn-legenda:hover {
             background-color: #2563eb;
             transform: translateY(-2px);
         }
-        
+
         .btn-legenda:disabled {
             background-color: #9ca3af;
             cursor: not-allowed;
             transform: none;
         }
-        
+
         .selection-info {
             background-color: #f0f9ff;
             border: 1px solid #bae6fd;
@@ -205,7 +205,7 @@
             margin-bottom: 10px;
             display: none;
         }
-        
+
         .selection-info.show {
             display: block;
         }
@@ -287,15 +287,15 @@
                     <span class="font-medium">Personalizada</span>
                 </div>
             </div>
-            
+
             <div id="customMetaInput" class="mb-4 hidden">
                 <label class="block text-sm font-medium mb-2">Digite a meta personalizada:</label>
-                <input type="number" id="customMetaValue" 
-                    class="w-full p-2 border border-gray-300 rounded" 
-                    placeholder="Ex: 120, 140, 160..." 
+                <input type="number" id="customMetaValue"
+                    class="w-full p-2 border border-gray-300 rounded"
+                    placeholder="Ex: 120, 140, 160..."
                     min="1" max="300" step="0.1">
             </div>
-            
+
             <div class="flex justify-end gap-3">
                 <button id="cancelMeta" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
                     Cancelar
@@ -373,7 +373,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="p-4 md:p-6 border-b">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -388,7 +388,7 @@
                         Registrar Ausência
                     </button>
                 </div>
-                
+
                 <div id="selectionInfo" class="selection-info">
                     <div class="flex items-center gap-2 text-sm">
                         <svg class="icon w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -398,7 +398,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse">
                     <thead>
@@ -434,7 +434,7 @@
                                 data-dia="{{ dia }}"
                                 data-funcionario-id="{{ r.funcionario_id }}"
                                 data-funcionario="{{ r.funcionario }}">
-                                
+
                                 {% if dia_data.type == 'leave' %}
                                     {{ dia_data.value|default:"-" }}
                                 {% else %}
@@ -470,14 +470,14 @@
                             <td class="border border-gray-300 p-2 text-center">
                                 <div class="flex items-center gap-2">
                                     <div class="progress-bar">
-                                        <div class="progress-fill 
+                                        <div class="progress-fill
                                             {% if r.percentual >= 90 %}bg-green-500
                                             {% elif r.percentual >= 75 %}bg-yellow-500
-                                            {% else %}bg-red-500{% endif %}" 
+                                            {% else %}bg-red-500{% endif %}"
                                             style="width: {% if r.percentual > 100 %}100{% else %}{{ r.percentual }}{% endif %}%">
                                         </div>
                                     </div>
-                                    <span class="text-sm font-medium 
+                                    <span class="text-sm font-medium
                                         {% if r.percentual >= 90 %}text-green-600
                                         {% elif r.percentual >= 75 %}text-yellow-600
                                         {% else %}text-red-600{% endif %}">
@@ -491,7 +491,7 @@
                 </table>
             </div>
         </div>
-        
+
         <div class="bg-white rounded-lg shadow p-4 md:p-6">
             <h3 class="text-lg font-semibold mb-4">Legenda</h3>
             <div class="flex flex-col md:flex-row flex-wrap gap-4">
@@ -586,10 +586,10 @@
             if (selectedCells.length > 0) {
                 btnAbrirLegenda.classList.add('show');
                 selectionInfo.classList.add('show');
-                
+
                 const funcionariosUnicos = [...new Set(selectedCells.map(cell => cell.funcionarioId))];
                 const diasSelecionados = selectedCells.length;
-                
+
                 if (funcionariosUnicos.length === 1) {
                     selectionText.textContent = `${diasSelecionados} dia(s) selecionado(s) para ${currentFuncionarioName}`;
                     btnAbrirLegenda.disabled = false;
@@ -614,14 +614,14 @@
             const outrasCelulasSelecionadas = document.querySelectorAll(
                 `.cell-selectable.cell-selected[data-funcionario-id!="${funcionarioIdAtual}"]`
             );
-            
+
             outrasCelulasSelecionadas.forEach(cell => {
                 const funcionarioId = cell.dataset.funcionarioId;
                 const dia = parseInt(cell.dataset.dia);
 
                 cell.classList.remove('cell-selected');
 
-                selectedCells = selectedCells.filter(cellInfo => 
+                selectedCells = selectedCells.filter(cellInfo =>
                     !(cellInfo.funcionarioId === funcionarioId && cellInfo.dia === dia)
                 );
             });
@@ -630,10 +630,10 @@
         document.querySelectorAll('.cell-selectable').forEach(cell => {
             cell.addEventListener('click', function(event) {
                 event.stopPropagation();
-                
+
                 const funcionarioId = this.dataset.funcionarioId;
                 const dia = parseInt(this.dataset.dia);
-                
+
                 if (!funcionarioId || !this.closest('tr').querySelector('.funcionario-name')) {
                     return;
                 }
@@ -643,20 +643,20 @@
                 }
 
                 const estaSelecionada = this.classList.contains('cell-selected');
-                
+
                 if (estaSelecionada) {
                     this.classList.remove('cell-selected');
-                    selectedCells = selectedCells.filter(cellInfo => 
+                    selectedCells = selectedCells.filter(cellInfo =>
                         !(cellInfo.funcionarioId === funcionarioId && cellInfo.dia === dia)
                     );
                 } else {
 
                     this.classList.add('cell-selected');
 
-                    const jaExiste = selectedCells.some(cellInfo => 
+                    const jaExiste = selectedCells.some(cellInfo =>
                         cellInfo.funcionarioId === funcionarioId && cellInfo.dia === dia
                     );
-                    
+
                     if (!jaExiste) {
                         selectedCells.push({
                             dia: dia,
@@ -666,7 +666,7 @@
                         });
                     }
                 }
-                
+
                 if (selectedCells.length > 0) {
                     currentFuncionarioId = selectedCells[0].funcionarioId;
                     currentFuncionarioName = selectedCells[0].funcionarioName;
@@ -674,7 +674,7 @@
                     currentFuncionarioId = null;
                     currentFuncionarioName = null;
                 }
-                
+
                 atualizarInterfaceSelecao();
             });
         });
@@ -682,14 +682,14 @@
         btnAbrirLegenda.addEventListener('click', function() {
             if (selectedCells.length > 0 && !this.disabled) {
                 currentAction = 'legenda';
-                document.getElementById('legendaInfo').textContent = 
+                document.getElementById('legendaInfo').textContent =
                     `Selecionar tipo de ausência para ${selectedCells.length} dias de ${currentFuncionarioName}`;
-                
+
                 legendaSelecionada = null;
-                document.querySelectorAll('.legenda-option').forEach(opt => 
+                document.querySelectorAll('.legenda-option').forEach(opt =>
                     opt.style.backgroundColor = ''
                 );
-                
+
                 openModal(legendaModal);
             }
         });
@@ -700,8 +700,8 @@
                     currentFuncionarioId = this.dataset.funcionarioId;
                     currentFuncionarioName = this.dataset.funcionario;
                     currentAction = 'meta';
-                    
-                    document.getElementById('metaInfo').textContent = 
+
+                    document.getElementById('metaInfo').textContent =
                         `Alterar meta para ${currentFuncionarioName}`;
                     openModal(metaModal);
                 });
@@ -710,7 +710,7 @@
 
         document.querySelectorAll('.legenda-option').forEach(option => {
             option.addEventListener('click', function() {
-                document.querySelectorAll('.legenda-option').forEach(opt => 
+                document.querySelectorAll('.legenda-option').forEach(opt =>
                     opt.style.backgroundColor = '');
                 this.style.backgroundColor = '#e5e7eb';
                 legendaSelecionada = this.dataset.value;
@@ -720,15 +720,15 @@
         document.getElementById('confirmLegenda').addEventListener('click', function() {
             if (legendaSelecionada && selectedCells.length > 0) {
                 closeModal(legendaModal);
-                
-                document.getElementById('confirmMessage').textContent = 
+
+                document.getElementById('confirmMessage').textContent =
                     `Deseja registrar ${getLegendaName(legendaSelecionada)} para ${selectedCells.length} dias de ${currentFuncionarioName}?`;
-                
+
                 document.getElementById('finalConfirm').onclick = function() {
                     aplicarLegenda(legendaSelecionada);
                     closeModal(confirmModal);
                 };
-                
+
                 openModal(confirmModal);
             } else {
                 alert('Por favor, selecione um tipo de ausência e pelo menos um dia.');
@@ -740,12 +740,12 @@
 
         document.querySelectorAll('.meta-option').forEach(option => {
             option.addEventListener('click', function() {
-                document.querySelectorAll('.meta-option').forEach(opt => 
+                document.querySelectorAll('.meta-option').forEach(opt =>
                     opt.style.backgroundColor = '');
                 this.style.backgroundColor = '#e5e7eb';
-                
+
                 const value = this.dataset.value;
-                
+
                 if (value === 'custom') {
                     document.getElementById('customMetaInput').classList.remove('hidden');
                     document.getElementById('customMetaInput').classList.add('block');
@@ -762,7 +762,7 @@
 
         document.getElementById('confirmMeta').addEventListener('click', function() {
             let metaValue = null;
-            
+
             if (isCustomMeta) {
                 const customValue = document.getElementById('customMetaValue').value;
                 if (!customValue || customValue <= 0) {
@@ -776,18 +776,18 @@
                 alert('Por favor, selecione uma opção de meta.');
                 return;
             }
-            
+
             if (metaValue) {
                 closeModal(metaModal);
-                
-                document.getElementById('confirmMessage').textContent = 
+
+                document.getElementById('confirmMessage').textContent =
                     `Deseja alterar a meta de ${currentFuncionarioName} para ${metaValue} horas?`;
-                
+
                 document.getElementById('finalConfirm').onclick = function() {
                     aplicarMeta(metaValue);
                     closeModal(confirmModal);
                 };
-                
+
                 openModal(confirmModal);
             }
         });
@@ -795,7 +795,7 @@
 
         function aplicarLegenda(legendaValue) {
             const dias = selectedCells.map(cell => cell.dia);
-            
+
             console.log("Enviando dados:", {
                 funcionario_id: currentFuncionarioId,
                 mes: {{ mes }},
@@ -803,7 +803,7 @@
                 dias: dias,
                 codigo: legendaValue
             });
-            
+
             fetch('{% url "atualizar_legenda" %}', {
                 method: 'POST',
                 headers: {
@@ -815,7 +815,7 @@
                     mes: {{ mes }},
                     ano: {{ ano }},
                     dias: dias,
-                    codigo: legendaValue  
+                    codigo: legendaValue
                 })
             })
             .then(response => {
@@ -867,7 +867,7 @@
 
         function getLegendaName(value) {
             const legendas = {
-                'FE': 'FÉRIAS', 'AT': 'ATESTADO', 'FO': 'FOLGA', 
+                'FE': 'FÉRIAS', 'AT': 'ATESTADO', 'FO': 'FOLGA',
                 'FA': 'FALTA', 'LI': 'LICENÇA', 'CO': 'COMPENSAR',
                 'NONE': 'REMOVER REGISTRO'
             };
@@ -882,13 +882,13 @@
         document.getElementById('cancelLegenda').addEventListener('click', () => {
             closeModal(legendaModal);
             legendaSelecionada = null;
-            document.querySelectorAll('.legenda-option').forEach(opt => 
+            document.querySelectorAll('.legenda-option').forEach(opt =>
                 opt.style.backgroundColor = '');
         });
-        
+
         document.getElementById('cancelMeta').addEventListener('click', () => {
             closeModal(metaModal);
-            document.querySelectorAll('.meta-option').forEach(opt => 
+            document.querySelectorAll('.meta-option').forEach(opt =>
                 opt.style.backgroundColor = '');
             document.getElementById('customMetaInput').classList.add('hidden');
             document.getElementById('customMetaValue').value = '';
@@ -900,22 +900,22 @@
         const exportButton = document.getElementById('exportPdfButton');
         const confirmButton = document.getElementById('confirmExport');
         const cancelButton = document.getElementById('cancelExport');
-        
+
         function closePdfModal() {
             pdfModal.classList.remove('active');
         }
-        
+
         exportButton.addEventListener('click', function() {
             openModal(pdfModal);
         });
-        
+
         cancelButton.addEventListener('click', closePdfModal);
-        
+
         confirmButton.addEventListener('click', function() {
-            closePdfModal(); 
+            closePdfModal();
             window.location.href = "{% url 'exportar_produtividade_pdf' %}?mes={{ mes }}&ano={{ ano }}";
         });
-        
+
         pdfModal.addEventListener('click', function(e) {
             if (e.target === pdfModal) {
                 closePdfModal();
@@ -929,7 +929,7 @@
                 selectContent.classList.toggle('show');
             });
         });
-        
+
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.select-container')) {
                 document.querySelectorAll('.select-content').forEach(select => {
@@ -937,15 +937,15 @@
                 });
             }
         });
-        
+
         document.querySelectorAll('.select-item').forEach(item => {
             item.addEventListener('click', function() {
                 const selectId = this.parentElement.id;
                 const valueId = selectId.replace('Select', 'Value');
-                
+
                 document.getElementById(valueId).textContent = this.textContent;
                 document.getElementById(selectId).classList.remove('show');
-                
+
                 const mesAno = this.dataset.value;
                 const [mes, ano] = mesAno.split('-');
                 window.location.href = `?mes=${mes}&ano=${ano}`;

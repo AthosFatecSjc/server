@@ -15,6 +15,15 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 SECRET_KEY = env("SECRET_KEY")
 
 DEBUG = env("DEBUG", default=True)
+env = environ.Env(DEBUG=(bool, False))
+
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = env("SECRET_KEY")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
@@ -67,14 +76,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("POSTGRES_DB", default=None),
-        "USER": env("POSTGRES_USER", default=None),
-        "PASSWORD": env("POSTGRES_PASSWORD", default=None),
-        "HOST": env("POSTGRES_HOST", default=None),
-        "PORT": env("POSTGRES_PORT", default=None),
+        "NAME": env("POSTGRES_DB", default="postgres"),
+        "USER": env("POSTGRES_USER", default="postgres"),
+        "PASSWORD": env("POSTGRES_PASSWORD", default="postgres"),
+        "HOST": env("POSTGRES_HOST", default="localhost"),
+        "PORT": env("POSTGRES_PORT", default="5432"),
     }
 }
 
@@ -84,9 +97,9 @@ if os.environ.get("TEST_DB_ENGINE"):
         "NAME": os.environ.get("TEST_DB_NAME", ":memory:"),
     }
 
-JIRA_BASE_URL = env("JIRA_BASE_URL", default=None)
-JIRA_USER = env("JIRA_USER", default=None)
-JIRA_TOKEN = env("JIRA_TOKEN", default=None)
+JIRA_BASE_URL = env("JIRA_BASE_URL", default="http://localhost")
+JIRA_USER = env("JIRA_USER", default="user")
+JIRA_TOKEN = env("JIRA_TOKEN", default="token")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -140,7 +153,12 @@ CRONJOBS = [
     ),
 ]
 
-CACHE_JIRA = {"data": {}, "timestamp": None, "validade": datetime.timedelta(minutes=10)}
+# Configuração de cache personalizado para dados do JIRA
+CACHE_JIRA = {
+    "data": {},  # Dados serão preenchidos pelo CRON
+    "timestamp": None,
+    "validade": datetime.timedelta(minutes=10),
+}
 
 # Sentry Configuration
 SENTRY_DSN = env("SENTRY_DSN", default="")
