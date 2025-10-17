@@ -15,7 +15,7 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
       AZURE_VM_USER: ${{ secrets.AZURE_VM_USER }}
-      AZURE_VM_KEY: ${{ secrets.AZURE_VM_KEY }}
+      AZURE_VM_PASSWORD: ${{ secrets.AZURE_VM_PASSWORD }}
 
     steps:
       - name: Checkout code
@@ -51,7 +51,7 @@ jobs:
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
-          key: ${{ env.AZURE_VM_KEY }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
           script: |
             echo "Atualizando aplicação na VM..."
             cd ~/app
@@ -66,7 +66,7 @@ jobs:
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
-          key: ${{ env.AZURE_VM_KEY }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
           script: |
             echo "Executando migrations..."
             docker exec django-app python manage.py migrate
@@ -76,7 +76,7 @@ jobs:
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
-          key: ${{ env.AZURE_VM_KEY }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
           script: |
             echo "::notice title=Containers::Listando containers ativos..."
             docker ps
