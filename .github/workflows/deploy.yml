@@ -41,7 +41,7 @@ jobs:
           DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
         run: |
           echo "::notice title=Build::Gerando imagem com tags: $VERSION e latest"
-          docker build --pull --no-cache -t $DOCKERHUB_USERNAME/minha-app:$VERSION .
+          docker build --pull --no-cache -t $DOCKERHUB_USERNAME/minha-app:$VERSION -f server/Dockerfile server/
           docker tag $DOCKERHUB_USERNAME/minha-app:$VERSION $DOCKERHUB_USERNAME/minha-app:latest
           docker push $DOCKERHUB_USERNAME/minha-app:$VERSION
           docker push $DOCKERHUB_USERNAME/minha-app:latest
@@ -54,12 +54,31 @@ jobs:
           password: ${{ env.AZURE_VM_PASSWORD }}
           script: |
             echo "Atualizando aplicação na VM..."
-            cd ~/app
-            git fetch origin develop
-            git reset --hard origin/develop
-            docker compose pull
-            docker compose down --remove-orphans
-            docker compose up -d
+
+            cd ~/app/server
+
+            if [ -d .git ]; then
+              echo "Sincronizando com a branch develop..."
+              git fetch origin develop
+              git reset --hard origin/develop
+            else
+              echo "Diretório não é um repositório Git. Pulando sincronização."
+            fi
+
+            if command -v docker-compose &> /dev/null; then
+              echo "Usando docker-compose (v1)"
+              docker-compose pull
+              docker-compose down --remove-orphans
+              docker-compose up -d
+            elif docker compose version &> /dev/null; then
+              echo "Usando docker compose (v2)"
+              docker compose pull
+              docker compose down --remove-orphans
+              docker compose up -d
+            else
+              echo "Docker Compose não encontrado na VM."
+              exit 1
+            fi
 
       - name: Run Django migrations
         uses: appleboy/ssh-action@v0.1.10
