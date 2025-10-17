@@ -1,4 +1,5 @@
 """Testes do relatório de comparação anual."""
+
 from datetime import date
 
 from django.test import TestCase
@@ -15,39 +16,24 @@ class SomaHorasTest(TestCase):
     def setUp(self):
         # dados comuns
         self.cargo = Cargo.objects.create(sigla="DEV")
-        self.func1 = Funcionario.objects.create(
-            nome="Renato", cargo=self.cargo)
+        self.func1 = Funcionario.objects.create(nome="Renato", cargo=self.cargo)
         self.func2 = Funcionario.objects.create(nome="Maria", cargo=self.cargo)
         self.projeto = Projeto.objects.create(nome="Projeto X")
 
         # realizado: Renato mês 1 = 10, somar mais 5 -> total 15
         ControleHorasEquipe.objects.create(
-            mes=date(
-                2025,
-                1,
-                1),
-            projeto=self.projeto,
-            funcionario=self.func1,
-            horas=10)
+            mes=date(2025, 1, 1), projeto=self.projeto, funcionario=self.func1, horas=10
+        )
         obj = ControleHorasEquipe.objects.get(
-            mes=date(
-                2025,
-                1,
-                1),
-            projeto=self.projeto,
-            funcionario=self.func1)
+            mes=date(2025, 1, 1), projeto=self.projeto, funcionario=self.func1
+        )
         obj.horas = obj.horas + 5
         obj.save()
 
         # realizado: Maria mês 2 = 8
         ControleHorasEquipe.objects.create(
-            mes=date(
-                2025,
-                2,
-                1),
-            projeto=self.projeto,
-            funcionario=self.func2,
-            horas=8)
+            mes=date(2025, 2, 1), projeto=self.projeto, funcionario=self.func2, horas=8
+        )
 
         # previstas: usaremos TempoGastoEquipe + TempoControleValores.total_meta
         # Renato mês 1 previsto 20
@@ -57,14 +43,14 @@ class SomaHorasTest(TestCase):
             mes=date(2025, 1, 1),
             funcionario=self.func1,
             tempo_gasto=15,  # campo opcional para fonte alternativa
-            meta=None
+            meta=None,
         )
         TempoControleValores.objects.create(
             controle_tempo_equipe=tge1,
             realizado_equipe=15,
             total_real=15,
             total_meta=20,
-            aproveitamento=75
+            aproveitamento=75,
         )
 
         # Maria mês 2 previsto 8
@@ -74,14 +60,14 @@ class SomaHorasTest(TestCase):
             mes=date(2025, 2, 1),
             funcionario=self.func2,
             tempo_gasto=8,
-            meta=None
+            meta=None,
         )
         TempoControleValores.objects.create(
             controle_tempo_equipe=tge2,
             realizado_equipe=8,
             total_real=8,
             total_meta=8,
-            aproveitamento=100
+            aproveitamento=100,
         )
 
     def test_soma_horas_realizadas(self):
@@ -95,7 +81,8 @@ class SomaHorasTest(TestCase):
     def test_soma_horas_previstas(self):
         """Testa a soma das horas previstas por desenvolvedor e mês."""
         previsto = ComparacaoService.soma_horas_previstas_por_dev_mes(
-            2025)  # usa TempoControleValores por padrão
+            2025
+        )  # usa TempoControleValores por padrão
         self.assertIn("Renato", previsto)
         self.assertIn("Maria", previsto)
         self.assertEqual(previsto["Renato"][1], 20.0)
