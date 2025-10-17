@@ -15,7 +15,7 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
       AZURE_VM_USER: ${{ secrets.AZURE_VM_USER }}
-      AZURE_VM_KEY: ${{ secrets.AZURE_VM_KEY }}
+      AZURE_VM_PASSWORD: ${{ secrets.AZURE_VM_PASSWORD }}
 
     steps:
       - name: Checkout code
@@ -51,22 +51,40 @@ jobs:
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
-          key: ${{ env.AZURE_VM_KEY }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
           script: |
             echo "Atualizando aplicação na VM..."
-            cd ~/app
-            git fetch origin develop
-            git reset --hard origin/develop
-            docker compose pull
-            docker compose down --remove-orphans
-            docker compose up -d
+            cd ~/app/server
+
+            if [ -d .git ]; then
+              echo "Sincronizando com a branch develop..."
+              git fetch origin develop
+              git reset --hard origin/develop
+            else
+              echo "Diretório não é um repositório Git. Pulando sincronização."
+            fi
+
+            if command -v docker-compose &> /dev/null; then
+              echo "Usando docker-compose (v1)"
+              docker-compose pull
+              docker-compose down --remove-orphans
+              docker-compose up -d
+            elif docker compose version &> /dev/null; then
+              echo "Usando docker compose (v2)"
+              docker compose pull
+              docker compose down --remove-orphans
+              docker compose up -d
+            else
+              echo "Docker Compose não encontrado na VM."
+              exit 1
+            fi
 
       - name: Run Django migrations
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
-          key: ${{ env.AZURE_VM_KEY }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
           script: |
             echo "Executando migrations..."
             docker exec django-app python manage.py migrate
@@ -76,7 +94,7 @@ jobs:
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
-          key: ${{ env.AZURE_VM_KEY }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
           script: |
             echo "::notice title=Containers::Listando containers ativos..."
             docker ps

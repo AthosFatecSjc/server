@@ -36,18 +36,14 @@ def buscar_dados_api():
 
         SimpleCache.set(context)
 
-        obj = {'status': 'sucesso',
-               'total_projetos': context['total_projetos']}
+        obj = {"status": "sucesso", "total_projetos": context["total_projetos"]}
 
         escrever_log(
             f"Fim do cron: Processados {context['total_projetos']} projetos "
             f"com {context['total_tasks_geral']} tasks total. Dados salvos no cache.",
-            obj=obj
+            obj=obj,
         )
 
     except Exception as e:
-        escrever_log(
-            f"Erro no cron: {str(e)}",
-            obj={'status': 'erro', 'erro': str(e)}
-        )
+        escrever_log(f"Erro no cron: {str(e)}", obj={"status": "erro", "erro": str(e)})
         raise

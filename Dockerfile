@@ -9,7 +9,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copia apenas os diretórios necessários
-COPY app/ ./app/
+COPY apps/ ./apps/
 COPY config/ ./config/
 COPY manage.py .
 
