@@ -2,7 +2,6 @@
 "  ""Serviços para geração de relatórios de atividade."""
 
 from collections import defaultdict
-
 from datetime import datetime
 from io import BytesIO
 
@@ -17,7 +16,6 @@ from reportlab.platypus import (Image, Paragraph, SimpleDocTemplate, Spacer,
                                 Table, TableStyle)
 
 from apps.relatorios.models import ControleHorasEquipe
-
 
 matplotlib.use('Agg')
 

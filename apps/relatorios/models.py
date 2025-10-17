@@ -1,5 +1,6 @@
 """Modelos para relatórios e controle de horas da equipe."""
 from datetime import date
+
 from django.db import models
 
 

@@ -3,7 +3,7 @@ from datetime import date
 
 from django.test import TestCase
 
-from apps.relatorios.comparacao.services import (ComparacaoService)
+from apps.relatorios.comparacao.services import ComparacaoService
 from apps.relatorios.models import (Cargo, ControleHorasEquipe, Funcionario,
                                     Projeto, TempoControleValores,
                                     TempoGastoEquipe)
