@@ -716,8 +716,10 @@ class AtividadeService:
             alignment=1,
         )
 
-        title_text = f"Relatório de Atividades - {
-            AtividadeService.MESES_PORTUGUES.get(mes)}/{ano}"
+        title_text = (
+            f"Relatório de Atividades - "
+            f"{AtividadeService.MESES_PORTUGUES.get(mes)}/{ano}"
+        )
         return [Paragraph(title_text, title_style), Spacer(1, 0.2 * inch)]
 
     @staticmethod
