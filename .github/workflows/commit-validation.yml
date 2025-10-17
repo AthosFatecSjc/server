@@ -1,4 +1,4 @@
-name: Commit validation
+name: Commit Validation
 
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Instalar Dependencias
+      - name: Instalar Dependências
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -30,21 +30,18 @@ jobs:
         run: |
           python -m py_compile $(git ls-files '*.py')
 
-      - name: Analisar Codigo com Pylint (Django)
+      - name: Analisar Código com Pylint (Django)
         continue-on-error: true
         env:
           DJANGO_SETTINGS_MODULE: config.settings
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          SECRET_KEY: fake-key
           TEST_DB_ENGINE: django.db.backends.sqlite3
           TEST_DB_NAME: ":memory:"
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_USER: ${{ secrets.JIRA_USER }}
-          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
           pip install pylint pylint-django
           pylint --django-settings-module=config.settings $(git ls-files '*.py')
 
-      - name: Aplicar Migrações
+      - name: Aplicar Migrações (SQLite)
         env:
           DJANGO_SETTINGS_MODULE: config.settings
           SECRET_KEY: fake-key
@@ -53,7 +50,7 @@ jobs:
         run: |
           python manage.py migrate --no-input
 
-      - name: Executar Testes Unitarios (SQLite)
+      - name: Executar Testes Unitários (SQLite)
         env:
           DJANGO_SETTINGS_MODULE: config.settings
           SECRET_KEY: fake-key
