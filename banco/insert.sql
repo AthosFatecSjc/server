@@ -2,7 +2,7 @@
 -- 0. Limpeza das tabelas
 -- ==================================================================================================
 
-TRUNCATE TABLE 
+TRUNCATE TABLE
     cargo,
     funcionario,
     projeto,
@@ -244,7 +244,7 @@ WHERE
 -- 7.1.1. Inserção na Tabela 'controle_horas_equipe_resumo'
 -- Adiciona dados de resumo para simular o total de horas para o mês de agosto.
 -- ==================================================================================================
- 
+
 INSERT INTO controle_horas_equipe_resumo (total_dev, total_projeto) VALUES
 (154.00, 154.00);
 
@@ -252,7 +252,7 @@ INSERT INTO controle_horas_equipe_resumo (total_dev, total_projeto) VALUES
 -- 7.1.2. Inserção na Tabela 'controle_horas_equipe'
 -- Adiciona os dados de horas por funcionário e projeto para os meses de agosto e julho, para criar um conjunto de dados mais robusto.
 -- ==================================================================================================
- 
+
 INSERT INTO controle_horas_equipe (mes, horas, funcionario_id, projeto_id, resumo_id) VALUES
 -- Dados de Agosto (baseados nos relatórios)
 ('2025-08-01', 78.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM projeto WHERE nome = 'Ball'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),

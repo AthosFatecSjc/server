@@ -11,8 +11,14 @@ from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import (PageBreak, Paragraph, SimpleDocTemplate,
-                                Spacer, Table, TableStyle)
+from reportlab.platypus import (
+    PageBreak,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
 from apps.relatorios.models import (
     ControleHorasEquipe,
@@ -188,9 +194,7 @@ class ComparacaoService:
             current_data, horas_planejadas, projeto_nome, ano
         )
 
-        filename = (
-            f"relatorio_horas_{projeto_nome.replace(' ', '_')}_{ano}.pdf"
-        )
+        filename = f"relatorio_horas_{projeto_nome.replace(' ', '_')}_{ano}.pdf"
         response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
@@ -287,9 +291,7 @@ class ComparacaoService:
         elements.append(Spacer(1, 15))
         elements.append(
             Paragraph(
-                (
-                    f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-                ),
+                (f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}"),
                 date_style,
             )
         )

@@ -7,7 +7,6 @@ from .services import JiraService
 # from apps.utils.cache import SimpleCache  # NOSONAR
 
 
-
 @require_http_methods(["GET"])
 def dashboard_view(request):
     """
