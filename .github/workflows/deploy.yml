@@ -1,0 +1,100 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches:
+      - develop
+      - release
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
+      AZURE_VM_USER: ${{ secrets.AZURE_VM_USER }}
+      AZURE_VM_PASSWORD: ${{ secrets.AZURE_VM_PASSWORD }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set version tag
+        run: |
+          BASE_VERSION=v1.0.0
+          BUILD_NUM=${{ github.run_number }}
+          VERSION="${BASE_VERSION%.*}.$(( ${BASE_VERSION##*.} + BUILD_NUM ))"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "::notice title=Versão::Nova versão gerada: $VERSION"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        env:
+          VERSION: ${{ env.VERSION }}
+          DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
+        run: |
+          echo "::notice title=Build::Gerando imagem com tags: $VERSION e latest"
+          docker build --pull --no-cache -t $DOCKERHUB_USERNAME/minha-app:$VERSION .
+          docker tag $DOCKERHUB_USERNAME/minha-app:$VERSION $DOCKERHUB_USERNAME/minha-app:latest
+          docker push $DOCKERHUB_USERNAME/minha-app:$VERSION
+          docker push $DOCKERHUB_USERNAME/minha-app:latest
+
+      - name: Deploy to Azure VM
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ env.AZURE_VM_IP }}
+          username: ${{ env.AZURE_VM_USER }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
+          script: |
+            echo "Atualizando aplicação na VM..."
+            cd ~/app/server
+
+            if [ -d .git ]; then
+              echo "Sincronizando com a branch develop..."
+              git fetch origin develop
+              git reset --hard origin/develop
+            else
+              echo "Diretório não é um repositório Git. Pulando sincronização."
+            fi
+
+            if command -v docker-compose &> /dev/null; then
+              echo "Usando docker-compose (v1)"
+              docker-compose pull
+              docker-compose down --remove-orphans
+              docker-compose up -d
+            elif docker compose version &> /dev/null; then
+              echo "Usando docker compose (v2)"
+              docker compose pull
+              docker compose down --remove-orphans
+              docker compose up -d
+            else
+              echo "Docker Compose não encontrado na VM."
+              exit 1
+            fi
+
+      - name: Run Django migrations
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ env.AZURE_VM_IP }}
+          username: ${{ env.AZURE_VM_USER }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
+          script: |
+            echo "Executando migrations..."
+            docker exec django-app python manage.py migrate
+
+      - name: Check running containers
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ env.AZURE_VM_IP }}
+          username: ${{ env.AZURE_VM_USER }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
+          script: |
+            echo "::notice title=Containers::Listando containers ativos..."
+            docker ps

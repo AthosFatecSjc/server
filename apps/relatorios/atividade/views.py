@@ -63,7 +63,10 @@ def get_tabela_horas_projeto(context, request):
         {
             "cabecalho": {
                 "titulo": "Horas por Desenvolvedor e Projeto",
-                "subtitulo": f'Distribuição de horas trabalhadas - {context.get("mes_nome")}/{context.get("ano")}',
+                "subtitulo": (
+                    f"Distribuição de horas trabalhadas - "
+                    f'{context.get("mes_nome")}/{context.get("ano")}'
+                ),
             }
         }
     )
@@ -78,9 +81,10 @@ def get_grafico_horas_projeto(context, request):
         {
             "cabecalho": {
                 "titulo": "Distribuição de Horas por Projeto",
-                "subtitulo": f'Percentual de horas dedicadas a cada projeto em {
-                    context.get("mes_nome")}/{
-                    context.get("ano")}',
+                "subtitulo": (
+                    f"Percentual de horas dedicadas a cada projeto em "
+                    f'{context.get("mes_nome")}/{context.get("ano")}'
+                ),
             }
         }
     )
@@ -101,7 +105,7 @@ def get_tabela_horas_por_dev(context, request):
         {
             "cabecalho": {
                 "titulo": "Total de Horas por Desenvolvedor",
-                "subtitulo": f'{context.get("mes_nome")}/{context.get("ano")}',
+                "subtitulo": (f'{context.get("mes_nome")}/{context.get("ano")}'),
             }
         }
     )
@@ -116,7 +120,7 @@ def get_grafico_horas_por_dev(context, request):
         {
             "cabecalho": {
                 "titulo": "Distribuição de Horas por Desenvolvedor",
-                "subtitulo": f'{context.get("mes_nome")}/{context.get("ano")}',
+                "subtitulo": (f'{context.get("mes_nome")}/{context.get("ano")}'),
             }
         }
     )

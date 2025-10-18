@@ -375,11 +375,12 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const cards = document.querySelectorAll('.card');
             const infoItems = document.querySelectorAll('.info-item');
 
-            cards.forEach((card, index) => {
+            let index = 0;
+            for (const card of cards) {
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(20px)';
 
@@ -388,9 +389,12 @@
                     card.style.opacity = '1';
                     card.style.transform = 'translateY(0)';
                 }, index * 150);
-            });
 
-            infoItems.forEach((item, index) => {
+                index++;
+            }
+
+            index = 0;
+            for (const item of infoItems) {
                 item.style.opacity = '0';
                 item.style.transform = 'translateY(15px)';
 
@@ -399,7 +403,9 @@
                     item.style.opacity = '1';
                     item.style.transform = 'translateY(0)';
                 }, cards.length * 150 + index * 100);
-            });
+
+                index++;
+            }
         });
     </script>
 </body>

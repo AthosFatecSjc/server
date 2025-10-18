@@ -9,11 +9,8 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.relatorios.models import TempoGastoEquipe
 from apps.relatorios.produtividade.services import (
-    atualizar_meta_funcionario,
-    atualizar_multiplos_dias,
-    calcular_spends_por_dev_com_legendas,
-    exportar_produtividade_pdf,
-)
+    atualizar_meta_funcionario, atualizar_multiplos_dias,
+    calcular_spends_por_dev_com_legendas, exportar_produtividade_pdf)
 
 
 @require_GET

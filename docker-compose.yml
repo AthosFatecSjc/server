@@ -1,29 +1,12 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  db:
-    container_name: postgres
-    image: postgres:16
+  app:
+    container_name: django-app
+    image: ruthmira/minha-app:latest
+    command: gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000
     env_file:
       - .env
-    restart: always
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  pgadmin:
-    container_name: pgadmin
-    image: dpage/pgadmin4
+      - "8000:8000"
     restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-
-volumes:
-  postgres_data:
-  pgadmin_data:
