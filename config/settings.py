@@ -12,9 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-SECRET_KEY = env("SECRET_KEY")
-
 DEBUG = env("DEBUG", default=True)
+
+SECRET_KEY = env("SECRET_KEY")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "apps.relatorios.atividade",
     "apps.utils",
     "django_crontab",
+    "olap_models",
 ]
 
 MIDDLEWARE = [
@@ -67,15 +68,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+DATABASE_ROUTERS = ['config.routers.OlapRouter']
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("POSTGRES_DB", default=None),
-        "USER": env("POSTGRES_USER", default=None),
-        "PASSWORD": env("POSTGRES_PASSWORD", default=None),
-        "HOST": env("POSTGRES_HOST", default=None),
-        "PORT": env("POSTGRES_PORT", default=None),
-    }
+        "NAME": env("DB_OLTP_NAME", default=None),
+        "USER": env("DB_OLTP_USER", default=None),
+        "PASSWORD": env("DB_OLTP_PASSWORD", default=None),
+        "HOST": env("DB_OLTP_HOST", default=None),
+        "PORT": env("DB_OLTP_PORT", default=None),
+    },
+    "olap": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("DB_OLAP_NAME", default=None),
+        "USER": env("DB_OLAP_USER", default=None),
+        "PASSWORD": env("DB_OLAP_PASSWORD", default=None),
+        "HOST": env("DB_OLAP_HOST", default=None),
+        "PORT": env("DB_OLAP_PORT", default=None),
+    },
 }
 
 if os.environ.get("TEST_DB_ENGINE"):
@@ -84,9 +99,9 @@ if os.environ.get("TEST_DB_ENGINE"):
         "NAME": os.environ.get("TEST_DB_NAME", ":memory:"),
     }
 
-JIRA_BASE_URL = env("JIRA_BASE_URL", default=None)
-JIRA_USER = env("JIRA_USER", default=None)
-JIRA_TOKEN = env("JIRA_TOKEN", default=None)
+JIRA_BASE_URL = env("JIRA_BASE_URL", default="http://localhost")
+JIRA_USER = env("JIRA_USER", default="user")
+JIRA_TOKEN = env("JIRA_TOKEN", default="token")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -140,7 +155,12 @@ CRONJOBS = [
     ),
 ]
 
-CACHE_JIRA = {"data": {}, "timestamp": None, "validade": datetime.timedelta(minutes=10)}
+# Configuração de cache personalizado para dados do JIRA
+CACHE_JIRA = {
+    "data": {},  # Dados serão preenchidos pelo CRON
+    "timestamp": None,
+    "validade": datetime.timedelta(minutes=10),
+}
 
 # Sentry Configuration
 SENTRY_DSN = env("SENTRY_DSN", default="")
