@@ -150,6 +150,11 @@ INSERT INTO CONTROLE_TEMPO_EQUIPE (
     TEMPO_GASTO,
     META_ID
 )
+WITH metas AS (
+    SELECT
+        (SELECT id FROM meta_tempo_controle WHERE objetivo_estagiario = '6') AS estagiario_id,
+        (SELECT id FROM meta_tempo_controle WHERE objetivo_clt = '7') AS clt_id
+)
 SELECT
     TRIM(TO_CHAR(D, 'Day')) AS DIA_SEMANA,
     EXTRACT(DAY FROM D)::INT AS DIA_MES,
@@ -308,11 +313,15 @@ HorasDistribuidaPorProjeto AS (
     SELECT
         thfm.mes_referencia,
         thfm.funcionario_id,
-        proj.id AS projeto_id,
-        ROUND( (thfm.total_horas * (RANDOM() * 0.7 + 0.3))::numeric, 2 ) AS horas_parciais
+        p.id AS projeto_id,
+        ROUND((thfm.total_horas * (RANDOM() * 0.7 + 0.3))::numeric, 2) AS horas_parciais
     FROM
-        TotalHorasFuncionarioMes thfm,
-        (SELECT id FROM projeto ORDER BY RANDOM() LIMIT (1 + (RANDOM() * 7)::INT)) AS proj(id)
+        TotalHorasFuncionarioMes thfm
+        JOIN LATERAL (
+            SELECT id FROM projeto
+            ORDER BY RANDOM()
+            LIMIT GREATEST(1, (1 + (RANDOM() * 7)::INT))
+        ) p ON TRUE
 ),
 HorasFinaisPorFuncionarioProjetoMes AS (
     SELECT
@@ -322,6 +331,8 @@ HorasFinaisPorFuncionarioProjetoMes AS (
         SUM(hdp.horas_parciais) AS horas_trabalhadas
     FROM
         HorasDistribuidaPorProjeto hdp
+    WHERE
+        hdp.projeto_id IS NOT NULL
     GROUP BY
         hdp.mes_referencia, hdp.funcionario_id, hdp.projeto_id
 ),
@@ -352,7 +363,7 @@ SELECT
     hfp.horas_trabalhadas AS horas,
     hfp.funcionario_id,
     hfp.projeto_id,
-    (SELECT r.id FROM ResumosMensaisGerados r ORDER BY RANDOM() LIMIT 1) AS resumo_id
+    (SELECT r.id FROM ResumosMensaisGerados r ORDER BY RANDOM() LIMIT 1)
 FROM
     HorasFinaisPorFuncionarioProjetoMes hfp
 ON CONFLICT (funcionario_id, mes, projeto_id) DO NOTHING;

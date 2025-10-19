@@ -28,7 +28,8 @@ disable=
     no-name-in-module,
     unrecognized-inline-option,
     f-string-without-interpolation,
-    no-member
+    no-member,
+    duplicate-code
 
 [FORMAT]
 # Tamanho máximo de linha

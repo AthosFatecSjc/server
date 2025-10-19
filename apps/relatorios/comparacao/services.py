@@ -194,8 +194,10 @@ class ComparacaoService:
             current_data, horas_planejadas, projeto_nome, ano
         )
 
-        filename = f"relatorio_horas_{projeto_nome.replace(' ', '_')}_{ano}.pdf"
         response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
+        filename = f"relatorio_horas_{
+            projeto_nome.replace(
+                ' ', '_')}_{ano}.pdf"
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
@@ -291,7 +293,8 @@ class ComparacaoService:
         elements.append(Spacer(1, 15))
         elements.append(
             Paragraph(
-                (f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}"),
+                f"Gerado em: {
+                    datetime.now().strftime('%d/%m/%Y %H:%M')}",
                 date_style,
             )
         )
@@ -832,16 +835,12 @@ class ComparacaoService:
         try:
             print(LOG_PREFIX, 1)
 
-            objetivo_clt = (
-                f"META_{ComparacaoService._get_projeto_id(nome_projeto)}_{ano}"
-            )
-
             horas_previstas_obj, created = MetaTempoControle.objects.get_or_create(
-                objetivo_clt=objetivo_clt,
+                objetivo_clt=f"META_{
+                    ComparacaoService._get_projeto_id(nome_projeto)}_{ano}",
                 defaults={"objetivo_estagiario": str(horas_previstas)},
             )
-
-            print(LOG_PREFIX, 2)
+            print("set_horas_previstas_projeto: %s", 2)
 
             if not created:
                 horas_previstas_obj.objetivo_estagiario = str(horas_previstas)
