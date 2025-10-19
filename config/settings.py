@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.relatorios.atividade",
     "apps.utils",
     "django_crontab",
+    "olap_models",
 ]
 
 MIDDLEWARE = [
@@ -98,6 +99,8 @@ DATABASES = {
         "PORT": os.getenv("DB_OLAP_PORT"),
     },
 }
+
+DATABASE_ROUTERS = ['config.routers.OlapRouter']
 
 if os.environ.get("TEST_DB_ENGINE"):
     DATABASES["default"] = {
