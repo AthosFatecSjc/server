@@ -7,11 +7,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, legal
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import (Paragraph, SimpleDocTemplate, Spacer, Table,
-                                TableStyle)
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from apps.relatorios.models import (Funcionario, MetaTempoControle,
-                                    TempoGastoEquipe)
+from apps.relatorios.models import Funcionario, MetaTempoControle, TempoGastoEquipe
 
 
 def calcular_spends_por_dev(mes, ano):
@@ -235,9 +233,7 @@ def exportar_produtividade_pdf(mes, ano, resultados):
         alignment=1,
     )
 
-    title_text = (
-        f"Relatório de Produtividade - {MESES_PORTUGUES.get(mes)}/{ano}"
-    )
+    title_text = f"Relatório de Produtividade - {MESES_PORTUGUES.get(mes)}/{ano}"
     elements.append(Paragraph(title_text, title_style))
     elements.append(Spacer(1, 0.1 * inch))
 
@@ -328,9 +324,9 @@ def exportar_produtividade_pdf(mes, ano, resultados):
 
     elements.append(Spacer(1, 0.1 * inch))
 
-    data_hora = datetime.now().strftime('%d/%m/%Y %H:%M')
     gen_date = Paragraph(
-        f"Gerado em: {data_hora}",
+        f"Gerado em: {
+            datetime.now().strftime('%d/%m/%Y %H:%M')}",
         ParagraphStyle("DateStyle", parent=styles["Normal"], fontSize=6),
     )
     elements.append(gen_date)

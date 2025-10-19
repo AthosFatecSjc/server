@@ -3,8 +3,8 @@ from django.views.decorators.http import require_http_methods
 
 from .services import JiraService
 
-# Mantido para futura reativação de cache
-# from apps.utils.cache import SimpleCache  # NOSONAR
+# A linha abaixo pode ser necessária dependendo de onde o SimpleCache foi implementado.
+# from apps.utils.cache import SimpleCache
 
 
 @require_http_methods(["GET"])

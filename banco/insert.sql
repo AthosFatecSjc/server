@@ -2,7 +2,7 @@
 -- 0. Limpeza das tabelas
 -- ==================================================================================================
 
-TRUNCATE TABLE 
+TRUNCATE TABLE
     cargo,
     funcionario,
     projeto,
@@ -150,6 +150,11 @@ INSERT INTO CONTROLE_TEMPO_EQUIPE (
     TEMPO_GASTO,
     META_ID
 )
+WITH metas AS (
+    SELECT
+        (SELECT id FROM meta_tempo_controle WHERE objetivo_estagiario = '6') AS estagiario_id,
+        (SELECT id FROM meta_tempo_controle WHERE objetivo_clt = '7') AS clt_id
+)
 SELECT
     TRIM(TO_CHAR(D, 'Day')) AS DIA_SEMANA,
     EXTRACT(DAY FROM D)::INT AS DIA_MES,
@@ -244,7 +249,7 @@ WHERE
 -- 7.1.1. Inserção na Tabela 'controle_horas_equipe_resumo'
 -- Adiciona dados de resumo para simular o total de horas para o mês de agosto.
 -- ==================================================================================================
- 
+
 INSERT INTO controle_horas_equipe_resumo (total_dev, total_projeto) VALUES
 (154.00, 154.00);
 
@@ -252,7 +257,7 @@ INSERT INTO controle_horas_equipe_resumo (total_dev, total_projeto) VALUES
 -- 7.1.2. Inserção na Tabela 'controle_horas_equipe'
 -- Adiciona os dados de horas por funcionário e projeto para os meses de agosto e julho, para criar um conjunto de dados mais robusto.
 -- ==================================================================================================
- 
+
 INSERT INTO controle_horas_equipe (mes, horas, funcionario_id, projeto_id, resumo_id) VALUES
 -- Dados de Agosto (baseados nos relatórios)
 ('2025-08-01', 78.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM projeto WHERE nome = 'Ball'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
@@ -308,11 +313,15 @@ HorasDistribuidaPorProjeto AS (
     SELECT
         thfm.mes_referencia,
         thfm.funcionario_id,
-        proj.id AS projeto_id,
-        ROUND( (thfm.total_horas * (RANDOM() * 0.7 + 0.3))::numeric, 2 ) AS horas_parciais
+        p.id AS projeto_id,
+        ROUND((thfm.total_horas * (RANDOM() * 0.7 + 0.3))::numeric, 2) AS horas_parciais
     FROM
-        TotalHorasFuncionarioMes thfm,
-        (SELECT id FROM projeto ORDER BY RANDOM() LIMIT (1 + (RANDOM() * 7)::INT)) AS proj(id)
+        TotalHorasFuncionarioMes thfm
+        JOIN LATERAL (
+            SELECT id FROM projeto
+            ORDER BY RANDOM()
+            LIMIT GREATEST(1, (1 + (RANDOM() * 7)::INT))
+        ) p ON TRUE
 ),
 HorasFinaisPorFuncionarioProjetoMes AS (
     SELECT
@@ -322,6 +331,8 @@ HorasFinaisPorFuncionarioProjetoMes AS (
         SUM(hdp.horas_parciais) AS horas_trabalhadas
     FROM
         HorasDistribuidaPorProjeto hdp
+    WHERE
+        hdp.projeto_id IS NOT NULL
     GROUP BY
         hdp.mes_referencia, hdp.funcionario_id, hdp.projeto_id
 ),
@@ -352,7 +363,7 @@ SELECT
     hfp.horas_trabalhadas AS horas,
     hfp.funcionario_id,
     hfp.projeto_id,
-    (SELECT r.id FROM ResumosMensaisGerados r ORDER BY RANDOM() LIMIT 1) AS resumo_id
+    (SELECT r.id FROM ResumosMensaisGerados r ORDER BY RANDOM() LIMIT 1)
 FROM
     HorasFinaisPorFuncionarioProjetoMes hfp
 ON CONFLICT (funcionario_id, mes, projeto_id) DO NOTHING;
