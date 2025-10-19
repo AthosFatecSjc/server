@@ -102,11 +102,12 @@ class ControleHorasEquipe(models.Model):
             mes_str = mes_value.strftime("%m/%Y")
         else:
             mes_str = "N/A"
-        return f"{
-            self.funcionario} - {
-            self.projeto} - {
-            mes_str} - {
-                self.horas}h"
+        return (
+            f"{self.funcionario} - "
+            f"{self.projeto} - "
+            f"{mes_str} - "
+            f"{self.horas}h"
+        )
 
 
 class MetaTempoControle(models.Model):
