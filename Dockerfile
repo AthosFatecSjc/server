@@ -13,6 +13,8 @@ COPY apps/ ./apps/
 COPY config/ ./config/
 COPY static/ ./static/
 COPY templates/ ./templates/
+COPY olap_models/ ./olap_models/
+COPY banco/ ./banco/
 COPY manage.py .
 
 # Cria usuário não-root
