@@ -1,18 +1,14 @@
-version: "3.8"
-
 services:
   app:
     container_name: django-app
     image: ruthmira/minha-app:latest
-    command: gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000
     env_file:
       - .env
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             python manage.py crontab remove &&
+             python manage.py crontab add &&
+             gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000"
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  pgadmin:
-    container_name: pgadmin
-    image: dpage/pgadmin4
+      - "8000:8000"
     restart: always

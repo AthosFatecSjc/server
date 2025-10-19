@@ -3,6 +3,7 @@ name: Deploy to Azure VM
 on:
   push:
     branches:
+      - develop
       - release
 
 jobs:
@@ -44,6 +45,18 @@ jobs:
           docker tag $DOCKERHUB_USERNAME/minha-app:$VERSION $DOCKERHUB_USERNAME/minha-app:latest
           docker push $DOCKERHUB_USERNAME/minha-app:$VERSION
           docker push $DOCKERHUB_USERNAME/minha-app:latest
+
+      - name: Upload environment file to VM
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ env.AZURE_VM_IP }}
+          username: ${{ env.AZURE_VM_USER }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
+          script: |
+            echo "Atualizando arquivo .env..."
+            mkdir -p ~/app/server
+            echo "${{ secrets.ENV_FILE }}" > ~/app/server/.env
+            chmod 600 ~/app/server/.env
 
       - name: Deploy to Azure VM
         uses: appleboy/ssh-action@v0.1.10
