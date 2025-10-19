@@ -4,9 +4,8 @@ from unittest.mock import patch
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
-
 from apps.relatorios.models import Funcionario
-from apps.dashboards.services import JiraService
+from apps.dashboards.services import JiraService # pylint: disable=unused-import
 
 VALOR_HORA_PADRAO = Decimal('40.00')
 

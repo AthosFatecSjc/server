@@ -75,3 +75,4 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'  - {atualizados} funcionários já existentes.'
         ))
+        
