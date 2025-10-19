@@ -8,9 +8,11 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copia apenas os diretórios necessários
+# Copia os diretórios necessários
 COPY apps/ ./apps/
 COPY config/ ./config/
+COPY static/ ./static/
+COPY templates/ ./templates/
 COPY manage.py .
 
 # Cria usuário não-root
