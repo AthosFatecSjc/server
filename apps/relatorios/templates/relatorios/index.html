@@ -379,7 +379,8 @@
             const cards = document.querySelectorAll('.card');
             const infoItems = document.querySelectorAll('.info-item');
 
-            cards.forEach((card, index) => {
+            let index = 0;
+            for (const card of cards) {
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(20px)';
 
