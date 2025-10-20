@@ -151,10 +151,7 @@ class TempoGastoEquipe(models.Model):
     def __str__(self) -> str:
         mes_value = self.mes
         mes_str = mes_value.strftime("%m/%Y") if isinstance(mes_value, date) else "N/A"
-        return f"{
-            self.funcionario} - {
-            mes_str} - {
-            self.tempo_gasto}h"
+        return f"{self.funcionario} - " f"{mes_str} - " f"{self.tempo_gasto}h"
 
 
 class TempoControleValores(models.Model):
