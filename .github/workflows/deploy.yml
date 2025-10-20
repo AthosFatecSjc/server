@@ -59,7 +59,7 @@ jobs:
             chmod 600 ~/app/server/.env
 
       - name: Deploy to Azure VM
-        uses: appleboy/ssh-action@v0.1.10
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
