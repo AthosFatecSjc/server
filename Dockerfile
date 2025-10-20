@@ -20,6 +20,7 @@ COPY templates/ ./templates/
 COPY olap_models/ ./olap_models/
 COPY banco/ ./banco/
 COPY manage.py .
+COPY entrypoint.sh /app/entrypoint.sh
 
 # Cria usuário, pasta de estáticos, e dá permissão
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
