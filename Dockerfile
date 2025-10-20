@@ -26,6 +26,7 @@ COPY entrypoint.sh /app/entrypoint.sh
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 RUN mkdir -p /app/staticfiles
 RUN chown -R appuser:appgroup /app
+RUN chmod +x /app/entrypoint.sh
 
 # Troca para o usuário não-root
 USER appuser
