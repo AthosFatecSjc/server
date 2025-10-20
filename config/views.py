@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.shortcuts import render
 
 def index(request):
-    return HttpResponse("Bem-vindo à página inicial!")
+    return render(request, 'config/index.html')

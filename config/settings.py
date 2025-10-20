@@ -47,11 +47,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_htmx',
     'apps.usuarios',
+    'config',
     'apps.relatorios',
-    'apps.dashboards',
     'apps.relatorios.produtividade',
     'apps.relatorios.comparacao.apps.ComparacaoConfig',
     'apps.relatorios.atividade',
+    'apps.dashboards',
+    'apps.dashboards.desenvolvedores',
+    'apps.dashboards.projetos',
 ]
 
 MIDDLEWARE = [
@@ -70,7 +73,9 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / 'templates',  
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
