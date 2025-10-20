@@ -17,11 +17,9 @@ COPY olap_models/ ./olap_models/
 COPY banco/ ./banco/
 COPY manage.py .
 
-RUN mkdir -p /app/staticfiles
-RUN chown -R appuser:appgroup /app/staticfiles
-
-# Cria usuário não-root
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+RUN mkdir -p /app/staticfiles
+RUN chown -R appuser:appgroup /app
 USER appuser
 
 # Expõe a porta
