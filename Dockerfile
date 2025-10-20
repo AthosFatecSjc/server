@@ -31,19 +31,10 @@ USER appuser
 
 # Expõe a porta
 EXPOSE 8000
-# Isso executa todos os comandos em sequência.
-# O Gunicorn é o último, pois ele deve ficar rodando no "foreground".
-CMD sh -c " \
-  echo 'Rodando collectstatic...' && \
-  python manage.py collectstatic --noinput && \
-  \
-  echo 'Atualizando crontab...' && \
-  python manage.py crontab remove && \
-  python manage.py crontab add && \
-  \
-  echo 'Iniciando cron daemon em background...' && \
-  cron && \
-  \
-  echo 'Iniciando gunicorn (processo principal)...' && \
-  gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000 \
-"
+
+# 1. Define o script como o ponto de entrada
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+# 2. Define o comando principal no formato JSON.
+# Este comando será passado como o "$@" para o script entrypoint.
+CMD ["gunicorn", "config.wsgi:application", "--workers", "4", "--bind", "0.0.0.0:8000"]
