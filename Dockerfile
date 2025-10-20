@@ -1,5 +1,9 @@
 FROM python:3.11-slim
 
+# Instalar dependências do cron e ps
+# (procps é necessário para o gunicorn encontrar os workers)
+RUN apt-get update && apt-get install -y cron procps && rm -rf /var/lib/apt/lists/*
+
 # Cria diretório de trabalho
 WORKDIR /app
 
@@ -17,13 +21,29 @@ COPY olap_models/ ./olap_models/
 COPY banco/ ./banco/
 COPY manage.py .
 
+# Cria usuário, pasta de estáticos, e dá permissão
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 RUN mkdir -p /app/staticfiles
 RUN chown -R appuser:appgroup /app
+
+# Troca para o usuário não-root
 USER appuser
 
 # Expõe a porta
 EXPOSE 8000
-
-# Comando padrão
-CMD ["gunicorn", "config.wsgi:application", "--workers", "4", "--bind", "0.0.0.0:8000"]
+# Isso executa todos os comandos em sequência.
+# O Gunicorn é o último, pois ele deve ficar rodando no "foreground".
+CMD sh -c " \
+  echo 'Rodando collectstatic...' && \
+  python manage.py collectstatic --noinput && \
+  \
+  echo 'Atualizando crontab...' && \
+  python manage.py crontab remove && \
+  python manage.py crontab add && \
+  \
+  echo 'Iniciando cron daemon em background...' && \
+  cron && \
+  \
+  echo 'Iniciando gunicorn (processo principal)...' && \
+  gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000 \
+"
