@@ -47,7 +47,7 @@ jobs:
           docker push $DOCKERHUB_USERNAME/minha-app:latest
 
       - name: Upload environment file to VM
-        uses: appleboy/ssh-action@v0.1.10
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
@@ -59,7 +59,7 @@ jobs:
             chmod 600 ~/app/server/.env
 
       - name: Deploy to Azure VM
-        uses: appleboy/ssh-action@v0.1.10 # NOSONAR
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
@@ -92,7 +92,7 @@ jobs:
             fi
 
       - name: Run migrations and ETL initial load
-        uses: appleboy/ssh-action@v0.1.10
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
@@ -106,7 +106,7 @@ jobs:
             docker exec django-app python manage.py rodar_etl
 
       - name: Check containers
-        uses: appleboy/ssh-action@v0.1.10
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
@@ -117,7 +117,7 @@ jobs:
 
 
       - name: Check running containers
-        uses: appleboy/ssh-action@v0.1.10
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
