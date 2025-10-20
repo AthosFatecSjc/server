@@ -78,9 +78,9 @@ def get_grafico_horas_projeto(context, request):
         {
             "cabecalho": {
                 "titulo": "Distribuição de Horas por Projeto",
-                "subtitulo": f'Percentual de horas dedicadas a cada projeto em {
+                "subtitulo": f'''Percentual de horas dedicadas a cada projeto em {
                     context.get("mes_nome")}/{
-                    context.get("ano")}',
+                    context.get("ano")}''',
             }
         }
     )
