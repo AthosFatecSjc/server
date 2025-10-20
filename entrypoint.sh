@@ -1,3 +1,6 @@
+#!/bin/sh
+
+# Sair imediatamente se um comando falhar
 set -e
 
 echo 'Rodando collectstatic...'
@@ -12,4 +15,5 @@ cron
 
 echo 'Iniciando processo principal (gunicorn)...'
 
+# O 'exec' é a parte mágica.
 exec "$@"
