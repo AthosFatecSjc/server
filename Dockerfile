@@ -18,11 +18,10 @@ COPY olap_models/ ./olap_models/
 COPY banco/ ./banco/
 COPY manage.py ./
 
-# Cria usuário, pasta de estáticos, e dá permissão
 RUN addgroup --system appgroup \
     && adduser --system --ingroup appgroup --home /home/appuser --shell /bin/bash appuser \
-    && mkdir -p /app/staticfiles \
-    && chown -R appuser:appgroup /app/staticfiles
+    && mkdir -p /app/staticfiles /app/log \
+    && chown -R appuser:appgroup /app/staticfiles /app/log
 
 USER appuser
 

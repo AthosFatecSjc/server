@@ -22,9 +22,11 @@ services:
     user: root
     command: >
       sh -c "
-        service cron start &&
+        mkdir -p /app/log &&
         python manage.py crontab remove &&
         python manage.py crontab add &&
+        echo '$(date) - CRON inicializado' >> /app/log/cron_buscar_dados_api.log &&
+        service cron start &&
         tail -f /app/log/cron_buscar_dados_api.log
       "
     volumes:
