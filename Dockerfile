@@ -20,7 +20,7 @@ COPY manage.py ./
 
 # Cria usuário, pasta de estáticos, e dá permissão
 RUN addgroup --system appgroup \
-    && adduser --system --ingroup appgroup appuser \
+    && adduser --system --ingroup appgroup --home /home/appuser --shell /bin/bash appuser \
     && mkdir -p /app/staticfiles \
     && chown -R appuser:appgroup /app/staticfiles
 
