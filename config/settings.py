@@ -12,17 +12,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-SECRET_KEY = env("SECRET_KEY")
-
 DEBUG = env("DEBUG", default=True)
-env = environ.Env(DEBUG=(bool, False))
 
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("SECRET_KEY")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
@@ -81,22 +72,24 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+DATABASE_ROUTERS = ["config.routers.OlapRouter"]
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_OLTP_NAME"),
-        "USER": os.getenv("DB_OLTP_USER"),
-        "PASSWORD": os.getenv("DB_OLTP_PASSWORD"),
-        "HOST": os.getenv("DB_OLTP_HOST"),
-        "PORT": os.getenv("DB_OLTP_PORT"),
+        "NAME": env("DB_OLTP_NAME", default=None),
+        "USER": env("DB_OLTP_USER", default=None),
+        "PASSWORD": env("DB_OLTP_PASSWORD", default=None),
+        "HOST": env("DB_OLTP_HOST", default=None),
+        "PORT": env("DB_OLTP_PORT", default=None),
     },
     "olap": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_OLAP_NAME"),
-        "USER": os.getenv("DB_OLAP_USER"),
-        "PASSWORD": os.getenv("DB_OLAP_PASSWORD"),
-        "HOST": os.getenv("DB_OLAP_HOST"),
-        "PORT": os.getenv("DB_OLAP_PORT"),
+        "NAME": env("DB_OLAP_NAME", default=None),
+        "USER": env("DB_OLAP_USER", default=None),
+        "PASSWORD": env("DB_OLAP_PASSWORD", default=None),
+        "HOST": env("DB_OLAP_HOST", default=None),
+        "PORT": env("DB_OLAP_PORT", default=None),
     },
 }
 
