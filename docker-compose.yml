@@ -8,7 +8,7 @@ services:
       sh -c "
         python manage.py migrate --noinput &&
         python manage.py collectstatic --noinput &&
-        su appuser -c 'gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000'
+        gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000
       "
     ports:
       - "8000:8000"
