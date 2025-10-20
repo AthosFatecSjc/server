@@ -20,13 +20,10 @@ COPY templates/ ./templates/
 COPY olap_models/ ./olap_models/
 COPY banco/ ./banco/
 COPY manage.py .
-COPY entrypoint.sh /app/entrypoint.sh
 
 # Cria usuário, pasta de estáticos, e dá permissão
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 RUN mkdir -p /app/staticfiles
-RUN chown -R appuser:appgroup /app
-RUN chmod +x /app/entrypoint.sh
 
 # Troca para o usuário não-root
 USER appuser
@@ -34,9 +31,5 @@ USER appuser
 # Expõe a porta
 EXPOSE 8000
 
-# 1. Define o script como o ponto de entrada
-ENTRYPOINT ["/app/entrypoint.sh"]
-
-# 2. Define o comando principal no formato JSON.
-# Este comando será passado como o "$@" para o script entrypoint.
+# Comando para coletar arquivos estáticos
 CMD ["gunicorn", "config.wsgi:application", "--workers", "4", "--bind", "0.0.0.0:8000"]

@@ -91,15 +91,30 @@ jobs:
               exit 1
             fi
 
-      - name: Run Django migrations
+      - name: Run migrations and ETL initial load
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
           password: ${{ env.AZURE_VM_PASSWORD }}
           script: |
-            echo "Executando migrations..."
-            docker exec django-app python manage.py migrate
+            echo "Executando migrações OLTP..."
+            docker exec django-app python manage.py migrate --database=default
+            echo "Executando migrações OLAP..."
+            docker exec django-app python manage.py migrate --database=olap
+            echo "Executando ETL inicial..."
+            docker exec django-app python manage.py rodar_etl
+
+      - name: Check containers
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ env.AZURE_VM_IP }}
+          username: ${{ env.AZURE_VM_USER }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
+          script: |
+            echo "::notice title=Containers ativos::"
+            docker ps
+
 
       - name: Check running containers
         uses: appleboy/ssh-action@v0.1.10

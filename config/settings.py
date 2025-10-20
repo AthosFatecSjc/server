@@ -155,11 +155,19 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cron Jobs
 CRONJOBS = [
+    # Jira a cada dia às 19h
     (
-        env("CRON_BUSCAR_DADOS", default="*/1 * * * *"),
+        env("CRON_BUSCAR_DADOS", default="0 19 * * *"),
         "apps.utils.cron.buscar_dados_api",
     ),
+    # ETL diário às 19h (ou no mesmo horário do Jira)
+    (
+        env("CRON_ETL", default="0 19 * * *"),
+        "django.core.management.call_command",
+        ["rodar_etl"],
+    ),
 ]
+
 
 # Configuração de cache personalizado para dados do JIRA
 CACHE_JIRA = {

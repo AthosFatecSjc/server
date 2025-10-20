@@ -1,14 +1,32 @@
 services:
-  app:
+  web:
     container_name: django-app
     image: ruthmira/minha-app:latest
     env_file:
       - .env
     command: >
-      sh -c "python manage.py collectstatic --noinput &&
-             python manage.py crontab remove &&
-             python manage.py crontab add &&
-             gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000"
+      sh -c "
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput &&
+        gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000
+      "
     ports:
       - "8000:8000"
+    restart: always
+
+  cron:
+    container_name: django-cron
+    image: ruthmira/minha-app:latest
+    env_file:
+      - .env
+    command: >
+      sh -c "
+        apt-get update && apt-get install -y cron &&
+        python manage.py crontab remove &&
+        python manage.py crontab add &&
+        service cron start &&
+        tail -f /app/log/cron_buscar_dados_api.log
+      "
+    volumes:
+      - .:/app
     restart: always
