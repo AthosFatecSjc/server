@@ -121,6 +121,8 @@
 </head>
 <body>
 
+    {% include "dashboards/_header.html" %}
+
     {% if error_message %}
     <div id="snackbar">{{ error_message }}</div>
     {% endif %}
