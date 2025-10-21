@@ -1,17 +1,28 @@
+"  " "Serviços para geração de relatórios de atividade." ""
+
 from collections import defaultdict
-from django.db.models import Sum, Count
-from apps.relatorios.models import ControleHorasEquipe
 from datetime import datetime
 from io import BytesIO
-from reportlab.lib.pagesizes import landscape, legal
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-from reportlab.lib.units import inch
+
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from PIL import Image as PILImage
+from django.db.models import Count, Sum
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import landscape, legal
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import (
+    Image,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
+
+from apps.relatorios.models import ControleHorasEquipe
+
+matplotlib.use("Agg")
 
 
 class AtividadeService:
@@ -32,9 +43,18 @@ class AtividadeService:
     """
 
     MESES_PORTUGUES = {
-        1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
-        5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
-        9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+        1: "Janeiro",
+        2: "Fevereiro",
+        3: "Março",
+        4: "Abril",
+        5: "Maio",
+        6: "Junho",
+        7: "Julho",
+        8: "Agosto",
+        9: "Setembro",
+        10: "Outubro",
+        11: "Novembro",
+        12: "Dezembro",
     }
 
     @staticmethod
@@ -50,18 +70,20 @@ class AtividadeService:
                 e pronto para ser aplicado a uma tabela.
 
         """
-        return TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0000FF')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-            ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-            ('FONTSIZE', (0, 1), (-1, -1), 9),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ])
+        return TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0000FF")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 10),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+                ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+                ("FONTSIZE", (0, 1), (-1, -1), 9),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ]
+        )
 
     @staticmethod
     def _criar_tabela_com_estilo(data, col_widths, align_right_cols=None):
@@ -82,14 +104,14 @@ class AtividadeService:
         Returns:
             tuple: Uma tupla contendo o objeto `Table` e o objeto `TableStyle`
                 aplicado a ele.
-        
+
         """
         table = Table(data, colWidths=col_widths)
         style = AtividadeService._criar_estilo_tabela_base()
 
         if align_right_cols:
             for col in align_right_cols:
-                style.add('ALIGN', (col, 1), (col, -1), 'CENTER')
+                style.add("ALIGN", (col, 1), (col, -1), "CENTER")
 
         table.setStyle(style)
         return table, style
@@ -114,43 +136,41 @@ class AtividadeService:
                 o `Paragraph` do subtítulo e o `Spacer`.
         """
         subtitle_style = ParagraphStyle(
-            'SubTitle',
-            parent=styles['Heading2'],
+            "SubTitle",
+            parent=styles["Heading2"],
             fontSize=12,
             spaceAfter=10,
-            alignment=0
+            alignment=0,
         )
-        return [
-            Paragraph(texto, subtitle_style),
-            Spacer(1, space_after * inch)
-        ]
+        return [Paragraph(texto, subtitle_style), Spacer(1, space_after * inch)]
 
     @staticmethod
     def _buscar_horas_detalhadas(ano: int, mes: int):
         """Busca horas detalhadas por funcionário e projeto.
-        
+
         Args:
             ano (int): Ano para filtrar os dados.
             mes (int): Mês para filtrar os dados.
-            
+
         Returns:
             QuerySet: Dados agregados de horas por funcionário e projeto.
         """
         return (
-            ControleHorasEquipe.objects
-            .filter(mes__year=ano, mes__month=mes)
-            .values('funcionario_id__nome', 'projeto_id__nome')
-            .annotate(total_horas=Sum('horas'))
-            .order_by('funcionario_id__nome', 'projeto_id__nome')
+            ControleHorasEquipe.objects.filter(  # pylint: disable=no-member
+                mes__year=ano, mes__month=mes
+            )
+            .values("funcionario_id__nome", "projeto_id__nome")
+            .annotate(total_horas=Sum("horas"))
+            .order_by("funcionario_id__nome", "projeto_id__nome")
         )
 
     @staticmethod
     def _processar_dados_horas_detalhadas(dados):
         """Processa os dados de horas, criando estruturas para por_projeto e totais.
-        
+
         Args:
             dados: QuerySet com dados de horas por funcionário e projeto.
-            
+
         Returns:
             tuple: Tupla contendo (por_projeto, total_por_dev).
         """
@@ -158,19 +178,21 @@ class AtividadeService:
         por_projeto = []
 
         for item in dados:
-            funcionario = item['funcionario_id__nome']
-            projeto = item['projeto_id__nome']
-            total_horas = float(item['total_horas'])
+            funcionario = item["funcionario_id__nome"]
+            projeto = item["projeto_id__nome"]
+            total_horas = float(item["total_horas"])
 
-            por_projeto.append({
-                'funcionario': funcionario,
-                'projeto': projeto,
-                'total_horas': total_horas
-            })
+            por_projeto.append(
+                {
+                    "funcionario": funcionario,
+                    "projeto": projeto,
+                    "total_horas": total_horas,
+                }
+            )
             totais[funcionario] += total_horas
 
         total_por_dev = [
-            {'funcionario': funcionario, 'total_horas': total}
+            {"funcionario": funcionario, "total_horas": total}
             for funcionario, total in totais.items()
         ]
 
@@ -196,12 +218,11 @@ class AtividadeService:
                     com o total de horas de um desenvolvedor no mês.
         """
         dados = AtividadeService._buscar_horas_detalhadas(ano, mes)
-        por_projeto, total_por_dev = AtividadeService._processar_dados_horas_detalhadas(dados)
+        por_projeto, total_por_dev = AtividadeService._processar_dados_horas_detalhadas(
+            dados
+        )
 
-        return {
-            'por_projeto': por_projeto,
-            'total_por_dev': total_por_dev
-        }
+        return {"por_projeto": por_projeto, "total_por_dev": total_por_dev}
 
     @staticmethod
     def soma_horas_por_dev_por_mes(ano: int, mes: int) -> list[dict[str, float]]:
@@ -216,100 +237,116 @@ class AtividadeService:
                 'funcionario' e 'total_horas'.
         """
         return list(
-            ControleHorasEquipe.objects
-            .filter(mes__year=ano, mes__month=mes)
-            .values('funcionario_id__nome')
-            .annotate(total_horas=Sum('horas'))
-            .order_by('funcionario_id__nome')
+            ControleHorasEquipe.objects.filter(  # pylint: disable=no-member
+                mes__year=ano, mes__month=mes
+            )
+            .values("funcionario_id__nome")
+            .annotate(total_horas=Sum("horas"))
+            .order_by("funcionario_id__nome")
         )
 
     @staticmethod
     def _buscar_dados_base(ano: int, mes: int):
         """Busca os dados base do banco de dados para o relatório.
-        
+
         Args:
             ano (int): Ano para geração do relatório.
             mes (int): Mês para geração do relatório.
-            
+
         Returns:
             QuerySet: Dados filtrados e otimizados do ControleHorasEquipe.
         """
-        return ControleHorasEquipe.objects.filter(
-            mes__year=ano,
-            mes__month=mes
-        ).select_related('funcionario', 'projeto').order_by('funcionario__nome')
+        return (
+            ControleHorasEquipe.objects.filter(  # pylint: disable=no-member
+                mes__year=ano, mes__month=mes
+            )
+            .select_related("funcionario", "projeto")
+            .order_by("funcionario__nome")
+        )
 
     @staticmethod
     def _processar_dados_por_colaborador(queryset):
         """Organiza os dados por colaborador e projeto.
-        
+
         Args:
             queryset: QuerySet com os dados do ControleHorasEquipe.
-            
+
         Returns:
             tuple: Tupla contendo (dados_por_colaborador, projetos_nomes, dados_tabela).
         """
         dados_por_colaborador = defaultdict(lambda: defaultdict(float))
         for registro in queryset:
-            dados_por_colaborador[registro.funcionario.nome][registro.projeto.nome] += float(registro.horas)
+            dados_por_colaborador[registro.funcionario.nome][
+                registro.projeto.nome
+            ] += float(registro.horas)
 
-        projetos_nomes = sorted(set(queryset.values_list('projeto__nome', flat=True)))
+        projetos_nomes = sorted(set(queryset.values_list("projeto__nome", flat=True)))
 
         dados_tabela = [
             {
-                'colaborador_nome': colaborador,
-                'horas': [projetos.get(p_nome, 0) for p_nome in projetos_nomes],
-                'total_colaborador': sum(projetos.values())
+                "colaborador_nome": colaborador,
+                "horas": [projetos.get(p_nome, 0) for p_nome in projetos_nomes],
+                "total_colaborador": sum(projetos.values()),
             }
             for colaborador, projetos in dados_por_colaborador.items()
         ]
-        
-        return dados_por_colaborador, projetos_nomes, dados_tabela
+
+        return projetos_nomes, dados_tabela
 
     @staticmethod
     def _calcular_totais_projeto(queryset, projetos_nomes):
         """Calcula os totais por projeto e total geral.
-        
+
         Args:
             queryset: QuerySet com os dados do ControleHorasEquipe.
             projetos_nomes (list): Lista com nomes dos projetos.
-            
+
         Returns:
             tuple: Tupla contendo (resumo_projetos, totais_por_projeto, total_geral_horas).
         """
-        total_geral_horas = queryset.aggregate(total=Sum('horas'))['total'] or 0
+        total_geral_horas = queryset.aggregate(total=Sum("horas"))["total"] or 0
 
-        resumo_projetos = queryset.values('projeto__nome').annotate(
-            total_horas=Sum('horas'),
-            devs_no_projeto=Count('funcionario', distinct=True)
-        ).order_by('-total_horas')
+        resumo_projetos = (
+            queryset.values("projeto__nome")
+            .annotate(
+                total_horas=Sum("horas"),
+                devs_no_projeto=Count("funcionario", distinct=True),
+            )
+            .order_by("-total_horas")
+        )
 
-        resumo_projetos_dict = {item['projeto__nome']: item for item in resumo_projetos}
+        resumo_projetos_dict = {item["projeto__nome"]: item for item in resumo_projetos}
 
         totais_por_projeto = [
-            resumo_projetos_dict.get(p_nome, {}).get('total_horas', 0) for p_nome in projetos_nomes
+            resumo_projetos_dict.get(p_nome, {}).get("total_horas", 0)
+            for p_nome in projetos_nomes
         ]
-        
+
         return resumo_projetos, totais_por_projeto, total_geral_horas
 
     @staticmethod
     def _gerar_dados_cards(resumo_projetos, total_geral_horas):
         """Gera os dados formatados para os cards de resumo.
-        
+
         Args:
             resumo_projetos: Lista com o resumo dos projetos.
             total_geral_horas (float): Total geral de horas.
-            
+
         Returns:
             list: Lista de dicionários com dados dos cards.
         """
         return [
             {
-                'projeto_nome': item['projeto__nome'],
-                'total_horas': float(item['total_horas']),
-                'percentual': round((float(item['total_horas']) / float(total_geral_horas)) * 100, 1)
-                if total_geral_horas > 0 else 0,
-                'desenvolvedores': item['devs_no_projeto'],
+                "projeto_nome": item["projeto__nome"],
+                "total_horas": float(item["total_horas"]),
+                "percentual": (
+                    round(
+                        (float(item["total_horas"]) / float(total_geral_horas)) * 100, 1
+                    )
+                    if total_geral_horas > 0
+                    else 0
+                ),
+                "desenvolvedores": item["devs_no_projeto"],
             }
             for item in resumo_projetos
         ]
@@ -317,126 +354,147 @@ class AtividadeService:
     @staticmethod
     def gerar_dados_relatorio_atividade(ano: int, mes: int) -> dict:
         """Gera os dados completos para o relatório de atividade.
-        
+
         Esta função orquestra a geração de dados, delegando responsabilidades
-        específicas para métodos auxiliares, mantendo a função principal 
+        específicas para métodos auxiliares, mantendo a função principal
         focada apenas na coordenação do processo.
-        
+
         Args:
             ano (int): Ano para geração do relatório.
             mes (int): Mês para geração do relatório.
-            
+
         Returns:
             dict: Dados formatados e prontos para geração do relatório.
         """
         queryset = AtividadeService._buscar_dados_base(ano, mes)
-        
-        dados_por_colaborador, projetos_nomes, dados_tabela = AtividadeService._processar_dados_por_colaborador(queryset)
-        
-        resumo_projetos, totais_por_projeto, total_geral_horas = AtividadeService._calcular_totais_projeto(queryset, projetos_nomes)
-        
-        dados_cards = AtividadeService._gerar_dados_cards(resumo_projetos, total_geral_horas)
+
+        projetos_nomes, dados_tabela = (
+            AtividadeService._processar_dados_por_colaborador(queryset)
+        )
+
+        resumo_projetos, totais_por_projeto, total_geral_horas = (
+            AtividadeService._calcular_totais_projeto(queryset, projetos_nomes)
+        )
+
+        dados_cards = AtividadeService._gerar_dados_cards(
+            resumo_projetos, total_geral_horas
+        )
 
         return {
-            'dados_tabela': dados_tabela,
-            'dados_cards': dados_cards,
-            'projetos_nomes': projetos_nomes,
-            'totais_por_projeto': totais_por_projeto,
-            'total_geral': total_geral_horas
+            "dados_tabela": dados_tabela,
+            "dados_cards": dados_cards,
+            "projetos_nomes": projetos_nomes,
+            "totais_por_projeto": totais_por_projeto,
+            "total_geral": total_geral_horas,
         }
 
     @staticmethod
     def _gerar_grafico_pizza(dados, titulo, label_key, value_key):
         """
         Método genérico para gerar gráficos de pizza.
-        
+
         Args:
             dados (list): Lista de dicionários com os dados.
             titulo (str): Título do gráfico.
             label_key (str): Chave para extrair os labels dos dados.
             value_key (str): Chave para extrair os valores dos dados.
-            
+
         Returns:
             BytesIO: Buffer com a imagem do gráfico em formato PNG ou None se não há dados.
         """
         if not dados or len(dados) == 0:
             return None
-            
-        plt.rcParams['font.family'] = 'sans-serif'
-        plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
-        
-        fig, ax = plt.subplots(figsize=(8, 6))
-        
+
+        plt.rcParams["font.family"] = "sans-serif"
+        plt.rcParams["font.sans-serif"] = ["Arial", "DejaVu Sans"]
+
+        _, ax = plt.subplots(figsize=(8, 6))  # noqa: F841
+
         labels = [item[label_key] for item in dados]
         sizes = [item[value_key] for item in dados]
-        
-        colors_palette = [
-            '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-            '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#6b7280',
-            '#d97706', '#0ea5e9', '#9333ea', '#22c55e', '#dc2626'
-        ]
-        colors_list = [colors_palette[i % len(colors_palette)] for i in range(len(labels))]
-        
 
-        wedges, texts, autotexts = ax.pie(
-            sizes, 
+        colors_palette = [
+            "#3b82f6",
+            "#10b981",
+            "#f59e0b",
+            "#ef4444",
+            "#8b5cf6",
+            "#06b6d4",
+            "#f97316",
+            "#84cc16",
+            "#ec4899",
+            "#6b7280",
+            "#d97706",
+            "#0ea5e9",
+            "#9333ea",
+            "#22c55e",
+            "#dc2626",
+        ]
+        colors_list = [
+            colors_palette[i % len(colors_palette)] for i in range(len(labels))
+        ]
+
+        _, _, autotexts = ax.pie(
+            sizes,
             labels=labels,
             colors=colors_list,
-            autopct='%1.1f%%',
+            autopct="%1.1f%%",
             startangle=90,
-            textprops={'fontsize': 10, 'color': 'black'}
+            textprops={"fontsize": 10, "color": "black"},
         )
-        
+
         for autotext in autotexts:
-            autotext.set_color('white')
-            autotext.set_fontweight('bold')
+            autotext.set_color("white")
+            autotext.set_fontweight("bold")
             autotext.set_fontsize(9)
-        
-        ax.set_title(titulo, fontsize=14, fontweight='bold', pad=20)
-        
-        ax.axis('equal')
-        
+
+        ax.set_title(titulo, fontsize=14, fontweight="bold", pad=20)
+
+        ax.axis("equal")
+
         buffer = BytesIO()
-        plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        plt.savefig(
+            buffer, format="png", dpi=150, bbox_inches="tight", facecolor="white"
+        )
         plt.close()
         buffer.seek(0)
-        
+
         return buffer
 
     @staticmethod
     def _gerar_grafico_pizza_projetos(dados_cards):
         """
         Gera um gráfico de pizza para distribuição de horas por projeto.
-        
+
         Args:
             dados_cards (list): Lista de dicionários com dados dos projetos.
-            
+
         Returns:
             BytesIO: Buffer com a imagem do gráfico em formato PNG.
         """
         return AtividadeService._gerar_grafico_pizza(
             dados_cards,
-            'Distribuição de Horas por Projeto',
-            'projeto_nome',
-            'total_horas'
+            "Distribuição de Horas por Projeto",
+            "projeto_nome",
+            "total_horas",
         )
 
     @staticmethod
     def _gerar_grafico_pizza_desenvolvedores(dados_tabela):
         """
         Gera um gráfico de pizza para distribuição de horas por desenvolvedor.
-        
+
         Args:
             dados_tabela (list): Lista de dicionários com dados dos desenvolvedores.
-            
+
         Returns:
             BytesIO: Buffer com a imagem do gráfico em formato PNG.
         """
         return AtividadeService._gerar_grafico_pizza(
             dados_tabela,
-            'Distribuição de Horas por Desenvolvedor',
-            'colaborador_nome',
-            'total_colaborador'
+            "Distribuição de Horas por Desenvolvedor",
+            "colaborador_nome",
+            "total_colaborador",
         )
 
     @staticmethod
@@ -461,18 +519,22 @@ class AtividadeService:
                 Tabela, Espaçador) prontos para serem adicionados ao
                 documento PDF.
         """
-        elements = AtividadeService._criar_subtitulo("Horas por Desenvolvedor e Projeto", styles)
+        elements = AtividadeService._criar_subtitulo(
+            "Horas por Desenvolvedor e Projeto", styles
+        )
         table_data = [["Desenvolvedor", "Projeto", "Horas"]]
-        for registro in dados['dados_tabela']:
-            for i, projeto_nome in enumerate(dados['projetos_nomes']):
-                horas = registro['horas'][i]
+        for registro in dados["dados_tabela"]:
+            for i, projeto_nome in enumerate(dados["projetos_nomes"]):
+                horas = registro["horas"][i]
                 if horas > 0:
-                    table_data.append([registro['colaborador_nome'], projeto_nome, f"{horas:.1f}h"])
+                    table_data.append(
+                        [registro["colaborador_nome"], projeto_nome, f"{horas:.1f}h"]
+                    )
         table, _ = AtividadeService._criar_tabela_com_estilo(
-            table_data, [2.5*inch, 3*inch, 1*inch], align_right_cols=[2]
+            table_data, [2.5 * inch, 3 * inch, 1 * inch], align_right_cols=[2]
         )
         elements.append(table)
-        elements.append(Spacer(1, 0.3*inch))
+        elements.append(Spacer(1, 0.3 * inch))
         return elements
 
     @staticmethod
@@ -495,21 +557,25 @@ class AtividadeService:
             list: Uma lista de objetos 'flowable' do ReportLab (Parágrafo,
                 Tabela, Espaçador) prontos para serem adicionados ao
                 documento PDF."""
-        elements = AtividadeService._criar_subtitulo("Total de Horas por Desenvolvedor", styles)
+        elements = AtividadeService._criar_subtitulo(
+            "Total de Horas por Desenvolvedor", styles
+        )
         table_data = [["Desenvolvedor", "Total de Horas"]] + [
-            [registro['colaborador_nome'], f"{registro['total_colaborador']:.1f}h"]
-            for registro in dados['dados_tabela']
+            [registro["colaborador_nome"], f"{registro['total_colaborador']:.1f}h"]
+            for registro in dados["dados_tabela"]
         ]
         table_data.append(["TOTAL GERAL", f"{dados['total_geral']:.1f}h"])
         table, table_style = AtividadeService._criar_tabela_com_estilo(
-            table_data, [4*inch, 2*inch], align_right_cols=[1]
+            table_data, [4 * inch, 2 * inch], align_right_cols=[1]
         )
         total_row = len(table_data) - 1
-        table_style.add('BACKGROUND', (0, total_row), (-1, total_row), colors.HexColor('#e9d5ff'))
-        table_style.add('FONTNAME', (0, total_row), (-1, total_row), 'Helvetica-Bold')
+        table_style.add(
+            "BACKGROUND", (0, total_row), (-1, total_row), colors.HexColor("#e9d5ff")
+        )
+        table_style.add("FONTNAME", (0, total_row), (-1, total_row), "Helvetica-Bold")
         table.setStyle(table_style)
         elements.append(table)
-        elements.append(Spacer(1, 0.3*inch))
+        elements.append(Spacer(1, 0.3 * inch))
         return elements
 
     @staticmethod
@@ -532,62 +598,66 @@ class AtividadeService:
                 Tabela, Espaçador) prontos para serem adicionados ao
                 documento PDF.
         """
-        elements = AtividadeService._criar_subtitulo("Total de Horas por Projeto", styles)
+        elements = AtividadeService._criar_subtitulo(
+            "Total de Horas por Projeto", styles
+        )
         table_data = [["Projeto", "Total de Horas"]] + [
-            [registro['projeto_nome'], f"{registro['total_horas']:.1f}h"]
-            for registro in dados['dados_cards']
+            [registro["projeto_nome"], f"{registro['total_horas']:.1f}h"]
+            for registro in dados["dados_cards"]
         ]
         table, _ = AtividadeService._criar_tabela_com_estilo(
-            table_data, [4*inch, 2*inch], align_right_cols=[1]
+            table_data, [4 * inch, 2 * inch], align_right_cols=[1]
         )
         elements.append(table)
-        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Spacer(1, 0.2 * inch))
         return elements
 
     @staticmethod
-    def _gerar_secao_grafico_projetos(dados, styles):
+    def _gerar_secao_grafico_projetos(dados):
         """
         Gera a seção do gráfico de pizza para distribuição por projeto.
-        
+
         Args:
             dados (dict): Dados processados do relatório.
-            styles: Estilos do ReportLab.
-            
+
         Returns:
             list: Lista de elementos do ReportLab para o gráfico.
         """
         elements = []
-        
-        grafico_buffer = AtividadeService._gerar_grafico_pizza_projetos(dados['dados_cards'])
-        
+
+        grafico_buffer = AtividadeService._gerar_grafico_pizza_projetos(
+            dados["dados_cards"]
+        )
+
         if grafico_buffer:
-            img = Image(grafico_buffer, width=6*inch, height=4.5*inch)
+            img = Image(grafico_buffer, width=6 * inch, height=4.5 * inch)
             elements.append(img)
-            elements.append(Spacer(1, 0.3*inch))
-        
+            elements.append(Spacer(1, 0.3 * inch))
+
         return elements
 
     @staticmethod
-    def _gerar_secao_grafico_desenvolvedores(dados, styles):
+    def _gerar_secao_grafico_desenvolvedores(dados):
         """
         Gera a seção do gráfico de pizza para distribuição por desenvolvedor.
-        
+
         Args:
             dados (dict): Dados processados do relatório.
-            styles: Estilos do ReportLab.
-            
+
         Returns:
             list: Lista de elementos do ReportLab para o gráfico.
         """
         elements = []
-        
-        grafico_buffer = AtividadeService._gerar_grafico_pizza_desenvolvedores(dados['dados_tabela'])
-        
+
+        grafico_buffer = AtividadeService._gerar_grafico_pizza_desenvolvedores(
+            dados["dados_tabela"]
+        )
+
         if grafico_buffer:
-            img = Image(grafico_buffer, width=6*inch, height=4.5*inch)
+            img = Image(grafico_buffer, width=6 * inch, height=4.5 * inch)
             elements.append(img)
-            elements.append(Spacer(1, 0.3*inch))
-        
+            elements.append(Spacer(1, 0.3 * inch))
+
         return elements
 
     @staticmethod
@@ -610,73 +680,78 @@ class AtividadeService:
         """
         return Paragraph(
             f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
-            ParagraphStyle('DateStyle', parent=styles['Normal'], fontSize=8)
+            ParagraphStyle("DateStyle", parent=styles["Normal"], fontSize=8),
         )
 
     @staticmethod
     def _configurar_documento_pdf(buffer):
         """Configura o documento PDF com tamanho e margens adequadas.
-        
+
         Args:
             buffer: Buffer de bytes onde o PDF será escrito.
-            
+
         Returns:
             SimpleDocTemplate: Documento PDF configurado.
         """
         return SimpleDocTemplate(
             buffer,
             pagesize=landscape(legal),
-            leftMargin=0.2*inch,
-            rightMargin=0.2*inch,
-            topMargin=0.3*inch,
-            bottomMargin=0.3*inch
+            leftMargin=0.2 * inch,
+            rightMargin=0.2 * inch,
+            topMargin=0.3 * inch,
+            bottomMargin=0.3 * inch,
         )
 
     @staticmethod
     def _criar_titulo_relatorio(mes, ano, styles):
         """Cria o título formatado do relatório.
-        
+
         Args:
             mes (int): Mês do relatório.
             ano (int): Ano do relatório.
             styles: Estilos do ReportLab.
-            
+
         Returns:
             list: Lista com elementos do título e espaçamento.
         """
         title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
+            "CustomTitle",
+            parent=styles["Heading1"],
             fontSize=16,
             spaceAfter=20,
-            alignment=1
+            alignment=1,
         )
-        
-        title_text = f"Relatório de Atividades - {AtividadeService.MESES_PORTUGUES.get(mes)}/{ano}"
-        return [
-            Paragraph(title_text, title_style),
-            Spacer(1, 0.2*inch)
-        ]
+
+        title_text = f"Relatório de Atividades - {
+            AtividadeService.MESES_PORTUGUES.get(mes)}/{ano}"
+        return [Paragraph(title_text, title_style), Spacer(1, 0.2 * inch)]
 
     @staticmethod
     def _combinar_elementos_relatorio(dados, styles):
         """Combina todos os elementos do relatório em uma lista.
-        
+
         Args:
             dados (dict): Dados processados do relatório.
             styles: Estilos do ReportLab.
-            
+
         Returns:
             list: Lista completa de elementos para o PDF.
         """
         elements = []
-        
-        elements += AtividadeService._gerar_tabela_horas_por_dev_e_projeto(dados, styles)
+
+        elements += AtividadeService._gerar_tabela_horas_por_dev_e_projeto(
+            dados, styles
+        )
         elements += AtividadeService._gerar_tabela_total_horas_por_dev(dados, styles)
-        elements += AtividadeService._gerar_tabela_total_horas_por_projeto(dados, styles)
-        
-        elements += AtividadeService._gerar_secao_grafico_projetos(dados, styles)
-        elements += AtividadeService._gerar_secao_grafico_desenvolvedores(dados, styles)
+        elements += AtividadeService._gerar_tabela_total_horas_por_projeto(
+            dados, styles
+        )
+
+        # type: ignore
+        elements += AtividadeService._gerar_secao_grafico_projetos(dados)
+        elements += AtividadeService._gerar_secao_grafico_desenvolvedores(
+            dados
+        )  # type: ignore
 
         elements.append(AtividadeService._gerar_footer(styles))
         return elements
@@ -702,7 +777,7 @@ class AtividadeService:
         buffer = BytesIO()
         doc = AtividadeService._configurar_documento_pdf(buffer)
         styles = getSampleStyleSheet()
-        
+
         elements = []
         elements += AtividadeService._criar_titulo_relatorio(mes, ano, styles)
         elements += AtividadeService._combinar_elementos_relatorio(dados, styles)

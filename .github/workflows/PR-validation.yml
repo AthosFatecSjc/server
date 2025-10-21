@@ -1,0 +1,65 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [ "develop", "release" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 2
+      matrix:
+        python-version: [3.12, 3.13]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Instalar Dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Analisar Código com Pylint (Django)
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+          SECRET_KEY: fake-key
+        run: |
+          pip install pylint pylint-django
+          pylint --django-settings-module=config.settings $(git ls-files '*.py')
+
+      - name: Verificação de Segurança com Bandit
+        run: |
+          pip install bandit
+          bandit -r . -f json -o bandit-report.json
+
+      - name: Executar Testes e Gerar Cobertura
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          TEST_DB_ENGINE: django.db.backends.sqlite3
+          TEST_DB_NAME: ":memory:"
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER: ${{ secrets.JIRA_USER }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          pip install coverage
+          coverage run --source='.' manage.py test
+          coverage xml
+
+      - name: Upload do Relatório de Cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.python-version }}
+          path: coverage.xml
+
+      - name: Upload do Relatório de Segurança (Bandit)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report-${{ matrix.python-version }}
+          path: bandit-report.json

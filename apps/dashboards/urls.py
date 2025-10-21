@@ -1,5 +1,9 @@
+""""URLs para a aplicação de dashboards."""
+
 from django.urls import path
 
+from .views import dashboard_view
+
 urlpatterns = [
-	# Add your URL patterns here
+    path("", dashboard_view, name="dashboard"),
 ]

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard JIRA</title>
+    <style>
+        .dashboard {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .stats {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .project-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            background: white;
+        }
+        .project-header {
+            background: #0052cc;
+            color: white;
+            padding: 15px;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+            font-size: inherit;
+        }
+        .project-header:focus {
+            outline: 2px solid #ffa500;
+            outline-offset: 2px;
+        }
+        .project-header h2 {
+            margin: 0;
+            color: white;
+        }
+        .project-content {
+            padding: 0;
+            display: none;
+        }
+        .project-content.show {
+            display: block;
+        }
+        .tasks-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .tasks-table th,
+        .tasks-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .tasks-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .tasks-table tr:hover {
+            background: #f8f9fa;
+        }
+        .refresh-btn {
+            background: #0052cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .refresh-btn:focus {
+            outline: 2px solid #ffa500;
+            outline-offset: 2px;
+        }
+        .no-tasks {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        #snackbar {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #d9534f;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            right: 30px;
+            bottom: 30px;
+            font-size: 17px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        #snackbar.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 4.5s;
+            animation: fadein 0.5s, fadeout 0.5s 4.5s;
+        }
+        @-webkit-keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @-webkit-keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
+</head>
+<body>
+
+    {% include "dashboards/_header.html" %}
+
+    {% if error_message %}
+    <div id="snackbar">{{ error_message }}</div>
+    {% endif %}
+
+    <div class="dashboard">
+        <div class="stats">
+            <h1>Dashboard JIRA</h1>
+            <p><strong>{{ total_projetos }}</strong> Projetos | <strong>{{ total_tasks_geral }}</strong> Tasks</p>
+            <button class="refresh-btn" onclick="window.location.reload()">
+                Atualizar Dados
+            </button>
+        </div>
+
+        <div class="projects-list">
+            {% for projeto in projetos_com_tasks %}
+            <div class="project-card">
+                <button class="project-header"
+                        onclick="toggleProject(this)"
+                        onkeydown="handleProjectKeyPress(event, this)"
+                        tabindex="0"
+                        aria-expanded="false"
+                        aria-controls="project-content-{{ forloop.counter }}">
+                    <h2>
+                        {{ projeto.name }}
+                        <small>({{ projeto.key }})</small>
+                        <span style="float: right;">
+                            {{ projeto.total_tasks }} tasks
+                        </span>
+                    </h2>
+                    <span class="sr-only">Clique ou pressione Enter para expandir/recolher</span>
+                </button>
+
+                <section class="project-content"
+                     id="project-content-{{ forloop.counter }}"
+                     aria-label="Tarefas do projeto {{ projeto.name }}">
+                    {% if projeto.tasks %}
+                    <table class="tasks-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Key</th>
+                                <th scope="col">Summary</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Assignee</th>
+                                <th scope="col">Time Spent</th>
+                                <th scope="col">Time Estimate</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in projeto.tasks %}
+                            <tr>
+                                <th scope="row">{{ task.key }}</th>
+                                <td>{{ task.summary }}</td>
+                                <td>
+                                    <span style="padding: 2px 6px; background: #e9ecef; border-radius: 3px; font-size: 12px;">
+                                        {{ task.issue_type }}
+                                    </span>
+                                </td>
+                                <td>{{ task.assignee }}</td>
+                                <td>{{ task.time_spent }}</td>
+                                <td>{{ task.time_estimate }}</td>
+                                <td>
+                                    <span style="padding: 2px 8px; background: #d4edda; border-radius: 3px; font-size: 12px;">
+                                        {{ task.status }}
+                                    </span>
+                                </td>
+                                <td>{{ task.created }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="no-tasks" role="alert">
+                        Nenhuma task encontrada neste projeto
+                    </div>
+                    {% endif %}
+                </section>
+            </div>
+            {% empty %}
+                {% if not error_message %}
+                <div style="text-align: center; padding: 40px; color: #666;" role="alert">
+                    <h2>Nenhum projeto encontrado</h2>
+                    <p>Verifique as configurações do JIRA</p>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function toggleProject(element) {
+            const projectContent = element.closest('.project-card').querySelector('.project-content');
+            const isExpanded = projectContent.classList.toggle('show');
+            element.setAttribute('aria-expanded', isExpanded.toString());
+        }
+
+        function handleProjectKeyPress(event, element) {
+            if (event.keyCode === 13 || event.keyCode === 32) {
+                event.preventDefault();
+                toggleProject(element);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstProject = document.querySelector('.project-card');
+            if (firstProject) {
+                const projectContent = firstProject.querySelector('.project-content');
+                const projectHeader = firstProject.querySelector('.project-header');
+                projectContent.classList.add('show');
+                projectHeader.setAttribute('aria-expanded', 'true');
+            }
+
+            const snackbar = document.getElementById('snackbar');
+            if (snackbar) {
+                snackbar.classList.add('show');
+                setTimeout(function() {
+                    snackbar.classList.remove('show');
+                    setTimeout(function() { snackbar.style.display = 'none'; }, 500);
+                }, 4500);
+            }
+        });
+    </script>
+</body>
+</html>
