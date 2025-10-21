@@ -11,8 +11,14 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, legal
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import (Image, Paragraph, SimpleDocTemplate, Spacer,
-                                Table, TableStyle)
+from reportlab.platypus import (
+    Image,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
 from apps.relatorios.models import ControleHorasEquipe
 
@@ -716,10 +722,8 @@ class AtividadeService:
             alignment=1,
         )
 
-        title_text = (
-            f"Relatório de Atividades - "
-            f"{AtividadeService.MESES_PORTUGUES.get(mes)}/{ano}"
-        )
+        title_text = f"Relatório de Atividades - {
+            AtividadeService.MESES_PORTUGUES.get(mes)}/{ano}"
         return [Paragraph(title_text, title_style), Spacer(1, 0.2 * inch)]
 
     @staticmethod

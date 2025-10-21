@@ -15,7 +15,7 @@ class Cargo(models.Model):
 
         db_table = "cargo"
 
-    def __str__(self) -> str:
+    def __str__(self):
         return str(self.sigla)
 
 
@@ -33,13 +33,19 @@ class Funcionario(models.Model):
         related_name="subordinados",
     )
     data_criacao = models.DateField(auto_now_add=True)
+    valor_hora = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=40.00,
+        help_text="Valor/hora do desenvolvedor (R$)",
+    )
 
     class Meta:
         """Meta dados do modelo Funcionario"""
 
         db_table = "funcionario"
 
-    def __str__(self) -> str:
+    def __str__(self):
         return str(self.nome)
 
 
@@ -54,7 +60,7 @@ class Projeto(models.Model):
 
         db_table = "projeto"
 
-    def __str__(self) -> str:
+    def __str__(self):
         return str(self.nome)
 
 
@@ -69,7 +75,7 @@ class ControleHorasEquipeResumo(models.Model):
 
         db_table = "controle_horas_equipe_resumo"
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"Dev: {self.total_dev}h | Projeto: {self.total_projeto}h"
 
 
@@ -92,8 +98,15 @@ class ControleHorasEquipe(models.Model):
 
     def __str__(self) -> str:
         mes_value = self.mes
-        mes_str = mes_value.strftime("%m/%Y") if isinstance(mes_value, date) else "N/A"
-        return f"{self.funcionario} - {self.projeto} - {mes_str} - {self.horas}h"
+        if isinstance(mes_value, date):
+            mes_str = mes_value.strftime("%m/%Y")
+        else:
+            mes_str = "N/A"
+        return f"{
+            self.funcionario} - {
+            self.projeto} - {
+            mes_str} - {
+                self.horas}h"
 
 
 class MetaTempoControle(models.Model):
@@ -137,7 +150,10 @@ class TempoGastoEquipe(models.Model):
     def __str__(self) -> str:
         mes_value = self.mes
         mes_str = mes_value.strftime("%m/%Y") if isinstance(mes_value, date) else "N/A"
-        return f"{self.funcionario} - {mes_str} - {self.tempo_gasto}h"
+        return f"{
+            self.funcionario} - {
+            mes_str} - {
+            self.tempo_gasto}h"
 
 
 class TempoControleValores(models.Model):
@@ -156,5 +172,5 @@ class TempoControleValores(models.Model):
 
         db_table = "controle_tempo_resumo"
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"Aproveitamento: {self.aproveitamento}%"
