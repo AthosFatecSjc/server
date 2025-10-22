@@ -739,6 +739,10 @@
                         typeMatch = issueType.toLowerCase().includes('bug') ||
                             issueType.toLowerCase().includes('erro') ||
                             issueType.toLowerCase().includes('error');
+                    } else if (currentTypeFilter === 'Story') {
+                        typeMatch = issueType.toLowerCase().includes('story') ||
+                            issueType.toLowerCase().includes('epic') ||
+                            issueType.toLowerCase().includes('história');
                     } else {
                         typeMatch = issueType === currentTypeFilter;
                     }
@@ -768,6 +772,8 @@
                                 filterName = 'Issue (Tarefa/SubTarefa)';
                             } else if (currentTypeFilter === 'bug') {
                                 filterName = 'Bug (Bug/Erro)';
+                            } else if (currentTypeFilter === 'Story') {
+                                filterName = 'Story (Story/Epic)';
                             }
                             noTasksDiv.textContent = `Nenhuma task do tipo "${filterName}" encontrada neste projeto`;
                         } else {
