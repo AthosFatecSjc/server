@@ -525,12 +525,16 @@
                     </button>
                     <div class="select-dropdown" id="projectDropdown">
                         <div class="select-option active" data-value="all"
-                            onclick="selectProject('all', 'Todos os Projetos')">
+                            onclick="selectProject('all', 'Todos os Projetos')"
+                            onkeypress="if(event.key==='Enter'||event.key===' ')selectProject('all', 'Todos os Projetos')"
+                            tabindex="0">
                             Todos os Projetos
                         </div>
                         {% for projeto in projetos_com_tasks %}
                         <div class="select-option" data-value="{{ projeto.key }}"
-                            onclick="selectProject('{{ projeto.key }}', '{{ projeto.name }} ({{ projeto.key }})')">
+                            onclick="selectProject('{{ projeto.key }}', '{{ projeto.name }} ({{ projeto.key }})')"
+                            onkeypress="if(event.key==='Enter'||event.key===' ')selectProject('{{ projeto.key }}', '{{ projeto.name }} ({{ projeto.key }})')"
+                            tabindex="0">
                             {{ projeto.name }} <small style="color: #6c757d;">({{ projeto.key }})</small>
                         </div>
                         {% endfor %}
