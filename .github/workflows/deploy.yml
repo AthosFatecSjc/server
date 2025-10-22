@@ -46,8 +46,20 @@ jobs:
           docker push $DOCKERHUB_USERNAME/minha-app:$VERSION
           docker push $DOCKERHUB_USERNAME/minha-app:latest
 
+      - name: Upload environment file to VM
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
+        with:
+          host: ${{ env.AZURE_VM_IP }}
+          username: ${{ env.AZURE_VM_USER }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
+          script: |
+            echo "Atualizando arquivo .env..."
+            mkdir -p ~/app/server
+            echo "${{ secrets.ENV_FILE }}" > ~/app/server/.env
+            chmod 600 ~/app/server/.env
+
       - name: Deploy to Azure VM
-        uses: appleboy/ssh-action@v0.1.10
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
@@ -79,18 +91,33 @@ jobs:
               exit 1
             fi
 
-      - name: Run Django migrations
-        uses: appleboy/ssh-action@v0.1.10
+      - name: Run migrations and ETL initial load
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
           password: ${{ env.AZURE_VM_PASSWORD }}
           script: |
-            echo "Executando migrations..."
-            docker exec django-app python manage.py migrate
+            echo "Executando migrações OLTP..."
+            docker exec django-app python manage.py migrate --database=default
+            echo "Executando migrações OLAP..."
+            docker exec django-app python manage.py migrate --database=olap
+            echo "Executando ETL inicial..."
+            docker exec django-app python manage.py rodar_etl
+
+      - name: Check containers
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
+        with:
+          host: ${{ env.AZURE_VM_IP }}
+          username: ${{ env.AZURE_VM_USER }}
+          password: ${{ env.AZURE_VM_PASSWORD }}
+          script: |
+            echo "::notice title=Containers ativos::"
+            docker ps
+
 
       - name: Check running containers
-        uses: appleboy/ssh-action@v0.1.10
+        uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: ${{ env.AZURE_VM_USER }}
