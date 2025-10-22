@@ -1,16 +1,17 @@
-version: '3.8'
-
 services:
   db:
     container_name: postgres
     image: postgres:16
-    env_file:
-      - .env
     restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_MULTIPLE_DATABASES: oltp,olap  
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./create-databases.sh:/docker-entrypoint-initdb.d/create-databases.sh  
 
   pgadmin:
     container_name: pgadmin
