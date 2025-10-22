@@ -46,20 +46,6 @@ jobs:
           docker push $DOCKERHUB_USERNAME/minha-app:$VERSION
           docker push $DOCKERHUB_USERNAME/minha-app:latest
 
-        - name: Upload environment file to VM
-          uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
-          with:
-            host: ${{ env.AZURE_VM_IP }}
-            username: ${{ env.AZURE_VM_USER }}
-            password: ${{ env.AZURE_VM_PASSWORD }}
-            script: |
-              echo "Atualizando arquivo .env..."
-              mkdir -p ~/app/server
-              cat <<'EOF' > ~/app/server/.env
-        ${{ secrets.ENV_FILE }}
-        EOF
-              chmod 600 ~/app/server/.env
-
       - name: Deploy to Azure VM
         uses: appleboy/ssh-action@v0.1.10 # NOSONAR: tag oficial estável, SHA quebra compatibilidade
         with:
