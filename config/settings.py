@@ -6,16 +6,18 @@ import environ
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(DEBUG=(bool, False))
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+env_path = os.path.join(BASE_DIR, ".env")
+if not os.path.exists(env_path):
+    env_path = os.path.join(BASE_DIR, "../.env")
+
+environ.Env.read_env(env_path)
 
 DEBUG = env("DEBUG", default=True)
-
 SECRET_KEY = env("SECRET_KEY")
-
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 # Application definition
@@ -138,9 +140,13 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# Onde o Django procura arquivos estáticos adicionais (a pasta /static do seu projeto)
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
+# Para onde o 'collectstatic' vai copiar todos os arquivos para produção
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -149,11 +155,19 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cron Jobs
 CRONJOBS = [
+    # Jira a cada dia às 19h
     (
-        env("CRON_BUSCAR_DADOS", default="*/1 * * * *"),
+        env("CRON_BUSCAR_DADOS", default="0 19 * * *"),
         "apps.utils.cron.buscar_dados_api",
     ),
+    # ETL diário às 19h (ou no mesmo horário do Jira)
+    (
+        env("CRON_ETL", default="0 19 * * *"),
+        "django.core.management.call_command",
+        ["rodar_etl"],
+    ),
 ]
+
 
 # Configuração de cache personalizado para dados do JIRA
 CACHE_JIRA = {
