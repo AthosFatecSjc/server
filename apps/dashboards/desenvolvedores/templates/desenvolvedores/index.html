@@ -28,7 +28,7 @@
                 </div>
                 <p class="text-2xl font-bold mt-2">8</p>
             </div>
-            
+
             <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
                 <div class="flex items-center justify-between">
                     <h3 class="text-sm font-medium text-gray-500">Valor/Hora Médio</h3>
@@ -46,7 +46,7 @@
                     <h2 class="text-xl font-semibold">Lista de Desenvolvedores</h2>
                     <p class="text-gray-600 mt-1">Configure o valor por hora de cada desenvolvedor</p>
                 </div>
-                
+
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-50">
@@ -234,7 +234,7 @@
                     <h2 class="text-xl font-semibold">Estatísticas</h2>
                     <p class="text-gray-600 mt-1">Análise dos valores configurados</p>
                 </div>
-                
+
                 <div class="p-6 space-y-6">
                     <div class="space-y-4">
                         <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
@@ -250,7 +250,7 @@
                             <span class="text-sm font-bold text-purple-600">R$ 40,10</span>
                         </div>
                     </div>
-                    
+
                     <div class="pt-4 border-t">
                         <div class="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
                             <div>
@@ -274,12 +274,12 @@
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                
+
                 <p class="text-gray-600 mb-4" id="developerName">Carregando...</p>
-                
+
                 <div class="space-y-4">
                     <input type="hidden" name="developer_id" id="developerId">
-                    
+
                     <div>
                         <label for="hourlyRate" class="block text-sm font-medium text-gray-700 mb-2">Valor/Hora (R$)</label>
                         <div class="relative">
@@ -288,7 +288,7 @@
                         </div>
                         <p class="text-xs text-gray-500 mt-1">Digite o valor sem o símbolo R$</p>
                     </div>
-                    
+
                     <div class="flex justify-end space-x-3 pt-4">
                         <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">Cancelar</button>
                         <button type="button" onclick="saveDeveloperRate()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
@@ -314,16 +314,16 @@
 
         function openEditModal(developerId, currentRate, developerName) {
             currentDeveloper = { id: developerId, name: developerName };
-            
+
             document.getElementById('developerId').value = developerId;
             document.getElementById('hourlyRate').value = parseFloat(currentRate).toFixed(2).replace('.', ',');
             document.getElementById('developerName').textContent = developerName;
-            
+
             const modal = document.getElementById('editModal');
             const modalContent = document.getElementById('modalContent');
-            
+
             modal.classList.remove('hidden');
-            
+
             setTimeout(() => {
                 modalContent.classList.remove('scale-95', 'opacity-0');
                 modalContent.classList.add('scale-100', 'opacity-100');
@@ -333,10 +333,10 @@
         function closeEditModal() {
             const modal = document.getElementById('editModal');
             const modalContent = document.getElementById('modalContent');
-            
+
             modalContent.classList.remove('scale-100', 'opacity-100');
             modalContent.classList.add('scale-95', 'opacity-0');
-            
+
             setTimeout(() => {
                 modal.classList.add('hidden');
                 currentDeveloper = null;
@@ -345,7 +345,7 @@
 
         function saveDeveloperRate() {
             const hourlyRate = document.getElementById('hourlyRate').value;
-            
+
             if (!hourlyRate) {
                 alert('Por favor, insira um valor para o hora.');
                 return;
@@ -359,14 +359,14 @@
             const notification = document.getElementById('notification');
             const notificationContent = document.getElementById('notificationContent');
             const notificationMessage = document.getElementById('notificationMessage');
-            
+
             notificationMessage.textContent = message;
             notification.classList.remove('hidden');
-            
+
             setTimeout(() => {
                 notificationContent.classList.remove('translate-x-full');
             }, 10);
-            
+
             setTimeout(() => {
                 notificationContent.classList.add('translate-x-full');
                 setTimeout(() => {
@@ -377,16 +377,16 @@
 
         document.getElementById('hourlyRate').addEventListener('input', function(e) {
             let value = e.target.value.replace(/[^\d,]/g, '');
-            
+
             const parts = value.split(',');
             if (parts.length > 2) {
                 value = parts[0] + ',' + parts.slice(1).join('');
             }
-            
+
             if (parts.length === 2 && parts[1].length > 2) {
                 value = parts[0] + ',' + parts[1].substring(0, 2);
             }
-            
+
             e.target.value = value;
         });
 

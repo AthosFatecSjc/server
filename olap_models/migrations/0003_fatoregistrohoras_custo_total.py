@@ -6,14 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('olap_models', '0002_dimfuncionario_valor_hora'),
+        ("olap_models", "0002_dimfuncionario_valor_hora"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='fatoregistrohoras',
-            name='custo_total',
-            field=models.DecimalField(
-                decimal_places=2, default=0, max_digits=10),
+            model_name="fatoregistrohoras",
+            name="custo_total",
+            field=models.DecimalField(decimal_places=2, default=0, max_digits=10),
         ),
     ]

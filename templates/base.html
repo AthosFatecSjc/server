@@ -6,7 +6,7 @@
     <title>{% block title %}Athos Insight{% endblock %}</title>
 
     <link rel="icon" href="/static/logo.png" type="image/png" sizes="128x128">
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -34,8 +34,8 @@
             top: 0;
             height: 100vh;
             width: var(--sidebar-width);
-            background: #f9fafb; 
-            border-right: 1px solid #e5e7eb; 
+            background: #f9fafb;
+            border-right: 1px solid #e5e7eb;
             transition: all var(--transition-speed) ease;
             z-index: 1000;
             overflow-x: hidden;
@@ -131,8 +131,8 @@
         }
 
         .sidebar-menu-button:hover {
-            background-color: #e5e7eb; 
-            color: #374151; 
+            background-color: #e5e7eb;
+            color: #374151;
         }
 
         .sidebar-menu-button.active {
@@ -161,7 +161,7 @@
             transition: margin-left var(--transition-speed) ease;
             min-height: 100vh;
             padding: 20px;
-            background: #f9fafb; 
+            background: #f9fafb;
         }
 
         .sidebar:hover ~ .main-content {
@@ -185,7 +185,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <ul class="sidebar-menu">
                 <li class="sidebar-menu-item">
                     <a href="/" class="sidebar-menu-button {% if request.path == '/' %}active{% endif %}">
@@ -193,21 +193,21 @@
                         <span>Home</span>
                     </a>
                 </li>
-                
+
                 <li class="sidebar-menu-item">
                     <a href="/relatorios/" class="sidebar-menu-button {% if '/relatorios/' in request.path %}active{% endif %}">
                         <i class="fas fa-chart-bar"></i>
                         <span>Relatórios</span>
                     </a>
                 </li>
-                
+
                 <li class="sidebar-menu-item">
                     <a href="/dashboards/" class="sidebar-menu-button {% if '/dashboards/' in request.path %}active{% endif %}">
                         <i class="fas fa-tachometer-alt"></i>
                         <span>Dashboards</span>
                     </a>
                 </li>
-                
+
                 <li class="sidebar-menu-item">
                     <a href="/usuarios/" class="sidebar-menu-button {% if '/usuarios/' in request.path %}active{% endif %}">
                         <i class="fas fa-users"></i>
@@ -230,7 +230,7 @@
                 img.onerror = function() {
                     const compact = document.querySelector('.logo-compact');
                     const full = document.querySelector('.logo-full');
-                    
+
                     if (compact) compact.innerHTML = '<span style="font-weight: bold; color: #374151;">A</span>';
                     if (full) full.innerHTML = '<span style="font-weight: bold; color: #374151;">ATHOS</span>';
                 };
