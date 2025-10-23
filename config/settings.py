@@ -150,11 +150,23 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cron Jobs
+# Cron Jobs
 CRONJOBS = [
+    # Executa a cada minuto - sincronização rápida
     (
         env("CRON_BUSCAR_DADOS", default="*/1 * * * *"),
         "apps.utils.cron.buscar_dados_api",
     ),
+    # Executa a cada minuto - ETL mais pesado
+    (
+        env("CRON_ETL", default="*/1 * * * *"),  
+        "apps.utils.cron.executar_etl_completo",
+    ),
+    # Executa a cada hora - processo completo (Jira sync + ETL)
+    # (
+    #     env("CRON_COMPLETO", default="0 */1 * * *"),  # A cada hora
+    #     "apps.utils.cron.buscar_dados_com_etl",
+    # ),
 ]
 
 # Configuração de cache personalizado para dados do JIRA
