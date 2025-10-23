@@ -27,7 +27,7 @@ class Command(BaseCommand):
         jira_service = JiraService()
 
         self.stdout.write('Buscando dados de projetos e tarefas do Jira...')
-        projetos_com_tasks = jira_service.get_all_tasks_data() #
+        projetos_com_tasks = jira_service.get_all_tasks_data()
 
         if projetos_com_tasks is None:
             raise CommandError(
@@ -49,30 +49,32 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(
-            f'Encontrados {len(assignees)} utilizadores únicos em {total_tasks_processadas} tarefas analisadas.')
+            'Encontrados {} utilizadores únicos em {} tarefas analisadas.'.format(
+                len(assignees), total_tasks_processadas
+            ))
 
         criados = 0
         atualizados = 0
         for nome_assignee in assignees:
             funcionario, created = Funcionario.objects.update_or_create(
                 nome=nome_assignee,
-                # O valor_hora padrão é definido no modelo Funcionario
             )
 
             if created:
                 criados += 1
                 self.stdout.write(
-                    f'  [CRIADO] Funcionário: {funcionario.nome} (ID: {funcionario.id}) com valor/hora padrão.')
+                    '  [CRIADO] Funcionário: {} (ID: {}) com valor/hora padrão.'.format(
+                        funcionario.nome, funcionario.id
+                    ))
             else:
                 atualizados += 1
 
         self.stdout.write(self.style.SUCCESS(
-            f'\nSincronização concluída com sucesso!'
+            '\nSincronização concluída com sucesso!'
         ))
         self.stdout.write(self.style.SUCCESS(
-            f'  - {criados} funcionários criados.'
+            '  - {} funcionários criados.'.format(criados)
         ))
         self.stdout.write(self.style.SUCCESS(
-            f'  - {atualizados} funcionários já existentes.'
+            '  - {} funcionários já existentes.'.format(atualizados)
         ))
-        
