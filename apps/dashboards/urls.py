@@ -1,9 +1,9 @@
-""""URLs para a aplicação de dashboards."""
+from django.urls import include, path
 
-from django.urls import path
-
-from .views import dashboard_view
+from .views import index
 
 urlpatterns = [
-    path("", dashboard_view, name="dashboard"),
+    path("", index, name="dashboards_index"),
+    path("desenvolvedores/", include("apps.dashboards.desenvolvedores.urls")),
+    path("projeto/", include("apps.dashboards.projetos.urls")),
 ]
