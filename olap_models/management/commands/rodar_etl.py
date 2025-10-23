@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, date, timedelta
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -52,8 +52,8 @@ class Command(BaseCommand):
         programaticamente para garantir um calendário completo para análises.
         """
         self.stdout.write('Populando Dimensão Tempo...')
-        start_date = datetime.date(2020, 1, 1)
-        end_date = datetime.date(2030, 12, 31)
+        start_date = date(2020, 1, 1)
+        end_date = date(datetime.now().year + 1, 12, 31)
         current_date = start_date
         while current_date <= end_date:
             DimTempo.objects.using('olap').update_or_create(
@@ -63,12 +63,12 @@ class Command(BaseCommand):
                     'ano': current_date.year,
                     'trimestre': f'T{(current_date.month - 1) // 3 + 1}',
                     'mes': current_date.month,
-                    'nome_mes': current_date.strftime('%B'),
-                    'dia_do_mes': current_date.day,
+                    'mes_nome': current_date.strftime('%B'),
+                    'dia': current_date.day,
                     'dia_da_semana': current_date.strftime('%A')
                 }
             )
-            current_date += datetime.timedelta(days=1)
+            current_date += timedelta(days=1)
 
     def popular_dimensoes_simples(self):
         """
@@ -84,7 +84,7 @@ class Command(BaseCommand):
         for projeto in Projeto.objects.all():
             DimProjeto.objects.using('olap').update_or_create(
                 id=projeto.id,
-                defaults={'nome_projeto': projeto.nome,
+                defaults={'nome': projeto.nome,
                           'data_criacao': projeto.data_criacao}
             )
 
@@ -107,11 +107,11 @@ class Command(BaseCommand):
             DimFuncionario.objects.using('olap').update_or_create(
                 id=func.id,
                 defaults={
-                    'nome_funcionario': func.nome,
+                    'nome': func.nome,
                     'time': func.time,
                     'data_contratacao': func.data_criacao,
                     'cargo': cargo_dim,
-                    'gerente': gerente_dim,
+                    'nome_gerente': gerente_dim,
                     'valor_hora': func.valor_hora
                 }
             )
