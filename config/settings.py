@@ -6,16 +6,18 @@ import environ
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(DEBUG=(bool, False))
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+env_path = os.path.join(BASE_DIR, ".env")
+if not os.path.exists(env_path):
+    env_path = os.path.join(BASE_DIR, "../.env")
+
+environ.Env.read_env(env_path)
 
 DEBUG = env("DEBUG", default=True)
-
 SECRET_KEY = env("SECRET_KEY")
-
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 # Application definition
@@ -27,14 +29,17 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_htmx",
+    "django_crontab",
     "apps.usuarios",
     "apps.relatorios",
-    "apps.dashboards",
     "apps.relatorios.produtividade",
     "apps.relatorios.comparacao.apps.ComparacaoConfig",
     "apps.relatorios.atividade",
+    "apps.dashboards",
+    "apps.dashboards.desenvolvedores",
+    "apps.dashboards.projetos",
     "apps.utils",
-    "django_crontab",
+    "config",
     "olap_models",
 ]
 
@@ -54,7 +59,9 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            BASE_DIR / "templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -140,9 +147,13 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# Onde o Django procura arquivos estáticos adicionais (a pasta /static do seu projeto)
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
+# Para onde o 'collectstatic' vai copiar todos os arquivos para produção
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -154,7 +165,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CRONJOBS = [
     # Executa a cada minuto - sincronização rápida
     (
-        env("CRON_BUSCAR_DADOS", default="*/1 * * * *"),
+        env("CRON_BUSCAR_DADOS", default="0 19 * * *"),
         "apps.utils.cron.buscar_dados_api",
     ),
     # Executa a cada minuto - ETL mais pesado
@@ -171,7 +182,7 @@ CRONJOBS = [
 
 # Configuração de cache personalizado para dados do JIRA
 CACHE_JIRA = {
-    "data": {},  # Dados serão preenchidos pelo CRON
+    "data": {},
     "timestamp": None,
     "validade": datetime.timedelta(minutes=10),
 }

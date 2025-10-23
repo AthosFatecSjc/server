@@ -6,9 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('relatorios', '0003_funcionario_valor_hora'),
-        ('relatorios', '0003_tempogastoequipe_unique_funcionario_dia_mes'),
+        ("relatorios", "0003_funcionario_valor_hora"),
+        ("relatorios", "0003_tempogastoequipe_unique_funcionario_dia_mes"),
     ]
 
-    operations = [
-    ]
+    operations = []

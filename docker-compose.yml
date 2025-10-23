@@ -1,18 +1,34 @@
-version: "3.8"
-
 services:
-  app:
+  web:
     container_name: django-app
     image: ruthmira/minha-app:latest
-    command: gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000
     env_file:
       - .env
+    command: >
+      sh -c "
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput &&
+        gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000
+      "
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - "8000:8000"
+    restart: always
 
-  pgadmin:
-    container_name: pgadmin
-    image: dpage/pgadmin4
+  cron:
+    container_name: django-cron
+    image: ruthmira/minha-app:latest
+    env_file:
+      - .env
+    user: root
+    command: >
+      sh -c "
+        mkdir -p /app/log &&
+        python manage.py crontab remove &&
+        python manage.py crontab add &&
+        echo '$(date) - CRON inicializado' >> /app/log/cron_buscar_dados_api.log &&
+        service cron start &&
+        tail -f /app/log/cron_buscar_dados_api.log
+      "
+    volumes:
+      - .:/app
     restart: always

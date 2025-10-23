@@ -6,14 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('olap_models', '0001_initial'),
+        ("olap_models", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dimfuncionario',
-            name='valor_hora',
+            model_name="dimfuncionario",
+            name="valor_hora",
             field=models.DecimalField(
-                decimal_places=2, default=40.0, help_text='Valor/hora do desenvolvedor (R$)', max_digits=8),
+                decimal_places=2,
+                default=40.0,
+                help_text="Valor/hora do desenvolvedor (R$)",
+                max_digits=8,
+            ),
         ),
     ]

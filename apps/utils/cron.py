@@ -10,8 +10,11 @@ from apps.utils.simple_cache import SimpleCache
 
 def escrever_log(mensagem: str, obj: dict = None):
     log_dir = Path(settings.BASE_DIR) / "log"
-    log_dir.mkdir(exist_ok=True)
+    log_dir.mkdir(
+        parents=True, exist_ok=True
+    )  # ✅ cria o diretório, mesmo se não existir
     log_file = log_dir / "cron_buscar_dados_api.log"
+
     agora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(f"[{agora}] {mensagem}\n")
@@ -21,7 +24,7 @@ def escrever_log(mensagem: str, obj: dict = None):
 
 def buscar_dados_api():
     jira_service = JiraService()
-    escrever_log("Início do cron: buscando dados na API.")
+    escrever_log("Início do cron: buscando dados na API Jira.")
 
     try:
         escrever_log("Sincronizando usuários do Jira...")
@@ -43,16 +46,23 @@ def buscar_dados_api():
 
         SimpleCache.set(context)
 
-        obj = {"status": "sucesso", "total_projetos": context["total_projetos"]}
+        obj = {
+            "status": "sucesso",
+            "total_projetos": context.get("total_projetos"),
+            "total_tasks_geral": context.get("total_tasks_geral"),
+        }
 
         escrever_log(
-            f"Fim do cron: Processados {context['total_projetos']} projetos "
-            f"com {context['total_tasks_geral']} tasks total. Dados salvos no cache.",
+            f"Fim do cron: {obj['total_projetos']} projetos e "
+            f"{obj['total_tasks_geral']} tasks processadas.",
             obj=obj,
         )
 
     except Exception as e:
-        escrever_log(f"Erro no cron: {str(e)}", obj={"status": "erro", "erro": str(e)})
+        escrever_log(
+            f"Erro no cron: {str(e)}",
+            obj={"status": "erro", "erro": str(e)},
+        )
         raise
 
 
