@@ -9,6 +9,11 @@ from apps.utils.simple_cache import SimpleCache
 
 
 def escrever_log(mensagem: str, obj: dict = None):
+    """
+    Cron job executado diariamente às 19h (por padrão).
+    Busca dados na API Jira, processa e salva no cache.
+    """
+
     log_dir = Path(settings.BASE_DIR) / "log"
     log_dir.mkdir(
         parents=True, exist_ok=True
@@ -23,6 +28,11 @@ def escrever_log(mensagem: str, obj: dict = None):
 
 
 def buscar_dados_api():
+    
+    """
+    Cron job executado diariamente às 19h (por padrão).
+    Busca dados na API Jira, processa e salva no cache.
+    """
     jira_service = JiraService()
     escrever_log("Início do cron: buscando dados na API Jira.")
 
