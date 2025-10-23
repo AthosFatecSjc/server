@@ -67,18 +67,18 @@ INSERT INTO meta_tempo_controle (objetivo_clt, objetivo_estagiario) VALUES
 -- 4. Inserção na Tabela 'funcionario'
 -- ==================================================================================================
 
-INSERT INTO funcionario (nome, time, cargo_id, gerente_id, data_criacao) VALUES
-('Daniel Maturana', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Gerente de Projetos'), NULL, CURRENT_DATE),
-('Aline Dominique', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE),
-('Felipe Faria', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE),
-('Eric Lourenço', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE),
-('Alison Americo', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE),
-('Francisco Bustamante', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE),
-('Helena Benevenuto', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE),
-('João V Menezes', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE),
-('Jose Thomazini', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE),
-('Lucas Paiva', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE),
-('Sérgio Casas', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE);
+INSERT INTO funcionario (nome, time, cargo_id, gerente_id, data_criacao, valor_hora) VALUES
+('Daniel Maturana', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Gerente de Projetos'), NULL, CURRENT_DATE, 40),
+('Aline Dominique', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
+('Felipe Faria', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
+('Eric Lourenço', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
+('Alison Americo', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
+('Francisco Bustamante', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
+('Helena Benevenuto', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
+('João V Menezes', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
+('Jose Thomazini', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
+('Lucas Paiva', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
+('Sérgio Casas', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40);
 
 -- ==================================================================================================
 -- 5. Inserção na Tabela 'controle_tempo_equipe'
