@@ -424,27 +424,29 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const cards = document.querySelectorAll('.card');
-        cards.forEach((card, index) => {
-            card.style.animationDelay = `${index * 0.1}s`;
-        });
+  document.addEventListener('DOMContentLoaded', () => {
+    const cards = document.querySelectorAll('.card');
+    let index = 0;
 
-        // Animação do mouse
-        document.addEventListener('mousemove', (e) => {
-            const lines = document.querySelector('.animated-lines');
-            const network = document.querySelector('.network');
+    for (const card of cards) {
+      card.style.animationDelay = `${index * 0.1}s`;
+      index++;
+    }
 
-            if (lines && network) {
-                const x = e.clientX / window.innerWidth;
-                const y = e.clientY / window.innerHeight;
+    document.addEventListener('mousemove', (e) => {
+      const lines = document.querySelector('.animated-lines');
+      const network = document.querySelector('.network');
 
-                lines.style.transform = `translate(${x * 20}px, ${y * 10}px)`;
-                network.style.transform = `translate(${x * -10}px, ${y * -5}px)`;
-            }
-        });
+      if (lines && network) {
+        const x = e.clientX / window.innerWidth;
+        const y = e.clientY / window.innerHeight;
 
-        console.log('Animations loaded successfully!');
+        lines.style.transform = `translate(${x * 20}px, ${y * 10}px)`;
+        network.style.transform = `translate(${x * -10}px, ${y * -5}px)`;
+      }
     });
+
+    console.log('Animations loaded successfully!');
+  });
 </script>
 {% endblock %}

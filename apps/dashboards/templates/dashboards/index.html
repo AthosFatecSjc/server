@@ -451,26 +451,31 @@ body {
     </div>
   </div>
 
-  <!-- Script simplificado e reutilizável -->
-  <script>
-    function animateElements(selector, delay = 150) {
-      const elements = document.querySelectorAll(selector);
-      elements.forEach((el, i) => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-          el.style.transition = 'all 0.5s ease';
-          el.style.opacity = '1';
-          el.style.transform = 'translateY(0)';
-        }, i * delay);
-      });
-    }
+<script>
+  function animateElements(selector, delay = 150) {
+    const elements = document.querySelectorAll(selector);
+    let index = 0;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      animateElements('.card', 150);
-      animateElements('.info-item', 100);
-    });
-  </script>
+    for (const el of elements) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+
+      setTimeout(() => {
+        el.style.transition = 'all 0.5s ease';
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+      }, index * delay);
+
+      index++;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    animateElements('.card', 150);
+    animateElements('.info-item', 100);
+  });
+</script>
+
 </body>
 </html>
 

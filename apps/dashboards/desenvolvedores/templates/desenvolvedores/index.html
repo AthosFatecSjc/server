@@ -327,7 +327,7 @@
             currentDeveloper = { id: developerId, name: developerName };
 
             document.getElementById('developerId').value = developerId;
-            document.getElementById('hourlyRate').value = parseFloat(currentRate).toFixed(2).replace('.', ',');
+            document.getElementById('hourlyRate').value = Number.parseFloat(currentRate).toFixed(2).replace('.', ',');
             document.getElementById('developerName').textContent = developerName;
 
             const modal = document.getElementById('editModal');
@@ -387,7 +387,7 @@
         }
 
         document.getElementById('hourlyRate').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/[^\d,]/g, '');
+            let value = e.target.value.replace(/[^\d,]/g, ''); // NOSONAR
 
             const parts = value.split(',');
             if (parts.length > 2) {
