@@ -110,7 +110,7 @@
         .badge {
             background: transparent;
             color: var(--muted-foreground);
-            padding: 4px 12px;
+            padding: 4px 6px;
             border: 1px solid var(--border);
             border-radius: 20px;
             font-size: 0.75rem;
@@ -159,6 +159,7 @@
             font-size: 0.75rem;
             font-weight: 500;
         }
+
 
         .btn {
             width: 100%;
@@ -324,7 +325,7 @@
                     </div>
                     <div>
                         <h3 class="card-title">Dashboard de Saúde do Projeto</h3>
-                        <p class="card-description">Análise completa de custos, issues e bugs do projeto</p>
+                        <p class="card-description">Análise completa de custos, issues e bugs por projeto e desenvolvedor</p>
                     </div>
                 </div>
                 <div class="card-content">
@@ -335,7 +336,41 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">Acesso:</span>
-                            <span class="badge-secondary">Gerente</span>
+                            <span class="badge-secondary">Gerente , Lider e Membro</span>
+                        </div>
+                    </div>
+                    <button class="btn">
+                        Acessar Dashboard
+                        <div class="icon icon-arrow-right"></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Produtividade -->
+            <div class="card" onclick="location.href='{% url 'produtividade_index' %}'">
+                <div class="card-header">
+                    <div class="card-header-top">
+                        <div class="icon-container" style="background: rgba(129, 235, 37, 0.1);">
+                            <div class="icon icon-trending-up"></div>
+                        </div>
+                        <span class="badge">Produtividade</span>
+                    </div>
+                    <div>
+                        <h3 class="card-title">Dashboard de Produtividade da Equipe</h3>
+                        <p class="card-description">Acompanhe horas por atividade, módulo e desenvolvedor</p>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="info-grid">
+                        <div class="info-row">
+                            <span class="info-label">Funcionalidades:</span>
+                            <span class="text-sm">
+                                Análise de horas por atividade, módulo/epic e desenvolvedor
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Acesso:</span>
+                            <span class="badge-secondary">Gerente , Lider e Membro</span>
                         </div>
                     </div>
                     <button class="btn">
@@ -363,6 +398,14 @@
                     <div class="icon icon-activity info-icon"></div>
                     <h4>Saúde do Projeto</h4>
                     <p>Acompanhe orçamento vs realizado, issues abertas e bugs com gráficos e tabelas detalhadas</p>
+                </div>
+                <div class="info-item">
+                    <div class="icon icon-trending-up info-icon"></div>
+                    <h4>Produtividade da Equipe</h4>
+                    <p>
+                        Análise detalhada de horas por atividade, módulo/epic e desenvolvedor
+                        com gráficos evolutivos
+                    </p>
                 </div>
             </div>
         </div>
