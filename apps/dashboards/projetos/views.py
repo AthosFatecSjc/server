@@ -4,4 +4,9 @@ from django.views.decorators.http import require_http_methods
 
 @require_http_methods(["GET"])
 def index(request):
-    return render(request, "projeto/index.html")
+    header_context = {
+        "title": "Dashboard de Saúde do Projeto",
+        "subtitle": "Análise financeira e operacional do projeto",
+        "breadcrumb": "Saúde do Projeto",
+    }
+    return render(request, "projeto/index.html", {"header_context": header_context})

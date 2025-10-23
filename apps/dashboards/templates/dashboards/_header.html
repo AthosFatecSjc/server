@@ -1,47 +1,51 @@
-<div class="dashboard-header" style="margin-bottom: 24px;">
+{# COMPONENTE: Header Padronizado (VERSÃO ORIGINAL E CORRETA) #}
 
-<nav aria-label="breadcrumb" style="font-size: 0.9rem; color: #6b7280; margin-bottom: 10px;">
-    <a href="/" style="text-decoration: none; color: #6b7280; display: inline-flex; align-items: center;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#6b7280" style="margin-right: 6px;">
-            <rect x="3" y="3" width="7" height="7" rx="2" stroke-width="2"/>
-            <rect x="14" y="3" width="7" height="7" rx="2" stroke-width="2"/>
-            <rect x="14" y="14" width="7" height="7" rx="2" stroke-width="2"/>
-            <rect x="3" y="14" width="7" height="7" rx="2" stroke-width="2"/>
+<section class="relative bg-white border-b border-gray-200 shadow-sm rounded-lg">
+  <div class="mx-auto px-6 py-6 flex flex-col gap-4">
+
+    <nav aria-label="breadcrumb" class="flex items-center text-sm text-gray-500 space-x-2">
+      <a href="/" class="flex items-center hover:text-gray-700 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <rect x="3" y="3" width="7" height="7" rx="2" stroke-width="2" />
+          <rect x="14" y="3" width="7" height="7" rx="2" stroke-width="2" />
+          <rect x="14" y="14" width="7" height="7" rx="2" stroke-width="2" />
+          <rect x="3" y="14" width="7" height="7" rx="2" stroke-width="2" />
         </svg>
         ATHOS INSIGHT
-    </a>
-    <span style="margin: 0 6px;">></span>
-    <a href="{% url 'dashboard' %}" style="text-decoration: none; color: #6b7280;">Dashboards</a>
-    <span style="margin: 0 6px;">></span>
-    <span style="color: #111827; font-weight: 500;">Saúde do Projeto</span>
-</nav>
+      </a>
+      <span class="text-gray-400">&gt;</span>
+      <a href="{% url 'dashboards_index' %}" class="hover:text-gray-700 transition-colors">Dashboards</a>
+      <span class="text-gray-400">&gt;</span>
+      <span class="font-medium text-gray-900">{{ header_breadcrumb|default:header.breadcrumb|default:"Saúde do Projeto" }}</span>
+    </nav>
 
-    <div style="display: flex; align-items: center; gap: 20px;">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
-        <button onclick="window.location.href='/'"
-                style="
-                    background: #f3f4f6;
-                    border: 1px solid #d1d5db;
-                    border-radius: 6px;
-                    padding: 8px 16px;
-                    cursor: pointer;
-                    color: #374151;
-                    font-weight: 500;
-                    transition: background 0.2s;
-                "
-                onmouseover="this.style.background='#e5e7eb'"
-                onmouseout="this.style.background='#f3f4f6'">
-            ← Voltar
+      <div class="flex items-start md:items-center gap-4">
+        <button
+          onclick="window.history.back()"
+          class="bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md px-4 py-2 text-gray-700 font-medium transition-colors">
+          ← Voltar
         </button>
-
         <div>
-            <h1 style="margin: 0; font-size: 1.75rem; font-weight: 700; color: #111827;">
-                Dashboard de Saúde do Projeto
-            </h1>
-            <p style="margin-top: 4px; color: #6b7280; font-size: 0.95rem;">
-                Análise financeira e operacional do projeto
-            </p>
+          <h1 class="text-2xl md:text-3xl font-semibold text-gray-900">
+            {{ header_title|default:header.title|default:"Dashboard de Saúde do Projeto" }}
+          </h1>
+          <p class="text-gray-500 text-sm mt-1">
+            {{ header_subtitle|default:header.subtitle|default:"Análise de horas por atividade, módulo, desenvolvedor e custos" }}
+          </p>
         </div>
-    </div>
+      </div>
 
-</div>
+      <div class="flex-shrink-0">
+        <button
+          class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md shadow-sm transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Exportar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
