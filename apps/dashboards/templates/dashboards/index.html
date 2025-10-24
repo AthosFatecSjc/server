@@ -321,9 +321,8 @@ body {
     <!-- Grid principal -->
     <div class="grid">
       <!-- Dashboard Desenvolvedores -->
-      <div class="card" role="button" tabindex="0"
-           onclick="location.href='{% url 'desenvolvedores_index' %}'"
-           onkeydown="if(event.key==='Enter'){location.href='{% url 'desenvolvedores_index' %}'}">
+      <button type="button" class="card w-full text-left"
+              onclick="location.href='{% url 'desenvolvedores_index' %}'">
         <div class="card-header">
           <div class="card-header-top">
             <div class="icon-container">
@@ -347,17 +346,16 @@ body {
               <span class="badge-secondary">Gerente</span>
             </div>
           </div>
-          <button class="btn">
+          <span class="btn">
             Acessar Dashboard
             <div class="icon icon-arrow-right"></div>
-          </button>
+          </span>
         </div>
-      </div>
+      </button>
 
       <!-- Dashboard Saúde -->
-      <div class="card" role="button" tabindex="0"
-           onclick="location.href='{% url 'projetos_index' %}'"
-           onkeydown="if(event.key==='Enter'){location.href='{% url 'projetos_index' %}'}">
+      <button type="button" class="card w-full text-left"
+              onclick="location.href='{% url 'projetos_index' %}'">
         <div class="card-header">
           <div class="card-header-top">
             <div class="icon-container bg-orange-50">
@@ -381,17 +379,17 @@ body {
               <span class="badge-secondary">Gerente, Líder e Membro</span>
             </div>
           </div>
-          <button class="btn">
+          <span class="btn">
             Acessar Dashboard
             <div class="icon icon-arrow-right"></div>
-          </button>
+          </span>
         </div>
-      </div>
+      </button>
+
 
       <!-- Dashboard Produtividade -->
-      <div class="card" role="button" tabindex="0"
-           onclick="location.href='{% url 'produtividade_index' %}'"
-           onkeydown="if(event.key==='Enter'){location.href='{% url 'produtividade_index' %}'}">
+      <button type="button" class="card w-full text-left"
+              onclick="location.href='{% url 'produtividade_index' %}'">
         <div class="card-header">
           <div class="card-header-top">
             <div class="icon-container bg-green-50">
@@ -415,13 +413,14 @@ body {
               <span class="badge-secondary">Gerente, Líder e Membro</span>
             </div>
           </div>
-          <button class="btn">
+          <span class="btn">
             Acessar Dashboard
             <div class="icon icon-arrow-right"></div>
-          </button>
+          </span>
         </div>
-      </div>
+      </button>
     </div>
+
 
     <!-- Informações adicionais -->
     <div class="info-card">

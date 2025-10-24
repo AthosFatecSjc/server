@@ -1,5 +1,3 @@
-"  " "Serviços para geração de relatórios de atividade." ""
-
 from collections import defaultdict
 from datetime import datetime
 from io import BytesIO
