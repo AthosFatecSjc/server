@@ -28,7 +28,6 @@ def escrever_log(mensagem: str, obj: dict = None):
 
 
 def buscar_dados_api():
-    
     """
     Cron job executado diariamente às 19h (por padrão).
     Busca dados na API Jira, processa e salva no cache.
@@ -39,19 +38,21 @@ def buscar_dados_api():
     try:
         escrever_log("Sincronizando usuários do Jira...")
         try:
-            call_command('sync_jira_users')
+            call_command("sync_jira_users")
             escrever_log("Sincronização de usuários concluída com sucesso.")
         except Exception as e:
             escrever_log(f"ERRO na sincronização de usuários: {str(e)}")
-        
+
         escrever_log("Buscando dados do Jira...")
         projetos_com_tasks = jira_service.get_all_tasks_data()
 
         context = {
-            'projetos_com_tasks': projetos_com_tasks,
-            'total_projetos': len(projetos_com_tasks),
-            'total_tasks_geral': sum(len(projeto.get('tasks', [])) for projeto in projetos_com_tasks),
-            'timestamp': datetime.datetime.now().isoformat()
+            "projetos_com_tasks": projetos_com_tasks,
+            "total_projetos": len(projetos_com_tasks),
+            "total_tasks_geral": sum(
+                len(projeto.get("tasks", [])) for projeto in projetos_com_tasks
+            ),
+            "timestamp": datetime.datetime.now().isoformat(),
         }
 
         SimpleCache.set(context)
@@ -82,7 +83,7 @@ def buscar_dados_com_etl():
 
     try:
         escrever_log("Sincronizando usuários do Jira...")
-        call_command('sync_jira_users')
+        call_command("sync_jira_users")
         escrever_log("Sincronização de usuários concluída.")
 
         escrever_log("Buscando dados do Jira...")
@@ -90,16 +91,18 @@ def buscar_dados_com_etl():
 
         if projetos_com_tasks:
             context = {
-                'projetos_com_tasks': projetos_com_tasks,
-                'total_projetos': len(projetos_com_tasks),
-                'total_tasks_geral': sum(len(projeto.get('tasks', [])) for projeto in projetos_com_tasks),
-                'timestamp': datetime.datetime.now().isoformat()
+                "projetos_com_tasks": projetos_com_tasks,
+                "total_projetos": len(projetos_com_tasks),
+                "total_tasks_geral": sum(
+                    len(projeto.get("tasks", [])) for projeto in projetos_com_tasks
+                ),
+                "timestamp": datetime.datetime.now().isoformat(),
             }
             SimpleCache.set(context)
             escrever_log(f"Cache atualizado: {context['total_projetos']} projetos")
 
         escrever_log("Executando processo ETL...")
-        call_command('rodar_etl')
+        call_command("rodar_etl")
         escrever_log("ETL concluído com sucesso!")
 
         escrever_log("Cron completo executado com sucesso!")

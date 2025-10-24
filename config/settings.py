@@ -100,7 +100,7 @@ DATABASES = {
     },
 }
 
-DATABASE_ROUTERS = ['config.routers.OlapRouter']
+DATABASE_ROUTERS = ["config.routers.OlapRouter"]
 
 if os.environ.get("TEST_DB_ENGINE"):
     DATABASES["default"] = {
@@ -170,7 +170,7 @@ CRONJOBS = [
     ),
     # Executa a cada minuto - ETL mais pesado
     (
-        env("CRON_ETL", default="*/1 * * * *"),  
+        env("CRON_ETL", default="*/1 * * * *"),
         "apps.utils.cron.executar_etl_completo",
     ),
     # Executa a cada hora - processo completo (Jira sync + ETL)
