@@ -6,6 +6,12 @@
 {% include "dashboards/_header.html" with header=header_context %}
 
 <div class="mx-auto px-6 py-3">
+  <div class="filters-container">
+    <div class="filters-top-row">
+      {% include "dashboards/components/_filter_project.html" %}
+    </div>
+    {% include "dashboards/components/_filter_type.html" %}
+  </div>
 
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
     <h1 class="text-2xl font-bold mb-4">TESTE DJANGO</h1>
@@ -14,6 +20,8 @@
     </p>
   </div>
 
-  </div>
+  {% include "dashboards/components/_filter_styles.html" %}
+  {% include "dashboards/components/_filter_scripts.html" %}
+</div>
 
 {% endblock %}
