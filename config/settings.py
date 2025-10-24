@@ -29,14 +29,17 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_htmx",
+    "django_crontab",
     "apps.usuarios",
     "apps.relatorios",
-    "apps.dashboards",
     "apps.relatorios.produtividade",
     "apps.relatorios.comparacao.apps.ComparacaoConfig",
     "apps.relatorios.atividade",
+    "apps.dashboards",
+    "apps.dashboards.desenvolvedores",
+    "apps.dashboards.projetos",
     "apps.utils",
-    "django_crontab",
+    "config",
     "olap_models",
 ]
 
@@ -56,7 +59,9 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            BASE_DIR / "templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -171,7 +176,7 @@ CRONJOBS = [
 
 # Configuração de cache personalizado para dados do JIRA
 CACHE_JIRA = {
-    "data": {},  # Dados serão preenchidos pelo CRON
+    "data": {},
     "timestamp": None,
     "validade": datetime.timedelta(minutes=10),
 }
