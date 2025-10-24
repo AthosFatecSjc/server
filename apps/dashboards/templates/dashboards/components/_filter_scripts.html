@@ -1,0 +1,175 @@
+<script>
+    let currentProjectFilter = 'all';
+    let currentTypeFilter = 'all';
+
+    function toggleProjectDropdown() {
+        const dropdown = document.getElementById('projectDropdown');
+        const button = document.getElementById('projectSelectBtn');
+
+        dropdown.classList.toggle('show');
+        button.classList.toggle('open');
+    }
+
+    function selectProject(projectId, projectName) {
+        currentProjectFilter = projectId;
+
+        const selectedOption = document.querySelector(`#projectDropdown .select-option[data-value="${projectId}"]`);
+        if (selectedOption && projectId !== 'all') {
+            let custoPorDev = [];
+            try {
+                const custoPorDevAttr = selectedOption.getAttribute('data-project-custo-por-dev');
+                if (custoPorDevAttr) {
+                    custoPorDev = JSON.parse(custoPorDevAttr);
+                }
+            } catch (e) {
+                console.error('Erro ao fazer parse do custo por dev:', e);
+            }
+
+            const projectData = {
+                id: selectedOption.getAttribute('data-project-id'),
+                name: selectedOption.getAttribute('data-project-name'),
+                created: selectedOption.getAttribute('data-project-created'),
+                totalHoras: parseFloat(selectedOption.getAttribute('data-project-total-horas')) || 0,
+                totalCusto: parseFloat(selectedOption.getAttribute('data-project-total-custo')) || 0,
+                custoRealizado: parseFloat(selectedOption.getAttribute('data-project-custo-realizado')) || 0,
+                custoPorDev: custoPorDev,
+                totalRegistros: parseInt(selectedOption.getAttribute('data-project-total-registros')) || 0,
+                mediaHoras: parseFloat(selectedOption.getAttribute('data-project-media-horas')) || 0,
+                primeiroRegistro: selectedOption.getAttribute('data-project-primeiro-registro'),
+                ultimoRegistro: selectedOption.getAttribute('data-project-ultimo-registro'),
+                funcionariosCount: parseInt(selectedOption.getAttribute('data-project-funcionarios-count')) || 0
+            };
+
+            window.selectedProjectData = projectData;
+
+            console.log('Projeto selecionado (dados completos do OLAP):', projectData);
+            console.log('Custo Realizado:', projectData.custoRealizado.toFixed(2));
+            console.log('Custo por Desenvolvedor:', projectData.custoPorDev);
+        } else {
+            window.selectedProjectData = null;
+        }
+
+        document.getElementById('selectedProjectText').textContent = projectName;
+
+        document.querySelectorAll('#projectDropdown .select-option').forEach(option => {
+            option.classList.remove('active');
+            if (option.getAttribute('data-value') === projectId) {
+                option.classList.add('active');
+            }
+        });
+
+        document.getElementById('projectDropdown').classList.remove('show');
+        document.getElementById('projectSelectBtn').classList.remove('open');
+
+        applyFilters();
+    }
+
+    document.addEventListener('click', function (event) {
+        const dropdown = document.getElementById('projectDropdown');
+        const button = document.getElementById('projectSelectBtn');
+
+        if (dropdown && button && !event.target.closest('.custom-select')) {
+            dropdown.classList.remove('show');
+            button.classList.remove('open');
+        }
+    });
+
+    function filterByProject(projectKey) {
+        currentProjectFilter = projectKey;
+        applyFilters();
+    }
+
+    function filterByType(issueType) {
+        currentTypeFilter = issueType;
+
+        document.querySelectorAll('#type-filters .filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-filter') === issueType) {
+                btn.classList.add('active');
+            }
+        });
+
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const projectCards = document.querySelectorAll('.project-card');
+
+        projectCards.forEach(card => {
+            const projectKey = card.getAttribute('data-project');
+
+            const projectMatch = currentProjectFilter === 'all' || projectKey === currentProjectFilter;
+
+            if (!projectMatch) {
+                card.classList.add('hidden');
+                return;
+            }
+
+            const rows = card.querySelectorAll('.tasks-table tbody tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const issueType = row.getAttribute('data-issue-type');
+                let typeMatch = false;
+
+                if (currentTypeFilter === 'all') {
+                    typeMatch = true;
+                } else if (currentTypeFilter === 'issue') {
+                    typeMatch = issueType.toLowerCase().includes('tarefa') ||
+                        issueType.toLowerCase().includes('task') ||
+                        issueType.toLowerCase() === 'issue';
+                } else if (currentTypeFilter === 'bug') {
+                    typeMatch = issueType.toLowerCase().includes('bug') ||
+                        issueType.toLowerCase().includes('erro') ||
+                        issueType.toLowerCase().includes('error');
+                } else if (currentTypeFilter === 'Story') {
+                    typeMatch = issueType.toLowerCase().includes('story') ||
+                        issueType.toLowerCase().includes('epic') ||
+                        issueType.toLowerCase().includes('história');
+                } else {
+                    typeMatch = issueType === currentTypeFilter;
+                }
+
+                if (typeMatch) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            const countElement = card.querySelector('.visible-tasks-count');
+            if (countElement) {
+                countElement.textContent = visibleCount;
+            }
+
+            const noTasksDiv = card.querySelector('.no-tasks');
+            const table = card.querySelector('.tasks-table');
+
+            if (visibleCount === 0) {
+                if (table) table.style.display = 'none';
+                if (noTasksDiv) {
+                    if (currentTypeFilter !== 'all') {
+                        let filterName = currentTypeFilter;
+                        if (currentTypeFilter === 'issue') {
+                            filterName = 'Issue (Tarefa/SubTarefa)';
+                        } else if (currentTypeFilter === 'bug') {
+                            filterName = 'Bug (Bug/Erro)';
+                        } else if (currentTypeFilter === 'Story') {
+                            filterName = 'Story (Story/Epic)';
+                        }
+                        noTasksDiv.textContent = `Nenhuma task do tipo "${filterName}" encontrada neste projeto`;
+                    } else {
+                        noTasksDiv.textContent = 'Nenhuma task encontrada neste projeto';
+                    }
+                    noTasksDiv.style.display = 'block';
+                }
+                card.classList.add('hidden');
+            } else {
+                if (table) table.style.display = 'table';
+                if (noTasksDiv) noTasksDiv.style.display = 'none';
+                card.classList.remove('hidden');
+            }
+        });
+    }
+</script>
