@@ -16,10 +16,27 @@ def index(request):
     hoje = datetime.date.today()
     anos_disponiveis = range(hoje.year - 5, hoje.year + 2)
 
+    MESES_PORTUGUES = {
+        1: "Janeiro",
+        2: "Fevereiro",
+        3: "Março",
+        4: "Abril",
+        5: "Maio",
+        6: "Junho",
+        7: "Julho",
+        8: "Agosto",
+        9: "Setembro",
+        10: "Outubro",
+        11: "Novembro",
+        12: "Dezembro",
+    }
+
     context = {
         "ano_atual": hoje.year,
         "mes_atual": hoje.month,
         "anos_disponiveis": anos_disponiveis,
+        "meses": MESES_PORTUGUES,
+        "cabecalho": {"titulo": "", "subtitulo": ""},
     }
 
     return render(request, "atividade/index.html", context)
