@@ -190,11 +190,11 @@
 
     <script src="{% static 'js/htmx.min.js' %}"></script>
     <script>
-        let currentMonth = parseInt("{{ mes_atual|default:0 }}");
-        let currentYear = parseInt("{{ ano_atual|default:0 }}");
+        let currentMonth = Number.parseInt("{{ mes_atual|default:0 }}");
+        let currentYear = Number.parseInt("{{ ano_atual|default:0 }}");
 
-        document.querySelector('select[name="mes"]').addEventListener('change', e => currentMonth = parseInt(e.target.value));
-        document.querySelector('select[name="ano"]').addEventListener('change', e => currentYear = parseInt(e.target.value));
+        document.querySelector('select[name="mes"]').addEventListener('change', e => currentMonth = Number.parseIntparseInt(e.target.value));
+        document.querySelector('select[name="ano"]').addEventListener('change', e => currentYear = Number.parseIntparseInt(e.target.value));
 
         const pdfModal = document.getElementById('pdfModal');
         const exportButton = document.getElementById('exportPdfButton');
@@ -216,7 +216,7 @@
 
         confirmButton.addEventListener('click', function() {
             closePdfModal();
-            window.location.href = "{% url 'exportar_atividade_pdf' %}?mes=" + currentMonth + "&ano=" + currentYear;
+            globalThis.location.href = "{% url 'exportar_atividade_pdf' %}?mes=" + currentMonth + "&ano=" + currentYear;
         });
 
         pdfModal.addEventListener('click', function(e) {
