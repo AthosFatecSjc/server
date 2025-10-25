@@ -29,7 +29,7 @@ class DimCargo(models.Model):
     nome_cargo = models.CharField(max_length=20, unique=True)
 
     class Meta:
-        db_table = 'dim_cargo'
+        db_table = "dim_cargo"
 
 
 class DimFuncionario(models.Model):
@@ -46,7 +46,11 @@ class DimFuncionario(models.Model):
     cargo = models.CharField(max_length=20, default='dev')
     nome_gerente = models.CharField(max_length=100, blank=True, null=True)
     valor_hora = models.DecimalField(
-        max_digits=8, decimal_places=2, default=40.00, help_text="Valor/hora do desenvolvedor (R$)")
+        max_digits=8,
+        decimal_places=2,
+        default=40.00,
+        help_text="Valor/hora do desenvolvedor (R$)",
+    )
 
     class Meta:
         '''
