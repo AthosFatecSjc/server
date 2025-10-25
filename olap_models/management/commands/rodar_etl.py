@@ -128,19 +128,19 @@ class Command(BaseCommand):
         """
         self.stdout.write('Populando Tabela Fato Registro Horas...')
         for registro in ControleHorasEquipe.objects.all().iterator():
-            projeto_dim = DimProjeto.objects.using(
-                'olap').filter(id=registro.projeto_id).first()
             func_dim = DimFuncionario.objects.using(
                 'olap').filter(id=registro.funcionario_id).first()
+            projeto_dim = DimProjeto.objects.using(
+                'olap').filter(id=registro.projeto_id).first()
             data_dim_id = int(registro.mes.strftime('%Y%m%d'))
             data_dim = DimTempo.objects.using(
                 'olap').filter(id=data_dim_id).first()
 
             if projeto_dim and func_dim and data_dim:
                 FatoRegistroHoras.objects.using('olap').create(
-                    projeto=projeto_dim,
                     funcionario=func_dim,
+                    projeto=projeto_dim,
                     data=data_dim,
-                    horas_gastas=registro.horas,
-                    custo_total=registro.horas * func_dim.valor_hora
+                    horas_trabalhadas=registro.horas,
+                    custo=registro.horas * func_dim.valor_hora
                 )

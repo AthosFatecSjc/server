@@ -127,42 +127,25 @@ class DimTempo(models.Model):
 
 
 class FatoRegistroHoras(models.Model):
-    projeto = models.ForeignKey(
-        DimProjeto, on_delete=models.SET_NULL, null=True, db_column='fk_projeto')
-    funcionario = models.ForeignKey(
-        DimFuncionario, on_delete=models.SET_NULL, null=True, db_column='fk_funcionario')
-    data = models.ForeignKey(
-        DimTempo, on_delete=models.SET_NULL, null=True, db_column='fk_data')
-    horas_gastas = models.DecimalField(
-        max_digits=6, decimal_places=2, default=0)
-    custo_total = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0)
-
-    class Meta:
-        db_table = 'fato_registro_horas'
-
-
-class FatoCustoFuncionarioProjeto(models.Model):
     '''
-    Modelo para tabela fato de custo por funcionário e projeto
-    Originalmente criado para dashboard de custo
+    Modelo para tabela fato de registro de horas e custo de funcionários por projeto
     '''
 
-    funcionario_id = models.ForeignKey(DimFuncionario, on_delete=models.CASCADE, db_column='funcionario_id')
-    projeto_id = models.ForeignKey(DimProjeto, on_delete=models.CASCADE, db_column='projeto_id')
-    data_id = models.ForeignKey(DimTempo, on_delete=models.CASCADE, db_column='data_id')
-    total_horas_trabalhadas = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    custo_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    funcionario = models.ForeignKey(DimFuncionario, on_delete=models.CASCADE, null=True, db_column='funcionario_id')
+    projeto = models.ForeignKey(DimProjeto, on_delete=models.CASCADE, null=True, db_column='projeto_id')
+    data = models.ForeignKey(DimTempo, on_delete=models.CASCADE, null=True, db_column='data_id')
+    horas_trabalhadas = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    custo = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
     class Meta:
         '''
         Regras para criação da tabela no banco de dados
         '''
 
-        db_table = 'fato_custo_funcionario_projeto'
+        db_table = 'fato_registro_horas'
         constraints = [
-            models.CheckConstraint(check=Q(total_horas_trabalhadas__gte=0), name="total_horas_non_negative"),
-            models.CheckConstraint(check=Q(custo_total__gte=0), name="custo_total_non_negative"),
+            models.CheckConstraint(check=Q(horas_trabalhadas__gte=0), name="total_horas_non_negative"),
+            models.CheckConstraint(check=Q(custo__gte=0), name="custo_total_non_negative"),
             models.UniqueConstraint(fields=['funcionario_id', 'projeto_id', 'data_id'], name='unique_fato_per_day')
         ]
 
