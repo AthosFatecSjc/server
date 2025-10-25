@@ -55,6 +55,10 @@ class DimFuncionario(models.Model):
     def save(self, *args, **kwargs):
         if not self.nome_gerente:
             self.nome_gerente = self.nome
+        
+        if not self.cargo:
+            self.cargo = 'dev'
+
         super().save(*args, **kwargs)
 
     class Meta:
