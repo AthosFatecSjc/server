@@ -3,6 +3,8 @@
 from datetime import date
 
 from django.db import models
+from django.db.models import Q
+
 
 
 class Cargo(models.Model):
@@ -54,14 +56,26 @@ class Projeto(models.Model):
 
     nome = models.CharField(max_length=100)
     data_criacao = models.DateField(auto_now_add=True)
+    orcamento_previsto =  models.DecimalField(max_digits=15, decimal_places=2, default=20000.00)
+
+    def save(self, *args, **kwargs):
+        if not self.orcamento_previsto:
+            self.orcamento_previsto = 20000.00
+        super().save(*args, **kwargs)
 
     class Meta:
         """Meta dados do modelo Projeto"""
 
         db_table = "projeto"
+        constraints = [
+            models.CheckConstraint(
+                check=Q(orcamento_previsto__gte=20000.00),
+                name="orcamento_previsto_min_20000"
+            ),
+        ]
 
     def __str__(self):
-        return str(self.nome)
+        return str(self.__dict__, indent=4, ensure_ascii=False)
 
 
 class ControleHorasEquipeResumo(models.Model):
