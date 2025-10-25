@@ -44,13 +44,18 @@ class DimFuncionario(models.Model):
 
     data_contratacao = models.DateField(default=datetime.now)
     cargo = models.CharField(max_length=20, default='dev')
-    nome_gerente = models.CharField(max_length=100, blank=True, null=True)
+    nome_gerente = models.CharField(max_length=100, blank=True)
     valor_hora = models.DecimalField(
         max_digits=8,
         decimal_places=2,
         default=40.00,
         help_text="Valor/hora do desenvolvedor (R$)",
     )
+
+    def save(self, *args, **kwargs):
+        if not self.nome_gerente:
+            self.nome_gerente = self.nome
+        super().save(*args, **kwargs)
 
     class Meta:
         '''
