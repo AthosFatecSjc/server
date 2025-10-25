@@ -1,191 +1,81 @@
 {% extends "base.html" %}
-
 {% block content %}
-
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>Controle de Horas - Projeto / Equipe</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js" integrity="sha256-Lye89HGy1p3XhJT24hcvsoRw64Q4IOL5a7hdOflhjTA=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" integrity="sha256-IMCPPZxtLvdt9tam8RJ8ABMzn+Mq3SQiInbDmMYwjDg=" crossorigin="anonymous"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-        }
-        html, body {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
+    <script src="{% static 'libs/chartjs/chart.umd.min.js' %}" crossorigin="anonymous"></script>
+    <script src="{% static 'libs/chartjs/chartjs-plugin-datalabels.min.js' %}" crossorigin="anonymous"></script>
 
+    <style>
         body {
             font-family: "Noto Sans", sans-serif;
-            margin: 16px;
             background-color: #f4f7f9;
+            margin: 16px;
         }
-        .container {
-            margin: 0;
-            max-width: none;
-            padding: 0;
-        }
-       #controle_horas_projeto_equipe {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            align-items: stretch;
-            min-width: 0;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .header h1 {
-            font-weight: 400;
-            font-size: 1.5em;
-            color: #0000FF;
-            margin: 0;
-        }
-        .header .subtitle {
-            font-size: 0.9em;
-            color: #3b4b61;
-            margin-top: 4px;
-        }
+
         .filters {
-            margin-bottom: 16px;
             background: #fff;
             padding: 16px;
             border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            border-left: 4px solid #0000FF;
+            border-left: 4px solid #2563EB;
         }
-        .htmx-indicator{
-             display: none;
+
+        .chart-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        .filter-header {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            margin-bottom: 12px;
-        }
-        .filter-header .filter-title {
-            display: flex;
-            align-items: center;
-            color: #0000FF;
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .filter-header .filter-title .filter-icon {
-            margin-right: 8px;
-        }
-        .filter-subtitle {
-            margin-left: 28px;
-            margin-top: 2px;
-            font-size: 0.8rem;
-            color: #3b4b61;
-        }
-        .filter-form {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .filter-form select {
-            padding: 6px 10px;
-            border-radius: 6px;
-            border: 1px solid #ccd4e0;
-            font-size: 0.9em;
-            background-color: #fdfdfd;
-        }
-        .bg-primary {
-            background-color: #3b82f6;
-        }
-        .text-white {
-            color: white;
-        }
-        .font-medium {
+
+        .chart-header h2 {
             font-weight: 500;
+            font-size: 1.2em;
+            color: #0f172a;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin-bottom: 5px;
         }
-        .py-2 {
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-        }
-        .px-4 {
-            padding-left: 1rem;
-            padding-right: 1rem;
-        }
-        .rounded {
-            border-radius: 0.25rem;
-        }
-        .flex {
+
+        .no-data-message {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            height: 400px;
             display: flex;
-        }
-        .items-center {
             align-items: center;
+            justify-content: center;
         }
-        .justify-between {
-            justify-content: space-between;
+
+        .chart-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 500px;
         }
-        .justify-end {
-            justify-content: flex-end;
+
+        .chart-wrapper canvas {
+            max-width: 100%;
+            max-height: 100%;
         }
-        .w-5 {
-            width: 1.25rem;
+
+        .bg-primary {
+            background-color: #2563EB;
         }
-        .h-5 {
-             height: 1.25rem;
-            }
-        .mr-2 {
-             margin-right: 0.5rem;
-            }
-        .text-lg {
-             font-size: 1.125rem;
-            }
-        .font-semibold {
-             font-weight: 600;
-            }
+
         .text-primary {
-             color: #3b82f6;
-            }
-        .text-muted-foreground {
-             color: #6b7280;
-            }
-        .mt-1 {
-             margin-top: 0.25rem;
-            }
-        .mb-4 {
-             margin-bottom: 1rem;
-            }
-        .gap-3 {
-             gap: 0.75rem;
-            }
-        .text-gray-600 {
-             color: #4b5563;
-            }
-        .space-y-6 > * + * {
-             margin-top: 1.5rem;
-            }
-        .text-2xl {
-             font-size: 1.5rem;
-             line-height: 2rem;
-            }
-        .ml-auto {
-             margin-left: auto;
+            color: #2563EB;
         }
+
         .modal-overlay {
             display: none;
             position: fixed;
@@ -198,143 +88,100 @@
             justify-content: center;
             align-items: center;
         }
+
         .modal-overlay.active {
             display: flex;
         }
+
         .modal-content {
             background: white;
             padding: 24px;
             border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             max-width: 400px;
             width: 90%;
         }
-        .select-wrapper .chevron-icon {
-            position: absolute;
-            right: 12px;
-            pointer-events: none;
-            color: #5a6a82;
-        }
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            background-color: #fff;
-        }
-        .table-wrapper table {
-            width: 100%;
-            min-width: 700px;
-            border-collapse: collapse;
-        }
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(650px, 1fr));
-            gap: 24px;
-        }
-        .chart-container {
-            position: relative;
-            height: 600px;
-            padding: 16px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-        }
-        .chart-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 500px;
-        }
-        .chart-wrapper canvas {
-            max-width: 100%;
-            max-height: 100%;
+
+        body.modal-open {
+            overflow: hidden;
         }
     </style>
 </head>
-<body>
 
+<body>
     <div class="container">
         <div class="space-y-6">
+
             <div class="flex justify-between items-center">
                 <div>
                     <h2 class="text-2xl font-semibold text-primary">Controle de Horas - Projeto / Equipe</h2>
-                    <p class="subtitle">Visão geral das horas lançadas por projeto e por membro da equipe.</p>
+                    <p class="subtitle text-gray-600">
+                        Visão geral das horas lançadas por projeto e por membro da equipe.
+                    </p>
                 </div>
                 <div class="ml-auto">
-                    <button id="exportPdfButton" class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                    <button id="exportPdfButton"
+                            class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center shadow-md">
                         <svg class="icon w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
                         Exportar PDF
                     </button>
                 </div>
             </div>
 
-        <div class="filters">
-            <div class="filter-header">
-                <div class="filter-title">
-                    <span class="filter-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#0000FF" viewBox="0 0 16 16">
-                            <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2z"/>
-                        </svg>
-                    </span>
-                    <span>Filtros</span>
+            <div class="filters">
+                <div class="mb-3">
+                    <h3 class="text-primary font-semibold text-sm uppercase">Filtros</h3>
+                    <p class="text-gray-600 text-xs">Selecione o mês e o ano</p>
                 </div>
-                <div class="filter-subtitle">Mês / Ano</div>
+
+                <form class="filter-form flex gap-3"
+                      hx-get="{% url 'relatorio_tabela_e_cards' %}"
+                      hx-target="#controle_horas_projeto_equipe"
+                      hx-trigger="load, change"
+                      hx-indicator="#loading">
+
+                    <select name="mes" aria-label="Mês" class="border border-gray-300 rounded p-1">
+                        {% for numero, nome in meses.items %}
+                            <option value="{{ numero }}" {% if mes_atual == numero %}selected{% endif %}>
+                                {{ nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="ano" aria-label="Ano" class="border border-gray-300 rounded p-1">
+                        {% for ano in anos_disponiveis %}
+                            <option value="{{ ano }}" {% if ano == ano_atual %}selected{% endif %}>{{ ano }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
             </div>
-            <form class="filter-form"
-                  hx-get="{% url 'relatorio_tabela_e_cards' %}"
-                  hx-target="#controle_horas_projeto_equipe"
-                  hx-trigger="load, change"
-                  hx-indicator="#loading">
 
-                <select name="mes" aria-label="Mês">
-                    <option value="1" {% if mes_atual == 1 %}selected{% endif %}>Janeiro</option>
-                    <option value="2" {% if mes_atual == 2 %}selected{% endif %}>Fevereiro</option>
-                    <option value="3" {% if mes_atual == 3 %}selected{% endif %}>Março</option>
-                    <option value="4" {% if mes_atual == 4 %}selected{% endif %}>Abril</option>
-                    <option value="5" {% if mes_atual == 5 %}selected{% endif %}>Maio</option>
-                    <option value="6" {% if mes_atual == 6 %}selected{% endif %}>Junho</option>
-                    <option value="7" {% if mes_atual == 7 %}selected{% endif %}>Julho</option>
-                    <option value="8" {% if mes_atual == 8 %}selected{% endif %}>Agosto</option>
-                    <option value="9" {% if mes_atual == 9 %}selected{% endif %}>Setembro</option>
-                    <option value="10" {% if mes_atual == 10 %}selected{% endif %}>Outubro</option>
-                    <option value="11" {% if mes_atual == 11 %}selected{% endif %}>Novembro</option>
-                    <option value="12" {% if mes_atual == 12 %}selected{% endif %}>Dezembro</option>
-                </select>
+            <div id="loading" class="htmx-indicator">Carregando dados...</div>
 
-                <select name="ano" aria-label="Ano">
-                    {% for ano in anos_disponiveis %}
-                        <option value="{{ ano }}" {% if ano == ano_atual %}selected{% endif %}>{{ ano }}</option>
-                    {% endfor %}
-                </select>
-            </form>
-        </div>
-
-        <div id="loading" class="htmx-indicator">
-            Carregando dados...
-        </div>
-
-        <div id="controle_horas_projeto_equipe"></div>
+            <div id="controle_horas_projeto_equipe">
+                {% include "atividade/partials/_grafico_pizza.html" %}
+            </div>
 
         </div>
     </div>
+
     <div id="pdfModal" class="modal-overlay">
         <div class="modal-content">
             <div class="mb-4">
                 <h3 class="text-lg font-semibold text-primary">Confirmar Exportação</h3>
-                <p class="text-muted-foreground mt-1">Deseja exportar o relatório de atividades para PDF?</p>
+                <p class="text-muted-foreground mt-1">
+                    Deseja exportar o relatório de atividades para PDF?
+                </p>
             </div>
             <div class="flex justify-end gap-3">
-                <button id="cancelExport" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+                <button id="cancelExport"
+                        class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
                     Cancelar
                 </button>
-                <button id="confirmExport" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
+                <button id="confirmExport" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium">
                     Confirmar
                 </button>
             </div>
@@ -342,18 +189,12 @@
     </div>
 
     <script src="{% static 'js/htmx.min.js' %}"></script>
-
     <script>
-        let currentMonth = {{ mes_atual }};
-        let currentYear = {{ ano_atual }};
+        let currentMonth = Number.parseInt("{{ mes_atual|default:0 }}");
+        let currentYear = Number.parseInt("{{ ano_atual|default:0 }}");
 
-        document.querySelector('select[name="mes"]').addEventListener('change', function(e) {
-            currentMonth = parseInt(e.target.value);
-        });
-
-        document.querySelector('select[name="ano"]').addEventListener('change', function(e) {
-            currentYear = parseInt(e.target.value);
-        });
+        document.querySelector('select[name="mes"]').addEventListener('change', e => currentMonth = Number.parseIntparseInt(e.target.value));
+        document.querySelector('select[name="ano"]').addEventListener('change', e => currentYear = Number.parseIntparseInt(e.target.value));
 
         const pdfModal = document.getElementById('pdfModal');
         const exportButton = document.getElementById('exportPdfButton');
@@ -362,26 +203,31 @@
 
         function openModal(modal) {
             modal.classList.add('active');
+            document.body.classList.add('modal-open');
         }
 
         function closePdfModal() {
             pdfModal.classList.remove('active');
+            document.body.classList.remove('modal-open');
         }
 
-        exportButton.addEventListener('click', function() {
-            openModal(pdfModal);
-        });
-
+        exportButton.addEventListener('click', () => openModal(pdfModal));
         cancelButton.addEventListener('click', closePdfModal);
 
         confirmButton.addEventListener('click', function() {
             closePdfModal();
-            window.location.href = "{% url 'exportar_atividade_pdf' %}?mes=" + currentMonth + "&ano=" + currentYear;
+            globalThis.location.href = "{% url 'exportar_atividade_pdf' %}?mes=" + currentMonth + "&ano=" + currentYear;
         });
 
         pdfModal.addEventListener('click', function(e) {
-            if (e.target === pdfModal) {
-                closePdfModal();
+            if (e.target === pdfModal) closePdfModal();
+        });
+
+        document.body.addEventListener("htmx:afterSwap", function(evt) {
+            if (evt.detail.target.id === "controle_horas_projeto_equipe") {
+                setTimeout(() => {
+                    if (typeof criarGraficoPizza === "function") criarGraficoPizza();
+                }, 100);
             }
         });
     </script>
