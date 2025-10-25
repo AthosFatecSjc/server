@@ -43,7 +43,7 @@ class DimFuncionario(models.Model):
     time = models.CharField(max_length=100, blank=True)
 
     data_contratacao = models.DateField(default=datetime.now)
-    cargo = models.CharField(max_length=20, default='dev')
+    cargo = models.CharField(max_length=20)
     nome_gerente = models.CharField(max_length=100, blank=True)
     valor_hora = models.DecimalField(
         max_digits=8,
@@ -55,10 +55,8 @@ class DimFuncionario(models.Model):
     def save(self, *args, **kwargs):
         if not self.nome_gerente:
             self.nome_gerente = self.nome
-        
         if not self.cargo:
             self.cargo = 'dev'
-
         super().save(*args, **kwargs)
 
     class Meta:
