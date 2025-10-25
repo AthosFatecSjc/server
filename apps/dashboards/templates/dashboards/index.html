@@ -8,24 +8,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboards - ATHOS INSIGHT</title>
-
-  <!-- Tailwind com SRI -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.13/dist/tailwind.min.js"
-    integrity="sha384-KSKt6p3GxV1s32tD3hG6gxHgXvYH0X7ZsmlayQ9XbVzVwqO5HvVAc1CrnP7vYgUh"
-    crossorigin="anonymous">
-  </script>
-
-  <!-- Font Awesome com SRI -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    integrity="sha512-pO6H9K4e5phZg0MZz2q4WvSxZQpRtYHAlT7koT6n2lJd3zvB1ZfP3ynGSlMHDnPl0gP5cFVH7W8K6U9tk5eWZQ=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer" />
-
-  <!-- CSS externo otimizado -->
-  <link rel="stylesheet" href="{% static 'dashboards/css/dashboard.css' %}">
 </head>
 
 <style>
@@ -57,7 +39,6 @@ body {
     padding: 24px;
 }
 
-/* === Header === */
 .header {
     display: flex;
     justify-content: space-between;
@@ -77,7 +58,6 @@ body {
     color: var(--muted-foreground);
 }
 
-/* === Grid Layout === */
 .grid {
     display: grid;
     gap: 24px;
@@ -85,7 +65,6 @@ body {
     margin-bottom: 32px;
 }
 
-/* === Cards === */
 .card {
     background: var(--card-background);
     border: 2px solid var(--border);
@@ -119,7 +98,7 @@ body {
 
 .icon-container {
     padding: 8px;
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(59, 131, 246, 0);
     border-radius: 8px;
 }
 
@@ -204,7 +183,6 @@ body {
     background: #2563eb;
 }
 
-/* === Info Card (bottom section) === */
 .info-card {
     background: var(--card-background);
     border: 1px solid var(--border);
@@ -266,7 +244,6 @@ body {
     line-height: 1.4;
 }
 
-/* === Responsive === */
 @media (max-width: 768px) {
     .container {
         padding: 16px;
@@ -406,7 +383,7 @@ body {
           <div class="info-grid">
             <div class="info-row">
               <span class="info-label">Funcionalidades:</span>
-              <span class="text-sm">Análise de horas por atividade, módulo/epic e desenvolvedor</span>
+              <span class="text-sm">Análise de horas por módulo/epic e desenvolvedor</span>
             </div>
             <div class="info-row">
               <span class="info-label">Acesso:</span>
@@ -444,7 +421,7 @@ body {
         <div class="info-item">
           <div class="icon icon-trending-up info-icon"></div>
           <h4>Produtividade da Equipe</h4>
-          <p>Análise detalhada de horas por atividade, módulo/epic e desenvolvedor com gráficos evolutivos</p>
+          <p>Análise detalhada de horas por módulo/epic e desenvolvedor com gráficos evolutivos</p>
         </div>
       </div>
     </div>
