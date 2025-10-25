@@ -26,10 +26,11 @@ INSERT INTO cargo (sigla) VALUES
 -- 2. Inserção na Tabela 'projeto' com data_criacao randômica
 -- ==================================================================================================
 
-INSERT INTO projeto (nome, data_criacao)
+INSERT INTO projeto (nome, data_criacao, orcamento_previsto)
 SELECT
     nome,
-    '2025-01-01'::DATE + (random() * (DATE '2025-12-31' - DATE '2025-01-01'))::INT AS data_criacao
+    '2025-01-01'::DATE + (random() * (DATE '2025-12-31' - DATE '2025-01-01'))::INT AS data_criacao,
+	20000.00
 FROM (
     VALUES
         ('Mnt'),
