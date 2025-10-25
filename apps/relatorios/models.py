@@ -102,12 +102,11 @@ class ControleHorasEquipe(models.Model):
             mes_str = mes_value.strftime("%m/%Y")
         else:
             mes_str = "N/A"
-        return (
-            f"{self.funcionario} - "
-            f"{self.projeto} - "
-            f"{mes_str} - "
-            f"{self.horas}h"
-        )
+        return f"""{
+            self.funcionario} - {
+            self.projeto} - {
+            mes_str} - {
+                self.horas}h"""
 
 
 class MetaTempoControle(models.Model):
@@ -151,7 +150,10 @@ class TempoGastoEquipe(models.Model):
     def __str__(self) -> str:
         mes_value = self.mes
         mes_str = mes_value.strftime("%m/%Y") if isinstance(mes_value, date) else "N/A"
-        return f"{self.funcionario} - " f"{mes_str} - " f"{self.tempo_gasto}h"
+        return f"""{
+            self.funcionario} - {
+            mes_str} - {
+            self.tempo_gasto}h"""
 
 
 class TempoControleValores(models.Model):
