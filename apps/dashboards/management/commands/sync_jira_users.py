@@ -51,9 +51,7 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(
-            "Encontrados {} utilizadores únicos em {} tarefas analisadas.".format(
-                len(assignees), total_tasks_processadas
-            )
+            f"Encontrados {len(assignees)} utilizadores únicos em {total_tasks_processadas} tarefas analisadas."
         )
 
         criados = 0
@@ -66,17 +64,15 @@ class Command(BaseCommand):
             if created:
                 criados += 1
                 self.stdout.write(
-                    "  [CRIADO] Funcionário: {} (ID: {}) com valor/hora padrão.".format(
-                        funcionario.nome, funcionario.id
-                    )
+                    f"  [CRIADO] Funcionário: {funcionario.nome} (ID: {funcionario.id}) com valor/hora padrão."
                 )
             else:
                 atualizados += 1
 
         self.stdout.write(self.style.SUCCESS("\nSincronização concluída com sucesso!"))
         self.stdout.write(
-            self.style.SUCCESS("  - {} funcionários criados.".format(criados))
+            self.style.SUCCESS(f"  - {criados} funcionários criados.")
         )
         self.stdout.write(
-            self.style.SUCCESS("  - {} funcionários já existentes.".format(atualizados))
+            self.style.SUCCESS(f"  - {atualizados} funcionários já existentes.")
         )
