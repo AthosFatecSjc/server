@@ -9,7 +9,14 @@ from olap_models.models import DimFuncionario, DimProjeto, DimTempo, FatoRegistr
 
 
 class CustoPorDesenvolvedorServiceTest(TestCase):
-    """Testes para o serviço de custo por desenvolvedor."""
+    """Testes para o módulo de dashboards de projetos.
+
+Os testes unitários foram movidos para a estrutura:
+tests/unit/apps/dashboards/projetos/test_services.py
+
+Esta mudança segue as boas práticas de organização de testes,
+separando testes unitários em uma hierarquia dedicada.
+"""
 
     def setUp(self):
         """Configuração inicial dos testes."""
