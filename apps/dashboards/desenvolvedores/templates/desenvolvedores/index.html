@@ -19,6 +19,8 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50 min-h-screen">
+    {% csrf_token %} <!-- 👈 ADICIONADO: Token CSRF para segurança -->
+
     <div class="container mx-auto px-4 py-8">
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -93,16 +95,16 @@
                 </div>
                 <style>
                     .avatar-0 { background-color: #93C5FD; }
-                    .avatar-1 { background-color: #F9A8D4; }
+                    .avatar-10 { background-color: #F9A8D4; }
                     .avatar-2 { background-color: #6EE7B7; }
-                    .avatar-7 { background-color: #FCA5A5; }
+                    .avatar-3 { background-color: #FCA5A5; }
                     .avatar-4 { background-color: #FDE68A; }
                     .avatar-5 { background-color: #C4B5FD; }
                     .avatar-6 { background-color: #67E8F9; }
-                    .avatar-3 { background-color: #FDBA74; }
+                    .avatar-7 { background-color: #FDBA74; }
                     .avatar-8 { background-color: #A5B4FC; }
                     .avatar-9 { background-color: #5EEAD4; }
-                    .avatar-10 { background-color: #BEF264; }
+                    .avatar-1 { background-color: #BEF264; }
                     .avatar-11 { background-color: #FDA4AF; }
                 </style>
             </div>
@@ -205,7 +207,12 @@
             };
 
             document.getElementById('developerId').value = developerId;
-            document.getElementById('hourlyRate').value = Number.parseFloat(currentRate).toFixed(2).replace('.', ',');
+
+            const formattedRate = typeof currentRate === 'string'
+                ? currentRate.replace('.', ',')
+                : Number(currentRate).toFixed(2).replace('.', ',');
+
+            document.getElementById('hourlyRate').value = formattedRate;
             document.getElementById('developerName').textContent = developerName;
 
             const modal = document.getElementById('editModal');
@@ -232,7 +239,7 @@
             }, 300);
         }
 
-            async function saveDeveloperRate() {
+        async function saveDeveloperRate() {
             const hourlyRate = document.getElementById('hourlyRate').value;
             const developerId = document.getElementById('developerId').value;
             const developerName = currentDeveloper.name;
@@ -314,7 +321,6 @@
             }
         }
 
-
         function atualizarInterface(desenvolvedores, estatisticas) {
             document.getElementById('totalDesenvolvedores').textContent = estatisticas.total_desenvolvedores;
             document.getElementById('valorHoraMedio').textContent = `R$ ${estatisticas.valor_medio.toFixed(2)}`;
@@ -326,15 +332,16 @@
             const tabelaBody = document.getElementById('tabelaDesenvolvedores');
             tabelaBody.innerHTML = '';
 
-            const cores = [
-                '#3B82F6', '#EC4899', '#10B981', '#EF4444', '#F59E0B',
-                '#8B5CF6', '#06B6D4', '#F97316', '#6366F1', '#14B8A6',
-                '#84CC16', '#F43F5E'
+            // CORREÇÃO: Usar cores pastéis consistentes
+            const coresPastel = [
+                '#93C5FD', '#F9A8D4', '#6EE7B7', '#FCA5A5', '#FDE68A',
+                '#C4B5FD', '#67E8F9', '#FDBA74', '#A5B4FC', '#5EEAD4',
+                '#BEF264', '#FDA4AF'
             ];
 
             desenvolvedores.forEach((dev, index) => {
-                const corIndex = index % cores.length;
-                const cor = cores[corIndex];
+                const corIndex = index % coresPastel.length;
+                const cor = coresPastel[corIndex];
 
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-gray-50';
@@ -384,7 +391,16 @@
 
         function getCsrfToken() {
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-            return csrfToken ? csrfToken.value : '';
+            if (csrfToken) {
+                return csrfToken.value;
+            }
+
+            const cookieValue = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+
+            return cookieValue || '';
         }
 
         document.getElementById('hourlyRate').addEventListener('input', (event) => {

@@ -1,8 +1,8 @@
 import json
 
 from django.http import JsonResponse
+from django.middleware.csrf import get_token
 from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from .services import DesenvolvedoresService
@@ -60,7 +60,6 @@ def get_dados_desenvolvedores(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def atualizar_valor_hora(request):
     """API para atualizar valor/hora no OLTP"""
