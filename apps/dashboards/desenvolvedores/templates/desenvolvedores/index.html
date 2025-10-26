@@ -226,11 +226,11 @@
 
         function formatarValorParaInput(valor) {
             if (typeof valor === 'string') {
-                valor = parseFloat(valor.replaceAll(',', '.'));
+                valor = Number.parseFloat(valor.replaceAll(',', '.'));
             }
 
             const numero = Number(valor);
-            if (isNaN(numero)) return '0,00';
+            if (Number.isNaN(numero)) return '0,00';
 
             const partes = numero.toFixed(2).split('.');
             return partes[0] + ',' + partes[1];
@@ -260,9 +260,9 @@
             }
 
             try {
-                const valorHoraDecimal = parseFloat(hourlyRate.replaceAll(',', '.'));
+                const valorHoraDecimal = Number.parseFloat(hourlyRate.replaceAll(',', '.'));
 
-                if (isNaN(valorHoraDecimal)) {
+                if (Number.isNaN(valorHoraDecimal)) {
                     alert('Por favor, insira um valor numérico válido.');
                     return;
                 }
@@ -380,7 +380,7 @@
 
         function formatarValorParaExibicao(valor) {
             const numero = Number(valor);
-            if (isNaN(numero)) return '0,00';
+            if (Number.isNaN(numero)) return '0,00';
 
             const partes = numero.toFixed(2).split('.');
             return partes[0] + ',' + partes[1];
@@ -421,24 +421,20 @@
         }
 
         document.getElementById('hourlyRate').addEventListener('input', (event) => {
-            let value = event.target.value.replaceAll(/[^\d,]/g, '');
+            let value = event.target.value;
 
+            // Remove tudo que não é número ou vírgula
+            value = value.replaceAll(/[^\d,]/g, '');
+
+            // Permite apenas uma vírgula
             const parts = value.split(',');
-
             if (parts.length > 2) {
-                value = `${parts[0]},${parts.slice(1).join('')}`;
+                value = parts[0] + ',' + parts.slice(1).join('');
             }
 
+            // Limita a 2 casas decimais após a vírgula
             if (parts.length === 2 && parts[1].length > 2) {
-                value = `${parts[0]},${parts[1].substring(0, 2)}`;
-            }
-
-            if (!value.includes(',')) {
-                value = value + ',00';
-            } else if (parts[1].length === 1) {
-                value = `${parts[0]},${parts[1]}0`;
-            } else if (parts[1].length === 0) {
-                value = `${parts[0]},00`;
+                value = parts[0] + ',' + parts[1].substring(0, 2);
             }
 
             event.target.value = value;
