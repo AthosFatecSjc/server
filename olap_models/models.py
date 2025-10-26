@@ -12,7 +12,7 @@ class DimProjeto(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
-    nome = models.CharField(max_length=100, db_column="nome_projeto")
+    nome = models.CharField(max_length=100)
     data_criacao = models.DateField(default=datetime.now)
 
     class Meta:
@@ -40,7 +40,7 @@ class DimFuncionario(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
-    nome = models.CharField(max_length=100, db_column="nome_funcionario")
+    nome = models.CharField(max_length=100)
     time = models.CharField(max_length=100, blank=True)
 
     data_contratacao = models.DateField(default=datetime.now)
@@ -155,21 +155,11 @@ class FatoRegistroHoras(models.Model):
     Modelo para tabela fato de registro de horas e custo de funcionários por projeto
     """
 
-    funcionario = models.ForeignKey(
-        DimFuncionario, on_delete=models.CASCADE, null=True, db_column="fk_funcionario"
-    )
-    projeto = models.ForeignKey(
-        DimProjeto, on_delete=models.CASCADE, null=True, db_column="fk_projeto"
-    )
-    data = models.ForeignKey(
-        DimTempo, on_delete=models.CASCADE, null=True, db_column="fk_data"
-    )
-    horas_trabalhadas = models.DecimalField(
-        max_digits=15, decimal_places=2, default=0, db_column="horas_gastas"
-    )
-    custo = models.DecimalField(
-        max_digits=15, decimal_places=2, default=0, db_column="custo_total"
-    )
+    funcionario = models.ForeignKey(DimFuncionario, on_delete=models.CASCADE, null=True)
+    projeto = models.ForeignKey(DimProjeto, on_delete=models.CASCADE, null=True)
+    data = models.ForeignKey(DimTempo, on_delete=models.CASCADE, null=True)
+    horas_trabalhadas = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    custo = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
     class Meta:
         """

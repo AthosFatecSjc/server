@@ -3,15 +3,12 @@
     <h3>Filtrar por Projeto</h3>
     <div class="custom-select">
         <button class="select-button" id="projectSelectBtn" onclick="toggleProjectDropdown()">
-            <span id="selectedProjectText">Todos os Projetos</span>
+            <span id="selectedProjectText">Selecione um projeto</span>
         </button>
         <div class="select-dropdown" id="projectDropdown">
-            <button type="button" class="select-option active" data-value="all" data-project-id="all"
-                onclick="selectProject('all', 'Todos os Projetos', null)">
-                Todos os Projetos
-            </button>
             {% for projeto in projetos_dimensao %}
-            <button type="button" class="select-option" data-value="{{ projeto.id }}" data-project-id="{{ projeto.id }}"
+            <button type="button" class="select-option{% if forloop.first %} active{% endif %}"
+                data-value="{{ projeto.id }}" data-project-id="{{ projeto.id }}"
                 data-project-name="{{ projeto.nome_projeto }}"
                 data-project-created="{{ projeto.data_criacao|date:'Y-m-d' }}"
                 data-project-total-horas="{{ projeto.total_horas }}"
