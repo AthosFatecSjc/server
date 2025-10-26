@@ -1,5 +1,4 @@
-import datetime
-
+from datetime import datetime, date, timedelta
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -57,24 +56,24 @@ class Command(BaseCommand):
         Esta dimensão não é extraída dos dados de origem, mas gerada
         programaticamente para garantir um calendário completo para análises.
         """
-        self.stdout.write("Populando Dimensão Tempo...")
-        start_date = datetime.date(2020, 1, 1)
-        end_date = datetime.date(2030, 12, 31)
+        self.stdout.write('Populando Dimensão Tempo...')
+        start_date = date(2020, 1, 1)
+        end_date = date(datetime.now().year + 1, 12, 31)
         current_date = start_date
         while current_date <= end_date:
             DimTempo.objects.using("olap").update_or_create(
                 id=int(current_date.strftime("%Y%m%d")),
                 defaults={
-                    "data_completa": current_date,
-                    "ano": current_date.year,
-                    "trimestre": f"T{(current_date.month - 1) // 3 + 1}",
-                    "mes": current_date.month,
-                    "nome_mes": current_date.strftime("%B"),
-                    "dia_do_mes": current_date.day,
-                    "dia_da_semana": current_date.strftime("%A"),
-                },
+                    'data_completa': current_date,
+                    'ano': current_date.year,
+                    'trimestre': f'T{(current_date.month - 1) // 3 + 1}',
+                    'mes': current_date.month,
+                    'mes_nome': current_date.strftime('%B'),
+                    'dia': current_date.day,
+                    'dia_da_semana': current_date.strftime('%A')
+                }
             )
-            current_date += datetime.timedelta(days=1)
+            current_date += timedelta(days=1)
 
     def popular_dimensoes_simples(self):
         """
@@ -91,10 +90,8 @@ class Command(BaseCommand):
         for projeto in Projeto.objects.all():
             DimProjeto.objects.using("olap").update_or_create(
                 id=projeto.id,
-                defaults={
-                    "nome_projeto": projeto.nome,
-                    "data_criacao": projeto.data_criacao,
-                },
+                defaults={'nome': projeto.nome,
+                          'data_criacao': projeto.data_criacao}
             )
 
     def popular_dim_funcionario(self):
@@ -118,13 +115,13 @@ class Command(BaseCommand):
             DimFuncionario.objects.using("olap").update_or_create(
                 id=func.id,
                 defaults={
-                    "nome_funcionario": func.nome,
-                    "time": func.time,
-                    "data_contratacao": func.data_criacao,
-                    "cargo": cargo_dim,
-                    "gerente": gerente_dim,
-                    "valor_hora": func.valor_hora,
-                },
+                    'nome': func.nome,
+                    'time': func.time,
+                    'data_contratacao': func.data_criacao,
+                    'cargo': cargo_dim,
+                    'nome_gerente': gerente_dim,
+                    'valor_hora': func.valor_hora
+                }
             )
 
     @transaction.atomic(using="olap")
@@ -139,22 +136,19 @@ class Command(BaseCommand):
         """
         self.stdout.write("Populando Tabela Fato Registro Horas...")
         for registro in ControleHorasEquipe.objects.all().iterator():
-            projeto_dim = (
-                DimProjeto.objects.using("olap").filter(id=registro.projeto_id).first()
-            )
-            func_dim = (
-                DimFuncionario.objects.using("olap")
-                .filter(id=registro.funcionario_id)
-                .first()
-            )
-            data_dim_id = int(registro.mes.strftime("%Y%m%d"))
-            data_dim = DimTempo.objects.using("olap").filter(id=data_dim_id).first()
+            func_dim = DimFuncionario.objects.using(
+                'olap').filter(id=registro.funcionario_id).first()
+            projeto_dim = DimProjeto.objects.using(
+                'olap').filter(id=registro.projeto_id).first()
+            data_dim_id = int(registro.mes.strftime('%Y%m%d'))
+            data_dim = DimTempo.objects.using(
+                'olap').filter(id=data_dim_id).first()
 
             if projeto_dim and func_dim and data_dim:
-                FatoRegistroHoras.objects.using("olap").create(
-                    projeto=projeto_dim,
+                FatoRegistroHoras.objects.using('olap').create(
                     funcionario=func_dim,
+                    projeto=projeto_dim,
                     data=data_dim,
-                    horas_gastas=registro.horas,
-                    custo_total=registro.horas * func_dim.valor_hora,
+                    horas_trabalhadas=registro.horas,
+                    custo=registro.horas * func_dim.valor_hora
                 )

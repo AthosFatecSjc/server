@@ -1,177 +1,177 @@
-{% extends "base.html" %}
+    {% extends "base.html" %}
+    {% load string_filters %}
+    {% block content %}
+    {% load static %}
 
-{% block content %}
-
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Relatório de Comparação de Horas</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js" integrity="sha256-Lye89HGy1p3XhJT24hcvsoRw64Q4IOL5a7hdOflhjTA=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" integrity="sha256-IMCPPZxtLvdt9tam8RJ8ABMzn+Mq3SQiInbDmMYwjDg=" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <script src="{% static 'libs/chartjs/chart.umd.min.js' %}" crossorigin="anonymous"></script>
+    <script src="{% static 'libs/chartjs/chartjs-plugin-datalabels.min.js' %}" crossorigin="anonymous"></script>
 
     <style>
         .fade-in { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
         }
         .icon { width: 1em; height: 1em; vertical-align: -0.125em; }
     </style>
-</head>
-<body class="bg-gray-50 min-h-screen">
+    </head>
+
+    <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-2xl font-semibold text-blue-600">Controle de Horas</h1>
-                <p class="text-gray-600">Relatório de Comparação de Horas Realizadas vs Previstas (Total)</p>
-            </div>
-            <button
-                onclick="openExportModal()"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
-                tabindex="0"
-                onKeyDown="handleKeyDown(event, openExportModal)">
-                <svg class="icon w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                Exportar PDF
-            </button>
+        <div>
+            <h1 class="text-2xl font-semibold text-blue-600">Controle de Horas</h1>
+            <p class="text-gray-600">Relatório de Comparação de Horas Realizadas vs Previstas (Total)</p>
+        </div>
+        <button
+            type="button"
+            onclick="openExportModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+        >
+            <svg class="icon w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Exportar PDF
+        </button>
         </div>
 
+        <!-- 🔹 Filtros -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div class="flex items-center gap-2 mb-4">
-                <svg class="icon w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
-                </svg>
-                <h2 class="text-lg font-semibold">Filtros</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Projeto</label>
-                    <select id="projectFilter" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        {% for nome_projeto in nome_projetos %}
-                            <option value="{{ nome_projeto }}">{{ nome_projeto }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ano</label>
-                    <select id="yearFilter" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        {% for ano in anos_disponiveis %}
-                            <option value="{{ ano }}" {% if ano_atual == ano %}selected{% endif %}>{{ ano }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
+        <div class="flex items-center gap-2 mb-4">
+            <svg class="icon w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+            </svg>
+            <h2 class="text-lg font-semibold">Filtros</h2>
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+            <label for="projectFilter" class="block text-sm font-medium text-gray-700 mb-1">Projeto</label>
+            <select id="projectFilter" name="project"
+                class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for nome_projeto in nome_projetos %}
+                <option value="{{ nome_projeto }}">{{ nome_projeto }}</option>
+                {% endfor %}
+            </select>
+            </div>
+            <div>
+            <label for="yearFilter" class="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+            <select id="yearFilter" name="year"
+                class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for ano in anos_disponiveis %}
+                <option value="{{ ano }}" {% if ano_atual == ano %}selected{% endif %}>{{ ano }}</option>
+                {% endfor %}
+            </select>
+            </div>
+        </div>
+        </div>
+
+        <!-- 🔹 Cards de resumo -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in">
-                <h3 class="text-lg font-semibold mb-4">Performance Geral</h3>
-                <div class="text-3xl font-bold text-blue-600 mb-2" id="performancePercentage">0%</div>
-                <p class="text-sm text-gray-600 mb-3">Meta de eficiência atingida</p>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div id="performanceBar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in">
-                <h3 class="text-lg font-semibold mb-4">Total Realizado</h3>
-                <div class="text-3xl font-bold text-green-600 mb-2" id="totalRealized">0h</div>
-                <p class="text-sm text-gray-600 mb-2">Horas trabalhadas no período</p>
-                <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full" id="collaboratorsCount">0 colaboradores</span>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in cursor-pointer hover:bg-gray-50 transition-colors"
-                onclick="openPlannedHoursModal()"
-                tabindex="0"
-                onKeyDown="handleKeyDown(event, openPlannedHoursModal)">
-                <h3 class="text-lg font-semibold mb-4 flex items-center justify-center gap-2">
-                    Meta Planejada
-                    <svg class="icon w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                </h3>
-                <div class="text-3xl font-bold mb-2" id="totalPlanned" style="color: #ea580c;">0h</div>
-                <p class="text-sm text-gray-600 mb-2">Horas planejadas para o período</p>
-                <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full" id="deficit">Déficit: 0h</span>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in">
+            <h3 class="text-lg font-semibold mb-4">Performance Geral</h3>
+            <div class="text-3xl font-bold text-blue-600 mb-2" id="performancePercentage">0%</div>
+            <p class="text-sm text-gray-600 mb-3">Meta de eficiência atingida</p>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+            <div id="performanceBar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width:0%"></div>
             </div>
         </div>
 
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in">
+            <h3 class="text-lg font-semibold mb-4">Total Realizado</h3>
+            <div class="text-3xl font-bold text-green-600 mb-2" id="totalRealized">0h</div>
+            <p class="text-sm text-gray-600 mb-2">Horas trabalhadas no período</p>
+            <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full" id="collaboratorsCount">0 colaboradores</span>
+        </div>
+
+        <button type="button"
+            onclick="openPlannedHoursModal()"
+            class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center fade-in cursor-pointer hover:bg-gray-50 transition-colors focus:outline-none w-full">
+            <h3 class="text-lg font-semibold mb-4 flex items-center justify-center gap-2">
+            Meta Planejada
+            <svg class="icon w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            </h3>
+            <div class="text-3xl font-bold mb-2" id="totalPlanned" style="color:#ea580c;">0h</div>
+            <p class="text-sm text-gray-600 mb-2">Horas planejadas para o período</p>
+            <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full" id="deficit">Déficit: 0h</span>
+        </button>
+        </div>
+
+        <!-- 🔹 Tabela de colaboradores -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 fade-in">
-            <div class="p-6 border-b border-gray-200">
-                <h2 class="text-xl font-semibold">Horas Realizadas por Colaborador</h2>
-                <p class="text-gray-600">Detalhes mensais das horas realizadas no projeto</p>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full" id="comparisonTable">
-                    <thead>
-                        <tr class="bg-blue-600 text-white">
-                            <th class="p-3 text-left font-medium">Colaborador</th>
-                            <th class="p-3 text-center font-medium">JAN</th>
-                            <th class="p-3 text-center font-medium">FEV</th>
-                            <th class="p-3 text-center font-medium">MAR</th>
-                            <th class="p-3 text-center font-medium">ABR</th>
-                            <th class="p-3 text-center font-medium">MAI</th>
-                            <th class="p-3 text-center font-medium">JUN</th>
-                            <th class="p-3 text-center font-medium">JUL</th>
-                            <th class="p-3 text-center font-medium">AGO</th>
-                            <th class="p-3 text-center font-medium">SET</th>
-                            <th class="p-3 text-center font-medium">OUT</th>
-                            <th class="p-3 text-center font-medium">NOV</th>
-                            <th class="p-3 text-center font-medium">DEZ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                    </tbody>
-                </table>
-            </div>
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-xl font-semibold">Horas Realizadas por Colaborador</h2>
+            <p class="text-gray-600">Detalhes mensais das horas realizadas no projeto</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full" id="comparisonTable">
+            <thead>
+                <tr class="bg-blue-600 text-white">
+                <th class="p-3 text-left font-medium">Colaborador</th>
+                {% for mes in "JAN FEV MAR ABR MAI JUN JUL AGO SET OUT NOV DEZ"|split %}
+                    <th class="p-3 text-center font-medium">{{ mes }}</th>
+                {% endfor %}
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+            </table>
+        </div>
         </div>
 
+        <!-- 🔹 Gráficos -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 fade-in">
-                <h3 class="text-xl font-semibold mb-2">Distribuição de Horas</h3>
-                <p class="text-gray-600 mb-4">Representação da participação de cada colaborador</p>
-                <div class="relative h-80">
-                    <canvas id="pieChart"></canvas>
-                </div>
-            </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-2">Distribuição de Horas</h3>
+            <p class="text-gray-600 mb-4">Participação de cada colaborador</p>
+            <div class="relative h-80"><canvas id="pieChart"></canvas></div>
+        </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 fade-in">
-                <h3 class="text-xl font-semibold mb-2">Total de Horas</h3>
-                <p class="text-gray-600 mb-4">Comparação do total de horas realizadas e previstas</p>
-                <div class="relative h-80">
-                    <canvas id="barChart"></canvas>
-                </div>
-            </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-2">Total de Horas</h3>
+            <p class="text-gray-600 mb-4">Comparação entre horas realizadas e previstas</p>
+            <div class="relative h-80"><canvas id="barChart"></canvas></div>
+        </div>
         </div>
     </div>
 
+    <!-- 🔹 Modal Exportar -->
     <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 class="text-lg font-semibold mb-2">Exportar relatório</h3>
-            <p class="text-gray-600 mb-4">Tem certeza que deseja exportar este relatório em PDF?</p>
-            <div class="flex gap-3 justify-end">
-                <button onclick="closeExportModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
-                <button onclick="exportPDF()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Confirmar</button>
-            </div>
+        <h3 class="text-lg font-semibold mb-2">Exportar relatório</h3>
+        <p class="text-gray-600 mb-4">Deseja exportar este relatório em PDF?</p>
+        <div class="flex gap-3 justify-end">
+            <button type="button" onclick="closeExportModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+            <button type="button" onclick="exportPDF()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Confirmar</button>
+        </div>
         </div>
     </div>
 
+    <!-- 🔹 Modal Horas Planejadas -->
     <div id="plannedHoursModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 class="text-lg font-semibold mb-2">Ajustar Meta Planejada</h3>
-            <p class="text-gray-600 mb-4">Altere o valor total de horas planejadas para o projeto.</p>
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Horas Planejadas</label>
-                <input type="number" id="newPlannedHours" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" step="0.01">
-            </div>
-            <div class="flex gap-3 justify-end">
-                <button onclick="closePlannedHoursModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
-                <button onclick="savePlannedHours()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Salvar</button>
-            </div>
+        <h3 class="text-lg font-semibold mb-2">Ajustar Meta Planejada</h3>
+        <p class="text-gray-600 mb-4">Altere o valor total de horas planejadas do projeto.</p>
+        <div class="mb-4">
+            <label for="newPlannedHours" class="block text-sm font-medium text-gray-700 mb-1">Horas Planejadas</label>
+            <input type="number" id="newPlannedHours" name="newPlannedHours"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" step="0.01" />
+        </div>
+        <div class="flex gap-3 justify-end">
+            <button type="button" onclick="closePlannedHoursModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+            <button type="button" onclick="savePlannedHours()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Salvar</button>
+        </div>
         </div>
     </div>
 
@@ -244,7 +244,12 @@
 
             let totalPlanned = currentData.horas_planejadas_projeto || 0;
 
-            const percentage = totalRealized == 0 ? 0 : totalPlanned > 0 ? (totalPlanned / totalRealized) * 100 : 0;
+            let percentage = 0;
+            if (totalRealized !== 0) {
+                if (totalPlanned > 0) {
+                    percentage = (totalPlanned / totalRealized) * 100;
+                }
+            }
             const deficit = Math.max(0, totalRealized - totalPlanned);
 
             document.getElementById('performancePercentage').textContent = percentage.toFixed(1) + '%';
@@ -266,24 +271,38 @@
             }
 
             let tableHTML = '';
-            Object.entries(currentData.por_dev).forEach(([devName, devData]) => {
-                tableHTML += `<tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">`;
-                tableHTML += `<td class="p-3 font-medium">${devName}</td>`;
+            for (const [devName, devData] of Object.entries(currentData.por_dev)) {
+                tableHTML += `
+                    <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                        <td class="p-3 font-medium">${devName}</td>
+                `;
 
                 for (let month = 1; month <= 12; month++) {
                     const monthData = devData.mensal[month];
                     const realized = monthData ? monthData.realizado : 0;
 
-                    tableHTML += `<td class="p-3 text-center">`;
-                    if (realized > 0) {
-                        tableHTML += `<div class="text-green-600 font-semibold text-sm">${formatHours(realized)}</div>`;
-                    } else {
-                        tableHTML += `<span class="text-gray-400 text-sm">-</span>`;
-                    }
-                    tableHTML += `</td>`;
+                    const cellContent = realized > 0
+                        ? `
+                            <div class="text-green-600 font-semibold text-sm">
+                                ${formatHours(realized)}
+                            </div>
+                        `
+                        : `
+                            <span class="text-gray-400 text-sm">-</span>
+                        `;
+
+                    tableHTML += `
+                        <td class="p-3 text-center">
+                            ${cellContent}
+                        </td>
+                    `;
                 }
-                tableHTML += `</tr>`;
-            });
+
+                tableHTML += `
+                    </tr>
+                `;
+            }
+
 
             tableHTML += `<tr class="bg-gray-100 font-semibold"><td class="p-3">Total Geral</td>`;
             for (let month = 1; month <= 12; month++) {
@@ -530,7 +549,7 @@
         }
 
         async function savePlannedHours() {
-            const newHours = parseFloat(document.getElementById('newPlannedHours').value) || 0;
+            const newHours = Number.parseFloat(document.getElementById('newPlannedHours').value) || 0;
             totalPlannedHours = newHours;
 
             currentData.horas_planejadas_projeto = totalPlannedHours;
@@ -586,15 +605,15 @@
 
                 if (response.ok) {
                     const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
+                    const url = globalThis.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
                     a.download = `relatorio_horas_${project}_${year}.pdf`;
                     document.body.appendChild(a);
                     a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
+                    globalThis.URL.revokeObjectURL(url);
+                    a.remove();
                 } else {
                     const errorData = await response.json();
                     throw new Error(errorData.error || 'Erro ao gerar PDF');
@@ -612,10 +631,10 @@
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
                 const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                for (const cookie of cookies) {
+                    const trimmed = cookie.trim();
+                    if (trimmed.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
                         break;
                     }
                 }

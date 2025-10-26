@@ -100,6 +100,8 @@ DATABASES = {
     },
 }
 
+DATABASE_ROUTERS = ["config.routers.OlapRouter"]
+
 if os.environ.get("TEST_DB_ENGINE"):
     DATABASES["default"] = {
         "ENGINE": os.environ["TEST_DB_ENGINE"],
@@ -159,20 +161,24 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cron Jobs
+# Cron Jobs
 CRONJOBS = [
-    # Jira a cada dia às 19h
+    # Executa a cada minuto - sincronização rápida
     (
         env("CRON_BUSCAR_DADOS", default="0 19 * * *"),
         "apps.utils.cron.buscar_dados_api",
     ),
-    # ETL diário às 19h (ou no mesmo horário do Jira)
+    # Executa a cada minuto - ETL mais pesado
     (
-        env("CRON_ETL", default="0 19 * * *"),
-        "django.core.management.call_command",
-        ["rodar_etl"],
+        env("CRON_ETL", default="*/1 * * * *"),
+        "apps.utils.cron.executar_etl_completo",
     ),
+    # Executa a cada hora - processo completo (Jira sync + ETL)
+    # (
+    #     env("CRON_COMPLETO", default="0 */1 * * *"),  # A cada hora
+    #     "apps.utils.cron.buscar_dados_com_etl",
+    # ),
 ]
-
 
 # Configuração de cache personalizado para dados do JIRA
 CACHE_JIRA = {
