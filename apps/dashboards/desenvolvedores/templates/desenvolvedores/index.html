@@ -209,8 +209,8 @@
             document.getElementById('developerId').value = developerId;
 
             const formattedRate = typeof currentRate === 'string'
-                ? currentRate.replaceAll('.', ',')
-                : Number(currentRate).toFixed(2).replaceAll('.', ',');
+                ? currentRate.replace(/\./g, ',')
+                : Number(currentRate).toFixed(2).replace(/\./g, ',');
 
             document.getElementById('hourlyRate').value = formattedRate;
             document.getElementById('developerName').textContent = developerName;
@@ -250,7 +250,7 @@
             }
 
             try {
-                const valorHoraDecimal = Number.parseFloat(hourlyRate.replaceAll(',', '.'));
+                const valorHoraDecimal = Number.parseFloat(hourlyRate.replace(/,/g, '.'));
 
                 if (Number.isNaN(valorHoraDecimal)) {
                     alert('Por favor, insira um valor numérico válido.');
@@ -403,7 +403,7 @@
         }
 
         document.getElementById('hourlyRate').addEventListener('input', (event) => {
-            let value = event.target.value.replaceAll(/[^\d,]/g, '');
+            let value = event.target.value.replace(/[^\d,]/g, '');
 
             const parts = value.split(',');
 
