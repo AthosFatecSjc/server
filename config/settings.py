@@ -171,7 +171,7 @@ CRONJOBS = [
     # Executa a cada minuto - ETL mais pesado
     (
         env("CRON_ETL", default="*/1 * * * *"),
-        "apps.utils.cron.executar_etl_completo",
+        "apps.utils.cron.buscar_dados_com_etl",
     ),
     # Executa a cada hora - processo completo (Jira sync + ETL)
     # (
