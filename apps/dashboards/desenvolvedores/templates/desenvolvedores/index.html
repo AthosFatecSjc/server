@@ -208,9 +208,7 @@
 
             document.getElementById('developerId').value = developerId;
 
-            const formattedRate = typeof currentRate === 'string'
-                ? currentRate.replace(/\./g, ',')
-                : Number(currentRate).toFixed(2).replace(/\./g, ',');
+            const formattedRate = formatarValorParaInput(currentRate);
 
             document.getElementById('hourlyRate').value = formattedRate;
             document.getElementById('developerName').textContent = developerName;
@@ -224,6 +222,18 @@
                 modalContent.classList.remove('scale-95', 'opacity-0');
                 modalContent.classList.add('scale-100', 'opacity-100');
             }, 10);
+        }
+
+        function formatarValorParaInput(valor) {
+            if (typeof valor === 'string') {
+                valor = parseFloat(valor.replaceAll(',', '.'));
+            }
+
+            const numero = Number(valor);
+            if (isNaN(numero)) return '0,00';
+
+            const partes = numero.toFixed(2).split('.');
+            return partes[0] + ',' + partes[1];
         }
 
         function closeEditModal() {
@@ -250,9 +260,9 @@
             }
 
             try {
-                const valorHoraDecimal = Number.parseFloat(hourlyRate.replace(/,/g, '.'));
+                const valorHoraDecimal = parseFloat(hourlyRate.replaceAll(',', '.'));
 
-                if (Number.isNaN(valorHoraDecimal)) {
+                if (isNaN(valorHoraDecimal)) {
                     alert('Por favor, insira um valor numérico válido.');
                     return;
                 }
@@ -323,11 +333,11 @@
 
         function atualizarInterface(desenvolvedores, estatisticas) {
             document.getElementById('totalDesenvolvedores').textContent = estatisticas.total_desenvolvedores;
-            document.getElementById('valorHoraMedio').textContent = `R$ ${estatisticas.valor_medio.toFixed(2)}`;
-            document.getElementById('menorValor').textContent = `R$ ${estatisticas.menor_valor.toFixed(2)}`;
-            document.getElementById('maiorValor').textContent = `R$ ${estatisticas.maior_valor.toFixed(2)}`;
-            document.getElementById('valorMedio').textContent = `R$ ${estatisticas.valor_medio.toFixed(2)}`;
-            document.getElementById('custoTotal').textContent = `R$ ${estatisticas.soma_total_valor_hora.toFixed(2)}`;
+            document.getElementById('valorHoraMedio').textContent = `R$ ${formatarValorParaExibicao(estatisticas.valor_medio)}`;
+            document.getElementById('menorValor').textContent = `R$ ${formatarValorParaExibicao(estatisticas.menor_valor)}`;
+            document.getElementById('maiorValor').textContent = `R$ ${formatarValorParaExibicao(estatisticas.maior_valor)}`;
+            document.getElementById('valorMedio').textContent = `R$ ${formatarValorParaExibicao(estatisticas.valor_medio)}`;
+            document.getElementById('custoTotal').textContent = `R$ ${formatarValorParaExibicao(estatisticas.soma_total_valor_hora)}`;
 
             const tabelaBody = document.getElementById('tabelaDesenvolvedores');
             tabelaBody.innerHTML = '';
@@ -356,16 +366,24 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="font-medium text-gray-900">R$ ${dev.valor_hora.toFixed(2)}</span>
+                        <span class="font-medium text-gray-900">R$ ${formatarValorParaExibicao(dev.valor_hora)}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <button onclick="openEditModal('${dev.id}', '${dev.valor_hora}', '${dev.nome.replace(/'/g, String.raw`\'`)}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
+                        <button onclick="openEditModal('${dev.id}', '${dev.valor_hora}', '${dev.nome.replaceAll("'", String.raw`\'`)}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
                             <i class="fas fa-edit"></i>
                         </button>
                     </td>
                 `;
                 tabelaBody.appendChild(row);
             }
+        }
+
+        function formatarValorParaExibicao(valor) {
+            const numero = Number(valor);
+            if (isNaN(numero)) return '0,00';
+
+            const partes = numero.toFixed(2).split('.');
+            return partes[0] + ',' + partes[1];
         }
 
         function showNotification(message) {
@@ -403,7 +421,7 @@
         }
 
         document.getElementById('hourlyRate').addEventListener('input', (event) => {
-            let value = event.target.value.replace(/[^\d,]/g, '');
+            let value = event.target.value.replaceAll(/[^\d,]/g, '');
 
             const parts = value.split(',');
 
@@ -413,6 +431,14 @@
 
             if (parts.length === 2 && parts[1].length > 2) {
                 value = `${parts[0]},${parts[1].substring(0, 2)}`;
+            }
+
+            if (!value.includes(',')) {
+                value = value + ',00';
+            } else if (parts[1].length === 1) {
+                value = `${parts[0]},${parts[1]}0`;
+            } else if (parts[1].length === 0) {
+                value = `${parts[0]},00`;
             }
 
             event.target.value = value;
