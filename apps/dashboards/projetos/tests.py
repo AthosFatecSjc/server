@@ -24,18 +24,18 @@ separando testes unitários em uma hierarquia dedicada.
         self.projeto = DimProjeto.objects.create(
             nome="Projeto Teste"
         )
-        
+
         # Criar funcionários
         self.funcionario1 = DimFuncionario.objects.create(
             nome="João Silva",
             valor_hora=Decimal("50.00")
         )
-        
+
         self.funcionario2 = DimFuncionario.objects.create(
             nome="Maria Santos",
             valor_hora=Decimal("45.00")
         )
-        
+
         # Criar dimensão tempo
         self.tempo = DimTempo.objects.create(
             data_completa="2024-01-15",
@@ -45,7 +45,7 @@ separando testes unitários em uma hierarquia dedicada.
             trimestre="Q1",
             dia_da_semana="Segunda-feira"
         )
-        
+
         # Criar registros de horas
         FatoRegistroHoras.objects.create(
             funcionario=self.funcionario1,
@@ -54,7 +54,7 @@ separando testes unitários em uma hierarquia dedicada.
             horas_trabalhadas=Decimal("100.00"),
             custo=Decimal("5000.00")  # 100h * R$50
         )
-        
+
         FatoRegistroHoras.objects.create(
             funcionario=self.funcionario2,
             projeto=self.projeto,
@@ -67,13 +67,13 @@ separando testes unitários em uma hierarquia dedicada.
         """Testa obtenção de custos sem filtrar por projeto."""
         service = CustoPorDesenvolvedorService()
         resultado = service.obter_custo_por_desenvolvedor()
-        
+
         self.assertEqual(len(resultado), 2)
-        
+
         # Deve estar ordenado por custo decrescente
         self.assertEqual(resultado[0]['nome'], "João Silva")
         self.assertEqual(resultado[0]['custo'], Decimal("5000.00"))
-        
+
         self.assertEqual(resultado[1]['nome'], "Maria Santos")
         self.assertEqual(resultado[1]['custo'], Decimal("4050.00"))
 
@@ -81,7 +81,7 @@ separando testes unitários em uma hierarquia dedicada.
         """Testa obtenção de custos filtrando por projeto."""
         # Criar outro projeto e registro
         outro_projeto = DimProjeto.objects.create(nome="Outro Projeto")
-        
+
         FatoRegistroHoras.objects.create(
             funcionario=self.funcionario1,
             projeto=outro_projeto,
@@ -89,12 +89,12 @@ separando testes unitários em uma hierarquia dedicada.
             horas_trabalhadas=Decimal("50.00"),
             custo=Decimal("2500.00")
         )
-        
+
         service = CustoPorDesenvolvedorService()
-        
+
         # Filtrar pelo projeto original
         resultado = service.obter_custo_por_desenvolvedor(projeto_id=self.projeto.id)
-        
+
         # Deve retornar apenas os custos do projeto filtrado
         self.assertEqual(len(resultado), 2)
         self.assertEqual(resultado[0]['custo'], Decimal("5000.00"))
@@ -103,10 +103,10 @@ separando testes unitários em uma hierarquia dedicada.
         """Testa comportamento quando não há dados."""
         # Limpar todos os registros
         FatoRegistroHoras.objects.all().delete()
-        
+
         service = CustoPorDesenvolvedorService()
         resultado = service.obter_custo_por_desenvolvedor()
-        
+
         self.assertEqual(len(resultado), 0)
 
     def test_formatar_para_grafico_com_dados(self):
@@ -116,12 +116,12 @@ separando testes unitários em uma hierarquia dedicada.
             {'nome': 'João Silva', 'custo': Decimal('5000.00')},
             {'nome': 'Maria Santos', 'custo': Decimal('4050.00')}
         ]
-        
+
         resultado = service.formatar_para_grafico(dados)
-        
+
         self.assertEqual(resultado['labels'], ['João Silva', 'Maria Santos'])
         self.assertEqual(resultado['values'], [5000.00, 4050.00])
-        
+
         # Max value deve ter margem de 10%
         self.assertAlmostEqual(resultado['max_value'], 5500.00, places=2)
 
@@ -129,7 +129,7 @@ separando testes unitários em uma hierarquia dedicada.
         """Testa formatação quando não há dados."""
         service = CustoPorDesenvolvedorService()
         resultado = service.formatar_para_grafico([])
-        
+
         self.assertEqual(resultado['labels'], [])
         self.assertEqual(resultado['values'], [])
         self.assertEqual(resultado['max_value'], 0)
@@ -140,9 +140,9 @@ separando testes unitários em uma hierarquia dedicada.
         dados = [
             {'nome': 'João Silva', 'custo': Decimal('1000.00')}
         ]
-        
+
         resultado = service.formatar_para_grafico(dados)
-        
+
         self.assertEqual(len(resultado['labels']), 1)
         self.assertEqual(len(resultado['values']), 1)
         self.assertAlmostEqual(resultado['max_value'], 1100.00, places=2)

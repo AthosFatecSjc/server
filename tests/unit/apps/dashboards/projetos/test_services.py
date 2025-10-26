@@ -19,17 +19,17 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
         cls.projeto = DimProjeto.objects.using('olap').create(
             nome="Projeto Teste"
         )
-        
+
         cls.funcionario1 = DimFuncionario.objects.using('olap').create(
             nome="João Silva",
             valor_hora=Decimal("50.00")
         )
-        
+
         cls.funcionario2 = DimFuncionario.objects.using('olap').create(
             nome="Maria Santos",
             valor_hora=Decimal("45.00")
         )
-        
+
         cls.tempo = DimTempo.objects.using('olap').create(
             data_completa="2024-01-15",
             dia=15,
@@ -48,7 +48,7 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
             horas_trabalhadas=Decimal("100.00"),
             custo=Decimal("5000.00")
         )
-        
+
         FatoRegistroHoras.objects.using('olap').create(
             funcionario=self.funcionario2,
             projeto=self.projeto,
@@ -69,7 +69,7 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
         """
         service = CustoPorDesenvolvedorService()
         resultado = service.obter_custo_por_desenvolvedor()
-        
+
         self.assertEqual(len(resultado), 2)
         self.assertEqual(resultado[0]['nome'], "João Silva")
         self.assertEqual(resultado[0]['custo'], Decimal("5000.00"))
@@ -85,7 +85,7 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
         outro_projeto = DimProjeto.objects.using('olap').create(
             nome="Outro Projeto"
         )
-        
+
         FatoRegistroHoras.objects.using('olap').create(
             funcionario=self.funcionario1,
             projeto=outro_projeto,
@@ -93,12 +93,12 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
             horas_trabalhadas=Decimal("50.00"),
             custo=Decimal("2500.00")
         )
-        
+
         service = CustoPorDesenvolvedorService()
         resultado = service.obter_custo_por_desenvolvedor(
             projeto_id=self.projeto.id
         )
-        
+
         self.assertEqual(len(resultado), 2)
         self.assertEqual(resultado[0]['custo'], Decimal("5000.00"))
         self.assertEqual(resultado[1]['custo'], Decimal("4050.00"))
@@ -110,10 +110,10 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
         Then: Deve retornar lista vazia
         """
         FatoRegistroHoras.objects.using('olap').all().delete()
-        
+
         service = CustoPorDesenvolvedorService()
         resultado = service.obter_custo_por_desenvolvedor()
-        
+
         self.assertEqual(resultado, [])
 
     def test_formatar_para_grafico_com_dados_retorna_estrutura_correta(self):
@@ -127,9 +127,9 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
             {'nome': 'João Silva', 'custo': Decimal('5000.00')},
             {'nome': 'Maria Santos', 'custo': Decimal('4050.00')}
         ]
-        
+
         resultado = service.formatar_para_grafico(dados)
-        
+
         self.assertEqual(resultado['labels'], ['João Silva', 'Maria Santos'])
         self.assertEqual(resultado['values'], [5000.00, 4050.00])
         self.assertAlmostEqual(resultado['max_value'], 5500.00, places=2)
@@ -142,7 +142,7 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
         """
         service = CustoPorDesenvolvedorService()
         resultado = service.formatar_para_grafico([])
-        
+
         self.assertEqual(resultado, {
             'labels': [],
             'values': [],
@@ -157,9 +157,9 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
         """
         service = CustoPorDesenvolvedorService()
         dados = [{'nome': 'João Silva', 'custo': Decimal('1000.00')}]
-        
+
         resultado = service.formatar_para_grafico(dados)
-        
+
         self.assertEqual(len(resultado['labels']), 1)
         self.assertEqual(len(resultado['values']), 1)
         self.assertAlmostEqual(resultado['max_value'], 1100.00, places=2)
