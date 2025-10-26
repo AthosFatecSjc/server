@@ -19,7 +19,7 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50 min-h-screen">
-    {% csrf_token %} <!-- 👈 ADICIONADO: Token CSRF para segurança -->
+    {% csrf_token %}
 
     <div class="container mx-auto px-4 py-8">
 
@@ -209,8 +209,8 @@
             document.getElementById('developerId').value = developerId;
 
             const formattedRate = typeof currentRate === 'string'
-                ? currentRate.replace('.', ',')
-                : Number(currentRate).toFixed(2).replace('.', ',');
+                ? currentRate.replaceAll('.', ',')
+                : Number(currentRate).toFixed(2).replaceAll('.', ',');
 
             document.getElementById('hourlyRate').value = formattedRate;
             document.getElementById('developerName').textContent = developerName;
@@ -250,9 +250,9 @@
             }
 
             try {
-                const valorHoraDecimal = parseFloat(hourlyRate.replace(',', '.'));
+                const valorHoraDecimal = Number.parseFloat(hourlyRate.replaceAll(',', '.'));
 
-                if (isNaN(valorHoraDecimal)) {
+                if (Number.isNaN(valorHoraDecimal)) {
                     alert('Por favor, insira um valor numérico válido.');
                     return;
                 }
@@ -332,20 +332,19 @@
             const tabelaBody = document.getElementById('tabelaDesenvolvedores');
             tabelaBody.innerHTML = '';
 
-            // CORREÇÃO: Usar cores pastéis consistentes
             const coresPastel = [
                 '#93C5FD', '#F9A8D4', '#6EE7B7', '#FCA5A5', '#FDE68A',
                 '#C4B5FD', '#67E8F9', '#FDBA74', '#A5B4FC', '#5EEAD4',
                 '#BEF264', '#FDA4AF'
             ];
 
-            desenvolvedores.forEach((dev, index) => {
+            for (const [index, dev] of desenvolvedores.entries()) {
                 const corIndex = index % coresPastel.length;
                 const cor = coresPastel[corIndex];
 
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-gray-50';
-                row.innerHTML = `
+                row.innerHTML = String.raw`
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center" style="background-color: ${cor}">
@@ -360,13 +359,13 @@
                         <span class="font-medium text-gray-900">R$ ${dev.valor_hora.toFixed(2)}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <button onclick="openEditModal('${dev.id}', '${dev.valor_hora}', '${dev.nome.replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
+                        <button onclick="openEditModal('${dev.id}', '${dev.valor_hora}', '${dev.nome.replace(/'/g, String.raw`\'`)}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
                             <i class="fas fa-edit"></i>
                         </button>
                     </td>
                 `;
                 tabelaBody.appendChild(row);
-            });
+            }
         }
 
         function showNotification(message) {
