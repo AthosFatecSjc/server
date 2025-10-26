@@ -1,0 +1,80 @@
+<!-- COMPONENTE: Cards do Dashboard de Custos -->
+<section class="mt-6 mb-10">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <!-- Card: Orçamento Previsto -->
+    <div class="relative bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+      <div class="flex justify-between items-start">
+        <span class="text-sm text-gray-500 font-medium">Orçamento Previsto</span>
+        <button
+          class="text-blue-500 hover:text-blue-700 transition-colors"
+          onclick="document.getElementById('modalOrcamento').classList.remove('hidden')"
+          title="Editar orçamento previsto"
+        >
+          <i class="fa fa-pen text-sm"></i>
+        </button>
+      </div>
+      <span class="text-3xl font-bold text-blue-600 mt-2 block" id="orcamentoPrevisto">R$ 85.000</span>
+    </div>
+
+    <!-- Card: Custo Realizado -->
+    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+      <span class="text-sm text-gray-500 font-medium">Custo Realizado</span>
+      <span class="text-3xl font-bold text-red-500 mt-2 block" id="custoRealizado">R$ 32.726</span>
+    </div>
+
+    <!-- Card: Saldo Remanescente -->
+    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+      <span class="text-sm text-gray-500 font-medium">Saldo Remanescente</span>
+      <span class="text-3xl font-bold text-green-600 mt-2 block" id="saldoRemanescente">R$ 52.274</span>
+    </div>
+
+    <!-- Card: % Orçamento Utilizado -->
+    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+      <span class="text-sm text-gray-500 font-medium">% Orçamento Utilizado</span>
+      <span class="text-3xl font-bold text-gray-800 mt-2 block" id="orcamentoUtilizado">38.5%</span>
+      <div class="w-full h-2 bg-gray-100 rounded mt-3">
+        <div class="h-2 rounded bg-blue-500 transition-all" style="width: 38.5%;"></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Modal de Edição do Orçamento Previsto -->
+<div id="modalOrcamento" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm animate-fade-in">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Editar Orçamento Previsto</h3>
+    <label for="inputOrcamento" class="block text-sm text-gray-600 mb-2">Valor (R$)</label>
+    <input
+      type="number"
+      id="inputOrcamento"
+      class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      value="85000"
+      min="0"
+    >
+    <div class="flex justify-end gap-2">
+      <button
+        class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-medium transition-colors"
+        onclick="document.getElementById('modalOrcamento').classList.add('hidden')"
+      >
+        Cancelar
+      </button>
+      <button
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+        onclick="salvarOrcamento()"
+      >
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+function salvarOrcamento() {
+  const valor = document.getElementById('inputOrcamento').value;
+  document.getElementById('orcamentoPrevisto').textContent = 'R$ ' + Number(valor).toLocaleString('pt-BR');
+  document.getElementById('modalOrcamento').classList.add('hidden');
+  // 🔧 Aqui você pode implementar uma chamada AJAX para salvar o valor no backend Django
+}
+</script>
