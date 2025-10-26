@@ -27,7 +27,7 @@ Parâmetros: titulo, subtitulo, dados (labels, values, max_value, has_data), id_
         const values = JSON.parse(document.getElementById('chart-values').textContent);
         const maxValue = JSON.parse(document.getElementById('chart-max-value').textContent);
 
-        new Chart(ctx, {
+        const chart = new Chart(ctx, {
           type: 'bar',
           data: {
             labels: labels,
