@@ -10,6 +10,10 @@ Parâmetros: titulo, subtitulo, dados (labels, values, max_value, has_data), id_
   </div>
 
   {% if dados.has_data %}
+    {{ dados.labels|json_script:"chart-labels" }}
+    {{ dados.values|json_script:"chart-values" }}
+    {{ dados.max_value|json_script:"chart-max-value" }}
+    
     <div class="relative" style="height: {{ altura|default:400 }}px;">
       <canvas id="{{ id_grafico|default:'grafico-barras' }}"></canvas>
     </div>
@@ -19,9 +23,9 @@ Parâmetros: titulo, subtitulo, dados (labels, values, max_value, has_data), id_
         const ctx = document.getElementById('{{ id_grafico|default:"grafico-barras" }}');
         if (!ctx) return;
 
-        const labels = {{ dados.labels|safe }};
-        const values = {{ dados.values|safe }};
-        const maxValue = {{ dados.max_value|safe }};
+        const labels = JSON.parse(document.getElementById('chart-labels').textContent);
+        const values = JSON.parse(document.getElementById('chart-values').textContent);
+        const maxValue = JSON.parse(document.getElementById('chart-max-value').textContent);
 
         new Chart(ctx, {
           type: 'bar',

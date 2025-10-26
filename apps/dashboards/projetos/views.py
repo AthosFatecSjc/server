@@ -1,5 +1,3 @@
-import json
-
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
@@ -16,9 +14,9 @@ def index(request):
     dados_grafico = service.formatar_para_grafico(dados_custo)
     
     context_dados = {
-        'labels': json.dumps(dados_grafico['labels']),
-        'values': json.dumps(dados_grafico['values']),
-        'max_value': json.dumps(dados_grafico['max_value']),
+        'labels': dados_grafico['labels'],
+        'values': dados_grafico['values'],
+        'max_value': dados_grafico['max_value'],
         'has_data': len(dados_grafico['labels']) > 0
     }
     
