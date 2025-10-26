@@ -10,33 +10,27 @@ from decimal import Decimal
 import django
 
 # Setup Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
-from olap_models.models import (
-    DimFuncionario,
-    DimProjeto,
-    DimTempo,
-    FatoRegistroHoras,
-)
+from olap_models.models import DimFuncionario, DimProjeto, DimTempo, FatoRegistroHoras
 
 
 def limpar_dados():
     """Remove dados existentes"""
     print("🧹 Limpando dados existentes...")
-    FatoRegistroHoras.objects.using('olap').all().delete()
-    DimTempo.objects.using('olap').all().delete()
-    DimFuncionario.objects.using('olap').all().delete()
-    DimProjeto.objects.using('olap').all().delete()
+    FatoRegistroHoras.objects.using("olap").all().delete()
+    DimTempo.objects.using("olap").all().delete()
+    DimFuncionario.objects.using("olap").all().delete()
+    DimProjeto.objects.using("olap").all().delete()
     print("✅ Dados limpos!")
 
 
 def criar_projeto():
     """Cria projeto mockado"""
     print("\n📁 Criando projeto...")
-    projeto = DimProjeto.objects.using('olap').create(
-        nome="Sistema de Gestão",
-        data_criacao=date(2025, 1, 15)
+    projeto = DimProjeto.objects.using("olap").create(
+        nome="Sistema de Gestão", data_criacao=date(2025, 1, 15)
     )
     print(f"✅ Projeto criado: {projeto.nome} (ID: {projeto.id})")
     return projeto
@@ -56,12 +50,12 @@ def criar_funcionarios():
 
     funcionarios_criados = []
     for dev in desenvolvedores:
-        func = DimFuncionario.objects.using('olap').create(
+        func = DimFuncionario.objects.using("olap").create(
             nome=dev["nome"],
             valor_hora=dev["valor_hora"],
             time=dev["time"],
             cargo="dev",
-            data_contratacao=date(2024, 6, 1)
+            data_contratacao=date(2024, 6, 1),
         )
         funcionarios_criados.append(func)
         print(f"  ✅ {func.nome} - R$ {func.valor_hora}/h")
@@ -83,14 +77,14 @@ def criar_datas():
 
         trimestre = "Q4"
 
-        dim_tempo = DimTempo.objects.using('olap').create(
+        dim_tempo = DimTempo.objects.using("olap").create(
             hora=9,
             dia=dia,
             mes=10,
             ano=2025,
             data_completa=data_completa,
             trimestre=trimestre,
-            dia_da_semana=dias_semana[dia_semana_idx]
+            dia_da_semana=dias_semana[dia_semana_idx],
         )
         datas_criadas.append(dim_tempo)
 
@@ -107,9 +101,9 @@ def criar_registros_horas(projeto, funcionarios, datas):
     # Horas trabalhadas por desenvolvedor (variando)
     horas_por_dev = {
         0: 120,  # Ana - 120h
-        1: 95,   # Carlos - 95h
+        1: 95,  # Carlos - 95h
         2: 110,  # Maria - 110h
-        3: 85,   # João - 85h
+        3: 85,  # João - 85h
         4: 100,  # Juliana - 100h
     }
 
@@ -120,17 +114,18 @@ def criar_registros_horas(projeto, funcionarios, datas):
         for data in datas:
             # Variar um pouco as horas por dia (± 20%)
             import random
+
             variacao = random.uniform(0.8, 1.2)
             horas = round(horas_por_dia * variacao, 2)
 
             custo = Decimal(str(horas)) * funcionario.valor_hora
 
-            FatoRegistroHoras.objects.using('olap').create(
+            FatoRegistroHoras.objects.using("olap").create(
                 funcionario=funcionario,
                 projeto=projeto,
                 data=data,
                 horas_trabalhadas=Decimal(str(horas)),
-                custo=Decimal(str(custo))
+                custo=Decimal(str(custo)),
             )
             total_registros += 1
 
@@ -140,14 +135,17 @@ def criar_registros_horas(projeto, funcionarios, datas):
     print("\n📊 RESUMO DOS CUSTOS POR DESENVOLVEDOR:")
     print("-" * 60)
     for funcionario in funcionarios:
-        total = FatoRegistroHoras.objects.using('olap').filter(
-            funcionario=funcionario,
-            projeto=projeto
-        ).aggregate(
-            total_horas=django.db.models.Sum('horas_trabalhadas'),
-            total_custo=django.db.models.Sum('custo')
+        total = (
+            FatoRegistroHoras.objects.using("olap")
+            .filter(funcionario=funcionario, projeto=projeto)
+            .aggregate(
+                total_horas=django.db.models.Sum("horas_trabalhadas"),
+                total_custo=django.db.models.Sum("custo"),
+            )
         )
-        print(f"{funcionario.nome:20} | {total['total_horas']:6}h | R$ {total['total_custo']:8.2f}")
+        print(
+            f"{funcionario.nome:20} | {total['total_horas']:6}h | R$ {total['total_custo']:8.2f}"
+        )
     print("-" * 60)
 
 
@@ -173,8 +171,9 @@ def main():
     except Exception as e:
         print(f"\n❌ ERRO: {e}")
         import traceback
+
         traceback.print_exc()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

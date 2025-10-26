@@ -11,29 +11,25 @@ from olap_models.models import DimFuncionario, DimProjeto, DimTempo, FatoRegistr
 class CustoPorDesenvolvedorServiceTest(TestCase):
     """Testes para o módulo de dashboards de projetos.
 
-Os testes unitários foram movidos para a estrutura:
-tests/unit/apps/dashboards/projetos/test_services.py
+    Os testes unitários foram movidos para a estrutura:
+    tests/unit/apps/dashboards/projetos/test_services.py
 
-Esta mudança segue as boas práticas de organização de testes,
-separando testes unitários em uma hierarquia dedicada.
-"""
+    Esta mudança segue as boas práticas de organização de testes,
+    separando testes unitários em uma hierarquia dedicada.
+    """
 
     def setUp(self):
         """Configuração inicial dos testes."""
         # Criar projeto
-        self.projeto = DimProjeto.objects.create(
-            nome="Projeto Teste"
-        )
+        self.projeto = DimProjeto.objects.create(nome="Projeto Teste")
 
         # Criar funcionários
         self.funcionario1 = DimFuncionario.objects.create(
-            nome="João Silva",
-            valor_hora=Decimal("50.00")
+            nome="João Silva", valor_hora=Decimal("50.00")
         )
 
         self.funcionario2 = DimFuncionario.objects.create(
-            nome="Maria Santos",
-            valor_hora=Decimal("45.00")
+            nome="Maria Santos", valor_hora=Decimal("45.00")
         )
 
         # Criar dimensão tempo
@@ -43,7 +39,7 @@ separando testes unitários em uma hierarquia dedicada.
             mes=1,
             ano=2024,
             trimestre="Q1",
-            dia_da_semana="Segunda-feira"
+            dia_da_semana="Segunda-feira",
         )
 
         # Criar registros de horas
@@ -52,7 +48,7 @@ separando testes unitários em uma hierarquia dedicada.
             projeto=self.projeto,
             data=self.tempo,
             horas_trabalhadas=Decimal("100.00"),
-            custo=Decimal("5000.00")  # 100h * R$50
+            custo=Decimal("5000.00"),  # 100h * R$50
         )
 
         FatoRegistroHoras.objects.create(
@@ -60,7 +56,7 @@ separando testes unitários em uma hierarquia dedicada.
             projeto=self.projeto,
             data=self.tempo,
             horas_trabalhadas=Decimal("90.00"),
-            custo=Decimal("4050.00")  # 90h * R$45
+            custo=Decimal("4050.00"),  # 90h * R$45
         )
 
     def test_obter_custo_por_desenvolvedor_sem_filtro(self):
@@ -71,11 +67,11 @@ separando testes unitários em uma hierarquia dedicada.
         self.assertEqual(len(resultado), 2)
 
         # Deve estar ordenado por custo decrescente
-        self.assertEqual(resultado[0]['nome'], "João Silva")
-        self.assertEqual(resultado[0]['custo'], Decimal("5000.00"))
+        self.assertEqual(resultado[0]["nome"], "João Silva")
+        self.assertEqual(resultado[0]["custo"], Decimal("5000.00"))
 
-        self.assertEqual(resultado[1]['nome'], "Maria Santos")
-        self.assertEqual(resultado[1]['custo'], Decimal("4050.00"))
+        self.assertEqual(resultado[1]["nome"], "Maria Santos")
+        self.assertEqual(resultado[1]["custo"], Decimal("4050.00"))
 
     def test_obter_custo_por_desenvolvedor_com_filtro_projeto(self):
         """Testa obtenção de custos filtrando por projeto."""
@@ -87,7 +83,7 @@ separando testes unitários em uma hierarquia dedicada.
             projeto=outro_projeto,
             data=self.tempo,
             horas_trabalhadas=Decimal("50.00"),
-            custo=Decimal("2500.00")
+            custo=Decimal("2500.00"),
         )
 
         service = CustoPorDesenvolvedorService()
@@ -97,7 +93,7 @@ separando testes unitários em uma hierarquia dedicada.
 
         # Deve retornar apenas os custos do projeto filtrado
         self.assertEqual(len(resultado), 2)
-        self.assertEqual(resultado[0]['custo'], Decimal("5000.00"))
+        self.assertEqual(resultado[0]["custo"], Decimal("5000.00"))
 
     def test_obter_custo_por_desenvolvedor_sem_dados(self):
         """Testa comportamento quando não há dados."""
@@ -113,36 +109,34 @@ separando testes unitários em uma hierarquia dedicada.
         """Testa formatação de dados para o gráfico."""
         service = CustoPorDesenvolvedorService()
         dados = [
-            {'nome': 'João Silva', 'custo': Decimal('5000.00')},
-            {'nome': 'Maria Santos', 'custo': Decimal('4050.00')}
+            {"nome": "João Silva", "custo": Decimal("5000.00")},
+            {"nome": "Maria Santos", "custo": Decimal("4050.00")},
         ]
 
         resultado = service.formatar_para_grafico(dados)
 
-        self.assertEqual(resultado['labels'], ['João Silva', 'Maria Santos'])
-        self.assertEqual(resultado['values'], [5000.00, 4050.00])
+        self.assertEqual(resultado["labels"], ["João Silva", "Maria Santos"])
+        self.assertEqual(resultado["values"], [5000.00, 4050.00])
 
         # Max value deve ter margem de 10%
-        self.assertAlmostEqual(resultado['max_value'], 5500.00, places=2)
+        self.assertAlmostEqual(resultado["max_value"], 5500.00, places=2)
 
     def test_formatar_para_grafico_sem_dados(self):
         """Testa formatação quando não há dados."""
         service = CustoPorDesenvolvedorService()
         resultado = service.formatar_para_grafico([])
 
-        self.assertEqual(resultado['labels'], [])
-        self.assertEqual(resultado['values'], [])
-        self.assertEqual(resultado['max_value'], 0)
+        self.assertEqual(resultado["labels"], [])
+        self.assertEqual(resultado["values"], [])
+        self.assertEqual(resultado["max_value"], 0)
 
     def test_formatar_para_grafico_com_um_dado(self):
         """Testa formatação com apenas um desenvolvedor."""
         service = CustoPorDesenvolvedorService()
-        dados = [
-            {'nome': 'João Silva', 'custo': Decimal('1000.00')}
-        ]
+        dados = [{"nome": "João Silva", "custo": Decimal("1000.00")}]
 
         resultado = service.formatar_para_grafico(dados)
 
-        self.assertEqual(len(resultado['labels']), 1)
-        self.assertEqual(len(resultado['values']), 1)
-        self.assertAlmostEqual(resultado['max_value'], 1100.00, places=2)
+        self.assertEqual(len(resultado["labels"]), 1)
+        self.assertEqual(len(resultado["values"]), 1)
+        self.assertAlmostEqual(resultado["max_value"], 1100.00, places=2)

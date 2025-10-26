@@ -23,24 +23,21 @@ class CustoPorDesenvolvedorService:
             Lista de dicionários com nome e custo total.
         """
         try:
-            queryset = FatoRegistroHoras.objects.using('olap').select_related(
-                'funcionario', 'projeto'
+            queryset = FatoRegistroHoras.objects.using("olap").select_related(
+                "funcionario", "projeto"
             )
 
             if projeto_id:
                 queryset = queryset.filter(projeto_id=projeto_id)
 
-            dados = queryset.values(
-                nome=F('funcionario__nome')
-            ).annotate(
-                custo=Sum('custo')
-            ).order_by('-custo')
+            dados = (
+                queryset.values(nome=F("funcionario__nome"))
+                .annotate(custo=Sum("custo"))
+                .order_by("-custo")
+            )
 
             return [
-                {
-                    'nome': item['nome'],
-                    'custo': item['custo'] or Decimal('0.00')
-                }
+                {"nome": item["nome"], "custo": item["custo"] or Decimal("0.00")}
                 for item in dados
             ]
         except Exception:
@@ -58,18 +55,10 @@ class CustoPorDesenvolvedorService:
             Dicionário com labels, values e max_value.
         """
         if not dados:
-            return {
-                'labels': [],
-                'values': [],
-                'max_value': 0
-            }
+            return {"labels": [], "values": [], "max_value": 0}
 
-        labels = [item['nome'] for item in dados]
-        values = [float(item['custo']) for item in dados]
+        labels = [item["nome"] for item in dados]
+        values = [float(item["custo"]) for item in dados]
         max_value = max(values) * 1.1 if values else 0
 
-        return {
-            'labels': labels,
-            'values': values,
-            'max_value': max_value
-        }
+        return {"labels": labels, "values": values, "max_value": max_value}
