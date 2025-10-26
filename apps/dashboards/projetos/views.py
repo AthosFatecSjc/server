@@ -19,10 +19,10 @@ def index(request):
             FatoRegistroHoras.objects.using("olap")
             .filter(projeto=projeto)
             .aggregate(
-                total_horas=Sum("horas_gastas"),
-                total_custo=Sum("custo_total"),
+                total_horas=Sum("horas_trabalhadas"),
+                total_custo=Sum("custo"),
                 total_registros=Count("id"),
-                media_horas=Avg("horas_gastas"),
+                media_horas=Avg("horas_trabalhadas"),
                 primeiro_registro=Min("data__data_completa"),
                 ultimo_registro=Max("data__data_completa"),
             )
@@ -41,17 +41,17 @@ def index(request):
             .filter(projeto=projeto)
             .values(
                 "funcionario__id",
-                "funcionario__nome_funcionario",
+                "funcionario__nome",
                 "funcionario__valor_hora",
             )
-            .annotate(total_horas_dev=Sum("horas_gastas"), custo_dev=Sum("custo_total"))
+            .annotate(total_horas_dev=Sum("horas_trabalhadas"), custo_dev=Sum("custo"))
             .order_by("-custo_dev")
         )
 
         custo_por_dev_list = [
             {
                 "funcionario_id": dev["funcionario__id"],
-                "funcionario_nome": dev["funcionario__nome_funcionario"],
+                "funcionario_nome": dev["funcionario__nome"],
                 "valor_hora": float(dev["funcionario__valor_hora"] or 0),
                 "total_horas": float(dev["total_horas_dev"] or 0),
                 "custo_total": float(dev["custo_dev"] or 0),
@@ -64,7 +64,7 @@ def index(request):
         projetos_dimensao.append(
             {
                 "id": projeto.id,
-                "nome_projeto": projeto.nome_projeto,
+                "nome_projeto": projeto.nome,
                 "data_criacao": projeto.data_criacao,
                 "total_horas": float(estatisticas["total_horas"] or 0),
                 "total_custo": float(estatisticas["total_custo"] or 0),
