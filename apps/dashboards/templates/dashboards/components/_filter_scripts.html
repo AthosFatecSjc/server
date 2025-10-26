@@ -96,80 +96,96 @@
         applyFilters();
     }
 
+    function getTypeMatch(issueType, filterType) {
+        if (filterType === 'all') {
+            return true;
+        }
+
+        const lowerType = issueType.toLowerCase();
+
+        const typeMatchers = {
+            'issue': ['tarefa', 'task', 'issue'],
+            'bug': ['bug', 'erro', 'error'],
+            'Story': ['story', 'epic', 'história']
+        };
+
+        const matchers = typeMatchers[filterType];
+        if (matchers) {
+            return matchers.some(matcher => lowerType.includes(matcher) || lowerType === matcher);
+        }
+
+        return issueType === filterType;
+    }
+
+    function getFilterDisplayName(filterType) {
+        const displayNames = {
+            'issue': 'Issue (Tarefa/SubTarefa)',
+            'bug': 'Bug (Bug/Erro)',
+            'Story': 'Story (Story/Epic)'
+        };
+        return displayNames[filterType] || filterType;
+    }
+
+    function updateCardVisibility(card, visibleCount) {
+        const noTasksDiv = card.querySelector('.no-tasks');
+        const table = card.querySelector('.tasks-table');
+
+        if (visibleCount === 0) {
+            if (table) {
+                table.style.display = 'none';
+            }
+            if (noTasksDiv) {
+                const message = currentTypeFilter === 'all'
+                    ? 'Nenhuma task encontrada neste projeto'
+                    : `Nenhuma task do tipo "${getFilterDisplayName(currentTypeFilter)}" encontrada neste projeto`;
+                noTasksDiv.textContent = message;
+                noTasksDiv.style.display = 'block';
+            }
+            card.classList.add('hidden');
+        } else {
+            if (table) {
+                table.style.display = 'table';
+            }
+            if (noTasksDiv) {
+                noTasksDiv.style.display = 'none';
+            }
+            card.classList.remove('hidden');
+        }
+    }
+
+    function filterProjectRows(card) {
+        const rows = card.querySelectorAll('.tasks-table tbody tr');
+        let visibleCount = 0;
+
+        for (const row of rows) {
+            const issueType = row.dataset.issueType;
+            const typeMatch = getTypeMatch(issueType, currentTypeFilter);
+
+            if (typeMatch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        const countElement = card.querySelector('.visible-tasks-count');
+        if (countElement) {
+            countElement.textContent = visibleCount;
+        }
+
+        updateCardVisibility(card, visibleCount);
+    }
+
     function applyFilters() {
         const projectCards = document.querySelectorAll('.project-card');
 
         for (const card of projectCards) {
             const projectKey = card.dataset.project;
-
             const projectMatch = currentProjectFilter === 'all' || projectKey === currentProjectFilter;
 
             if (projectMatch) {
-                const rows = card.querySelectorAll('.tasks-table tbody tr');
-                let visibleCount = 0;
-
-                for (const row of rows) {
-                    const issueType = row.dataset.issueType;
-                    let typeMatch = false;
-
-                    if (currentTypeFilter === 'all') {
-                        typeMatch = true;
-                    } else if (currentTypeFilter === 'issue') {
-                        typeMatch = issueType.toLowerCase().includes('tarefa') ||
-                            issueType.toLowerCase().includes('task') ||
-                            issueType.toLowerCase() === 'issue';
-                    } else if (currentTypeFilter === 'bug') {
-                        typeMatch = issueType.toLowerCase().includes('bug') ||
-                            issueType.toLowerCase().includes('erro') ||
-                            issueType.toLowerCase().includes('error');
-                    } else if (currentTypeFilter === 'Story') {
-                        typeMatch = issueType.toLowerCase().includes('story') ||
-                            issueType.toLowerCase().includes('epic') ||
-                            issueType.toLowerCase().includes('história');
-                    } else {
-                        typeMatch = issueType === currentTypeFilter;
-                    }
-
-                    if (typeMatch) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                }
-
-                const countElement = card.querySelector('.visible-tasks-count');
-                if (countElement) {
-                    countElement.textContent = visibleCount;
-                }
-
-                const noTasksDiv = card.querySelector('.no-tasks');
-                const table = card.querySelector('.tasks-table');
-
-                if (visibleCount === 0) {
-                    if (table) table.style.display = 'none';
-                    if (noTasksDiv) {
-                        if (currentTypeFilter !== 'all') {
-                            let filterName = currentTypeFilter;
-                            if (currentTypeFilter === 'issue') {
-                                filterName = 'Issue (Tarefa/SubTarefa)';
-                            } else if (currentTypeFilter === 'bug') {
-                                filterName = 'Bug (Bug/Erro)';
-                            } else if (currentTypeFilter === 'Story') {
-                                filterName = 'Story (Story/Epic)';
-                            }
-                            noTasksDiv.textContent = `Nenhuma task do tipo "${filterName}" encontrada neste projeto`;
-                        } else {
-                            noTasksDiv.textContent = 'Nenhuma task encontrada neste projeto';
-                        }
-                        noTasksDiv.style.display = 'block';
-                    }
-                    card.classList.add('hidden');
-                } else {
-                    if (table) table.style.display = 'table';
-                    if (noTasksDiv) noTasksDiv.style.display = 'none';
-                    card.classList.remove('hidden');
-                }
+                filterProjectRows(card);
             } else {
                 card.classList.add('hidden');
             }
