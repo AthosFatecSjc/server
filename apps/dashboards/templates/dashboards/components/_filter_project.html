@@ -6,14 +6,12 @@
             <span id="selectedProjectText">Todos os Projetos</span>
         </button>
         <div class="select-dropdown" id="projectDropdown">
-            <div class="select-option active" data-value="all" data-project-id="all"
-                onclick="selectProject('all', 'Todos os Projetos', null)"
-                onkeypress="if(event.key==='Enter'||event.key===' ')selectProject('all', 'Todos os Projetos', null)"
-                tabindex="0">
+            <button type="button" class="select-option active" data-value="all" data-project-id="all"
+                onclick="selectProject('all', 'Todos os Projetos', null)">
                 Todos os Projetos
-            </div>
+            </button>
             {% for projeto in projetos_dimensao %}
-            <div class="select-option" data-value="{{ projeto.id }}" data-project-id="{{ projeto.id }}"
+            <button type="button" class="select-option" data-value="{{ projeto.id }}" data-project-id="{{ projeto.id }}"
                 data-project-name="{{ projeto.nome_projeto }}"
                 data-project-created="{{ projeto.data_criacao|date:'Y-m-d' }}"
                 data-project-total-horas="{{ projeto.total_horas }}"
@@ -25,14 +23,12 @@
                 data-project-primeiro-registro="{{ projeto.primeiro_registro|date:'Y-m-d' }}"
                 data-project-ultimo-registro="{{ projeto.ultimo_registro|date:'Y-m-d' }}"
                 data-project-funcionarios-count="{{ projeto.funcionarios_count }}"
-                onclick="selectProject('{{ projeto.id }}', '{{ projeto.nome_projeto }}')"
-                onkeypress="if(event.key==='Enter'||event.key===' ')selectProject('{{ projeto.id }}', '{{ projeto.nome_projeto }}')"
-                tabindex="0">
+                onclick="selectProject('{{ projeto.id }}', '{{ projeto.nome_projeto }}')">
                 {{ projeto.nome_projeto }}
                 {% if projeto.data_criacao %}
                 <small style="color: #6c757d;">({{ projeto.data_criacao|date:'d/m/Y' }})</small>
                 {% endif %}
-            </div>
+            </button>
             {% endfor %}
         </div>
     </div>

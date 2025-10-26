@@ -111,10 +111,14 @@
 
   <script>
     function switchTab(tabName) {
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      for (const btn of document.querySelectorAll('.tab-button')) {
+        btn.classList.remove('active');
+      }
       document.getElementById(`tab-${tabName}`).classList.add('active');
 
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+      for (const content of document.querySelectorAll('.tab-content')) {
+        content.classList.add('hidden');
+      }
       document.getElementById(`content-${tabName}`).classList.remove('hidden');
     }
 
@@ -122,52 +126,50 @@
       const custosEmpty = document.getElementById('custos-empty');
       const custosData = document.getElementById('custos-data');
 
-      if (!window.selectedProjectData) {
-        custosEmpty.classList.remove('hidden');
-        custosData.classList.add('hidden');
-        return;
-      }
+      if (globalThis.selectedProjectData) {
+        custosEmpty.classList.add('hidden');
+        custosData.classList.remove('hidden');
 
-      custosEmpty.classList.add('hidden');
-      custosData.classList.remove('hidden');
+        const data = globalThis.selectedProjectData;
 
-      const data = window.selectedProjectData;
+        document.getElementById('custoRealizado').textContent = data.custoRealizado.toFixed(2);
+        document.getElementById('totalHoras').textContent = data.totalHoras.toFixed(2);
+        document.getElementById('funcionariosCount').textContent = data.funcionariosCount;
 
-      document.getElementById('custoRealizado').textContent = data.custoRealizado.toFixed(2);
-      document.getElementById('totalHoras').textContent = data.totalHoras.toFixed(2);
-      document.getElementById('funcionariosCount').textContent = data.funcionariosCount;
+        const tbody = document.getElementById('custoTableBody');
+        tbody.innerHTML = '';
 
-      const tbody = document.getElementById('custoTableBody');
-      tbody.innerHTML = '';
+        for (const [index, dev] of data.custoPorDev.entries()) {
+          const percentual = (dev.custo_total / data.custoRealizado * 100).toFixed(1);
+          tbody.innerHTML += `
+            <tr>
+              <td class="px-6 py-4 text-sm text-gray-900">${index + 1}</td>
+              <td class="px-6 py-4 text-sm font-medium text-gray-900">${dev.funcionario_nome}</td>
+              <td class="px-6 py-4 text-sm text-gray-900">${dev.total_horas.toFixed(2)}h</td>
+              <td class="px-6 py-4 text-sm text-gray-900">R$ ${dev.valor_hora.toFixed(2)}</td>
+              <td class="px-6 py-4 text-sm font-semibold text-gray-900">R$ ${dev.custo_total.toFixed(2)}</td>
+              <td class="px-6 py-4 text-sm text-gray-900">${percentual}%</td>
+            </tr>
+          `;
+        }
 
-      data.custoPorDev.forEach((dev, index) => {
-        const percentual = (dev.custo_total / data.custoRealizado * 100).toFixed(1);
         tbody.innerHTML += `
-          <tr>
-            <td class="px-6 py-4 text-sm text-gray-900">${index + 1}</td>
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">${dev.funcionario_nome}</td>
-            <td class="px-6 py-4 text-sm text-gray-900">${dev.total_horas.toFixed(2)}h</td>
-            <td class="px-6 py-4 text-sm text-gray-900">R$ ${dev.valor_hora.toFixed(2)}</td>
-            <td class="px-6 py-4 text-sm font-semibold text-gray-900">R$ ${dev.custo_total.toFixed(2)}</td>
-            <td class="px-6 py-4 text-sm text-gray-900">${percentual}%</td>
+          <tr class="bg-gray-50 font-bold">
+            <td colspan="4" class="px-6 py-4 text-right text-sm text-gray-900">TOTAL</td>
+            <td class="px-6 py-4 text-sm text-gray-900">R$ ${data.custoRealizado.toFixed(2)}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">100%</td>
           </tr>
         `;
-      });
-
-      tbody.innerHTML += `
-        <tr class="bg-gray-50 font-bold">
-          <td colspan="4" class="px-6 py-4 text-right text-sm text-gray-900">TOTAL</td>
-          <td class="px-6 py-4 text-sm text-gray-900">R$ ${data.custoRealizado.toFixed(2)}</td>
-          <td class="px-6 py-4 text-sm text-gray-900">100%</td>
-        </tr>
-      `;
+      } else {
+        custosEmpty.classList.remove('hidden');
+        custosData.classList.add('hidden');
+      }
     }
 
-    const originalSelectProject = selectProject;
-    selectProject = function (projectId, projectName) {
-      originalSelectProject(projectId, projectName);
+    // Escutar mudanças de projeto para atualizar a exibição de custos
+    document.addEventListener('projectSelected', function () {
       updateCostDisplay();
-    };
+    });
   </script>
 </div>
 
