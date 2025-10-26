@@ -17,9 +17,7 @@
       crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- sonarignore:start -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- sonarignore:end -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -386,19 +384,21 @@
             }, 3000);
         }
 
-        document.getElementById('hourlyRate').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/[^\d,]/g, ''); // NOSONAR
+        document.getElementById('hourlyRate').addEventListener('input', (event) => {
+            let value = event.target.value.replaceAll(/[^\d,]/g, '');
 
             const parts = value.split(',');
+
+
             if (parts.length > 2) {
-                value = parts[0] + ',' + parts.slice(1).join('');
+                value = `${parts[0]},${parts.slice(1).join('')}`;
             }
 
             if (parts.length === 2 && parts[1].length > 2) {
-                value = parts[0] + ',' + parts[1].substring(0, 2);
+                value = `${parts[0]},${parts[1].substring(0, 2)}`;
             }
 
-            e.target.value = value;
+            event.target.value = value;
         });
 
         document.getElementById('editModal').addEventListener('click', function(e) {

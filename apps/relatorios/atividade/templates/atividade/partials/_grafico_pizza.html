@@ -42,8 +42,9 @@
                     return;
                 }
 
-                const labels = dadosCards.map(card => card.label);
-                const data = dadosCards.map(card => parseFloat(card.data));
+                const labels = dadosCards.map((card) => card.label);
+                const data = dadosCards.map((card) => Number.parseFloat(card.data));
+
 
                 const dadosGrafico = {
                     labels: labels,
