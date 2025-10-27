@@ -1,7 +1,7 @@
-from django.http import HttpResponse
+from django.shortcuts import render
 from django.views.decorators.http import require_safe
 
 
 @require_safe
 def index(request):
-    return HttpResponse("Bem-vindo à página inicial!")
+    return render(request, "config/index.html")

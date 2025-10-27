@@ -29,14 +29,17 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_htmx",
+    "django_crontab",
     "apps.usuarios",
     "apps.relatorios",
-    "apps.dashboards",
     "apps.relatorios.produtividade",
     "apps.relatorios.comparacao.apps.ComparacaoConfig",
     "apps.relatorios.atividade",
+    "apps.dashboards",
+    "apps.dashboards.desenvolvedores",
+    "apps.dashboards.projetos",
     "apps.utils",
-    "django_crontab",
+    "config",
     "olap_models",
 ]
 
@@ -56,7 +59,9 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            BASE_DIR / "templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -94,6 +99,8 @@ DATABASES = {
         "PORT": env("DB_OLAP_PORT", default=None),
     },
 }
+
+DATABASE_ROUTERS = ["config.routers.OlapRouter"]
 
 if os.environ.get("TEST_DB_ENGINE"):
     DATABASES["default"] = {
@@ -154,24 +161,28 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cron Jobs
+# Cron Jobs
 CRONJOBS = [
-    # Jira a cada dia às 19h
+    # Executa a cada minuto - sincronização rápida
     (
         env("CRON_BUSCAR_DADOS", default="0 19 * * *"),
         "apps.utils.cron.buscar_dados_api",
     ),
-    # ETL diário às 19h (ou no mesmo horário do Jira)
+    # Executa a cada minuto - ETL mais pesado
     (
-        env("CRON_ETL", default="0 19 * * *"),
-        "django.core.management.call_command",
-        ["rodar_etl"],
+        env("CRON_ETL", default="*/1 * * * *"),
+        "apps.utils.cron.buscar_dados_com_etl",
     ),
+    # Executa a cada hora - processo completo (Jira sync + ETL)
+    # (
+    #     env("CRON_COMPLETO", default="0 */1 * * *"),  # A cada hora
+    #     "apps.utils.cron.buscar_dados_com_etl",
+    # ),
 ]
-
 
 # Configuração de cache personalizado para dados do JIRA
 CACHE_JIRA = {
-    "data": {},  # Dados serão preenchidos pelo CRON
+    "data": {},
     "timestamp": None,
     "validade": datetime.timedelta(minutes=10),
 }

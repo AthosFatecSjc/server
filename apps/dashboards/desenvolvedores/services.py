@@ -1,0 +1,137 @@
+from decimal import Decimal
+
+from django.db import connections
+
+
+class DesenvolvedoresService:
+
+    @staticmethod
+    def get_desenvolvedores_olap():
+        """
+        Busca dados de desenvolvedores do banco OLAP para visualização
+        """
+        try:
+            with connections["olap"].cursor() as cursor:
+                query = """
+                SELECT
+                    id,
+                    nome,
+                    COALESCE(valor_hora, 40.00) as valor_hora
+                FROM dim_funcionario
+                ORDER BY nome
+                """
+
+                cursor.execute(query)
+                resultados = cursor.fetchall()
+
+                desenvolvedores = []
+                for row in resultados:
+                    dev_id, nome, valor_hora = row
+
+                    desenvolvedores.append(
+                        {
+                            "id": dev_id,
+                            "nome": nome,
+                            "valor_hora": float(valor_hora),
+                            "iniciais": DesenvolvedoresService._gerar_iniciais(nome),
+                        }
+                    )
+
+                print(
+                    f"DEBUG Service: Encontrados {len(desenvolvedores)} desenvolvedores no OLAP"
+                )
+                return desenvolvedores
+
+        except Exception as e:
+            print(f"Erro ao buscar dados OLAP: {e}")
+            return []
+
+    @staticmethod
+    def _gerar_iniciais(nome):
+        """Gera iniciais a partir do nome"""
+        if not nome:
+            return "XX"
+
+        partes = nome.split()
+        if len(partes) >= 2:
+            return (partes[0][0] + partes[1][0]).upper()
+        elif len(partes) == 1:
+            return partes[0][:2].upper()
+        return "XX"
+
+    @staticmethod
+    def calcular_estatisticas(desenvolvedores):
+        """Calcula estatísticas com base na lista de desenvolvedores"""
+        if not desenvolvedores:
+            return {
+                "total_desenvolvedores": 0,
+                "valor_medio": 0,
+                "menor_valor": 0,
+                "maior_valor": 0,
+                "soma_total_valor_hora": 0,
+            }
+
+        valores = [dev["valor_hora"] for dev in desenvolvedores]
+        soma_total = sum(valores)
+
+        estatisticas = {
+            "total_desenvolvedores": len(desenvolvedores),
+            "valor_medio": round(soma_total / len(valores), 2),
+            "menor_valor": min(valores),
+            "maior_valor": max(valores),
+            "soma_total_valor_hora": round(soma_total, 2),
+        }
+
+        return estatisticas
+
+    @staticmethod
+    def atualizar_valor_hora_oltp(desenvolvedor_id, nome, novo_valor_hora):
+        """
+        Atualiza valor/hora no banco OLTP
+        """
+        try:
+            with connections["default"].cursor() as cursor:
+                query = """
+                UPDATE funcionario
+                SET valor_hora = %s
+                WHERE nome = %s OR id = %s
+                """
+                cursor.execute(query, [novo_valor_hora, nome, desenvolvedor_id])
+
+                if cursor.rowcount == 0:
+                    insert_query = """
+                    INSERT INTO funcionario (nome, valor_hora, data_criacao)
+                    VALUES (%s, %s, NOW())
+                    """
+                    cursor.execute(insert_query, [nome, novo_valor_hora])
+                    print(f"DEBUG Service: Inserido novo funcionário {nome} no OLTP")
+                else:
+                    print(f"DEBUG Service: Atualizado funcionário {nome} no OLTP")
+
+                DesenvolvedoresService._atualizar_valor_hora_olap(
+                    desenvolvedor_id, nome, novo_valor_hora
+                )
+
+                return True
+
+        except Exception as e:
+            print(f"Erro ao atualizar valor/hora OLTP: {e}")
+            return False
+
+    @staticmethod
+    def _atualizar_valor_hora_olap(desenvolvedor_id, nome, novo_valor_hora):
+        """
+        Atualiza valor/hora no banco OLAP também
+        """
+        try:
+            with connections["olap"].cursor() as cursor:
+                query = """
+                UPDATE dim_funcionario
+                SET valor_hora = %s
+                WHERE id = %s OR nome = %s
+                """
+                cursor.execute(query, [novo_valor_hora, desenvolvedor_id, nome])
+                print(f"DEBUG Service: Valor/hora atualizado no OLAP para {nome}")
+
+        except Exception as e:
+            print(f"Erro ao atualizar valor/hora OLAP: {e}")
