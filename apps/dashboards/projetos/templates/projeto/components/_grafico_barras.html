@@ -23,11 +23,12 @@ Parâmetros: titulo, subtitulo, dados (labels, values, max_value, has_data), id_
         const ctx = document.getElementById('{{ id_grafico|default:"grafico-barras" }}');
         if (!ctx) return;
 
-    const labels = JSON.parse(document.getElementById('chart-labels').textContent);
-    const values = JSON.parse(document.getElementById('chart-values').textContent);
-    const maxValue = JSON.parse(document.getElementById('chart-max-value').textContent);
+        const labels = JSON.parse(document.getElementById('chart-labels').textContent);
+        const values = JSON.parse(document.getElementById('chart-values').textContent);
+        const maxValue = JSON.parse(document.getElementById('chart-max-value').textContent);
 
-    new Chart(ctx, {
+        // NOSONAR - Chart instance is required for Chart.js to render
+        new Chart(ctx, {
           type: 'bar',
           data: {
             labels: labels,
