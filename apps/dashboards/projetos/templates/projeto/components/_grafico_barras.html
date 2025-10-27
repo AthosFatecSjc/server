@@ -27,6 +27,9 @@ Parâmetros: titulo, subtitulo, dados (labels, values, max_value, has_data), id_
         const values = JSON.parse(document.getElementById('chart-values').textContent);
         const maxValue = JSON.parse(document.getElementById('chart-max-value').textContent);
 
+        // O operador void é usado intencionalmente aqui porque o Chart.js
+        // registra o gráfico internamente através de side effects do construtor.
+        // Não precisamos da referência retornada, apenas da execução.
         void new Chart(ctx, {
           type: 'bar',
           data: {
