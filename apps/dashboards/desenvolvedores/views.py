@@ -1,7 +1,6 @@
 import json
 
 from django.http import JsonResponse
-from django.middleware.csrf import get_token
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
@@ -94,10 +93,9 @@ def atualizar_valor_hora(request):
                     "message": f"Valor/hora de {desenvolvedor_nome} atualizado para R$ {novo_valor_hora:.2f}",
                 }
             )
-        else:
-            return JsonResponse(
-                {"success": False, "error": "Erro ao atualizar valor/hora"}, status=500
-            )
+        return JsonResponse(
+            {"success": False, "error": "Erro ao atualizar valor/hora"}, status=500
+        )
 
     except Exception as e:
         print(f"DEBUG API Update: Erro - {e}")
