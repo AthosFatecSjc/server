@@ -11,6 +11,12 @@
         gap: 16px;
     }
 
+    .filters-bottom-row {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
     .filter-group {
         position: relative;
         overflow: visible;
@@ -240,6 +246,35 @@
         .filter-btn {
             min-width: 100%;
             flex: 1 1 100%;
+        }
+    }
+
+    .dashboard-panels {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .dashboard-panel.hidden {
+        display: none;
+    }
+
+    #typeFilterContainer.hidden {
+        display: none;
+    }
+
+    @media (min-width: 1024px) {
+        .filters-bottom-row {
+            flex-direction: row;
+            align-items: stretch;
+        }
+
+        .filter-dashboard-tabs {
+            flex: 1;
+        }
+
+        #typeFilterContainer {
+            flex: 1;
         }
     }
 </style>

@@ -1,6 +1,79 @@
 <script>
     let currentProjectFilter = 'all';
     let currentTypeFilter = 'all';
+    let currentDashboardTab = 'custos';
+
+    function formatCurrency(value) {
+        const numericValue = Number.parseFloat(value);
+        if (!Number.isFinite(numericValue)) {
+            return '--';
+        }
+
+        return numericValue.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+    }
+
+    function setText(elementId, text) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = text;
+        }
+    }
+
+    function setBarWidth(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            const width = Math.max(0, Math.min(100, value));
+            element.style.width = `${width}%`;
+        }
+    }
+
+    function updateDashboardCards(projectData) {
+        const hasCardElements =
+            document.getElementById('orcamentoPrevistoValue') &&
+            document.getElementById('custoRealizadoValue') &&
+            document.getElementById('saldoRemanescenteValue') &&
+            document.getElementById('orcamentoUtilizadoValue');
+
+        if (!hasCardElements) {
+            return;
+        }
+
+        if (!projectData) {
+            setText('orcamentoPrevistoValue', '--');
+            setText('custoRealizadoValue', '--');
+            setText('saldoRemanescenteValue', '--');
+            setText('orcamentoUtilizadoValue', '--');
+            setBarWidth('orcamentoUtilizadoBar', 0);
+            return;
+        }
+
+        const fallbackBudget = Number.isFinite(projectData.totalCusto) ? projectData.totalCusto : 0;
+        const budget = Number.isFinite(globalThis.customBudgetValue) && globalThis.customBudgetValue > 0
+            ? globalThis.customBudgetValue
+            : fallbackBudget;
+
+        const realized = Number.isFinite(projectData.custoRealizado) ? projectData.custoRealizado : 0;
+        const remaining = Math.max(budget - realized, 0);
+        const utilization = budget > 0 ? (realized / budget) * 100 : 0;
+
+        setText('orcamentoPrevistoValue', formatCurrency(budget));
+        setText('custoRealizadoValue', formatCurrency(realized));
+        setText('saldoRemanescenteValue', formatCurrency(remaining));
+        setText('orcamentoUtilizadoValue', `${utilization.toFixed(1)}%`);
+        setBarWidth('orcamentoUtilizadoBar', utilization);
+
+        const inputOrcamento = document.getElementById('inputOrcamento');
+        if (inputOrcamento) {
+            const valueToUse = Number.isFinite(globalThis.customBudgetValue) && globalThis.customBudgetValue > 0
+                ? globalThis.customBudgetValue
+                : budget;
+
+            inputOrcamento.value = valueToUse > 0 ? valueToUse.toFixed(2) : '';
+        }
+    }
 
     function toggleProjectDropdown() {
         const dropdown = document.getElementById('projectDropdown');
@@ -42,15 +115,14 @@
 
             globalThis.selectedProjectData = projectData;
 
-            console.log('Projeto selecionado (dados completos do OLAP):', projectData);
-            console.log('Custo Realizado:', projectData.custoRealizado.toFixed(2));
-            console.log('Custo por Desenvolvedor:', projectData.custoPorDev);
-
             // Disparar evento customizado para notificar outras partes da aplicação
             document.dispatchEvent(new CustomEvent('projectSelected', { detail: projectData }));
+
+            updateDashboardCards(projectData);
         } else {
             globalThis.selectedProjectData = null;
             document.dispatchEvent(new CustomEvent('projectSelected', { detail: null }));
+            updateDashboardCards(null);
         }
 
         document.getElementById('selectedProjectText').textContent = projectName;
@@ -191,4 +263,56 @@
             }
         }
     }
+
+    function toggleTypeFilterVisibility(tabKey) {
+        const typeFilterContainer = document.getElementById('typeFilterContainer');
+        if (!typeFilterContainer) {
+            return;
+        }
+
+        if (tabKey === 'issues' || tabKey === 'bugs') {
+            typeFilterContainer.classList.remove('hidden');
+        } else {
+            typeFilterContainer.classList.add('hidden');
+        }
+    }
+
+    function switchDashboardTab(tabKey) {
+        currentDashboardTab = tabKey;
+
+        const tabButtons = document.querySelectorAll('#dashboard-tabs .filter-btn');
+        for (const button of tabButtons) {
+            button.classList.toggle('active', button.dataset.dashboard === tabKey);
+        }
+
+        const panels = {
+            custos: document.getElementById('dashboard-custos'),
+            issues: document.getElementById('dashboard-issues'),
+            bugs: document.getElementById('dashboard-bugs')
+        };
+
+        Object.entries(panels).forEach(([key, panel]) => {
+            if (!panel) {
+                return;
+            }
+
+            if (key === tabKey) {
+                panel.classList.remove('hidden');
+            } else {
+                panel.classList.add('hidden');
+            }
+        });
+
+        toggleTypeFilterVisibility(tabKey);
+        applyFilters();
+    }
+
+    document.addEventListener('projectSelected', function (event) {
+        updateDashboardCards(event.detail || null);
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        updateDashboardCards(globalThis.selectedProjectData || null);
+        switchDashboardTab(currentDashboardTab);
+    });
 </script>
