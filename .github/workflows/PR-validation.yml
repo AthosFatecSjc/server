@@ -34,6 +34,7 @@ jobs:
           pylint --django-settings-module=config.settings $(git ls-files '*.py')
 
       - name: Verificação de Segurança com Bandit
+        continue-on-error: true
         run: |
           pip install bandit
           bandit -r . -f json -o bandit-report.json

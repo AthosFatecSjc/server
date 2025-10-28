@@ -1,0 +1,32 @@
+{% load dashboard_filters %}
+<div class="filter-group filter-project">
+    <h3>Filtrar por Projeto</h3>
+    <div class="custom-select">
+        <button class="select-button" id="projectSelectBtn" onclick="toggleProjectDropdown()">
+            <span id="selectedProjectText">Selecione um projeto</span>
+        </button>
+        <div class="select-dropdown" id="projectDropdown">
+            {% for projeto in projetos_dimensao %}
+            <button type="button" class="select-option{% if forloop.first %} active{% endif %}"
+                data-value="{{ projeto.id }}" data-project-id="{{ projeto.id }}"
+                data-project-name="{{ projeto.nome_projeto }}"
+                data-project-created="{{ projeto.data_criacao|date:'Y-m-d' }}"
+                data-project-total-horas="{{ projeto.total_horas }}"
+                data-project-total-custo="{{ projeto.total_custo }}"
+                data-project-custo-realizado="{{ projeto.custo_realizado }}"
+                data-project-custo-por-dev='{{ projeto.custo_por_dev|jsonify }}'
+                data-project-total-registros="{{ projeto.total_registros }}"
+                data-project-media-horas="{{ projeto.media_horas }}"
+                data-project-primeiro-registro="{{ projeto.primeiro_registro|date:'Y-m-d' }}"
+                data-project-ultimo-registro="{{ projeto.ultimo_registro|date:'Y-m-d' }}"
+                data-project-funcionarios-count="{{ projeto.funcionarios_count }}"
+                onclick="selectProject('{{ projeto.id }}', '{{ projeto.nome_projeto }}')">
+                {{ projeto.nome_projeto }}
+                {% if projeto.data_criacao %}
+                <small style="color: #6c757d;">({{ projeto.data_criacao|date:'d/m/Y' }})</small>
+                {% endif %}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+</div>

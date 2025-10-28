@@ -1,0 +1,194 @@
+<script>
+    let currentProjectFilter = 'all';
+    let currentTypeFilter = 'all';
+
+    function toggleProjectDropdown() {
+        const dropdown = document.getElementById('projectDropdown');
+        const button = document.getElementById('projectSelectBtn');
+
+        dropdown.classList.toggle('show');
+        button.classList.toggle('open');
+    }
+
+    function selectProject(projectId, projectName) {
+        currentProjectFilter = projectId;
+
+        const selectedOption = document.querySelector(`#projectDropdown .select-option[data-value="${projectId}"]`);
+        if (selectedOption && projectId !== 'all') {
+            let custoPorDev = [];
+            try {
+                const custoPorDevAttr = selectedOption.dataset.projectCustoPorDev;
+                if (custoPorDevAttr) {
+                    custoPorDev = JSON.parse(custoPorDevAttr);
+                }
+            } catch (e) {
+                console.error('Erro ao fazer parse do custo por dev:', e);
+            }
+
+            const projectData = {
+                id: selectedOption.dataset.projectId,
+                name: selectedOption.dataset.projectName,
+                created: selectedOption.dataset.projectCreated,
+                totalHoras: Number.parseFloat(selectedOption.dataset.projectTotalHoras) || 0,
+                totalCusto: Number.parseFloat(selectedOption.dataset.projectTotalCusto) || 0,
+                custoRealizado: Number.parseFloat(selectedOption.dataset.projectCustoRealizado) || 0,
+                custoPorDev: custoPorDev,
+                totalRegistros: Number.parseInt(selectedOption.dataset.projectTotalRegistros, 10) || 0,
+                mediaHoras: Number.parseFloat(selectedOption.dataset.projectMediaHoras) || 0,
+                primeiroRegistro: selectedOption.dataset.projectPrimeiroRegistro,
+                ultimoRegistro: selectedOption.dataset.projectUltimoRegistro,
+                funcionariosCount: Number.parseInt(selectedOption.dataset.projectFuncionariosCount, 10) || 0
+            };
+
+            globalThis.selectedProjectData = projectData;
+
+            console.log('Projeto selecionado (dados completos do OLAP):', projectData);
+            console.log('Custo Realizado:', projectData.custoRealizado.toFixed(2));
+            console.log('Custo por Desenvolvedor:', projectData.custoPorDev);
+
+            // Disparar evento customizado para notificar outras partes da aplicação
+            document.dispatchEvent(new CustomEvent('projectSelected', { detail: projectData }));
+        } else {
+            globalThis.selectedProjectData = null;
+            document.dispatchEvent(new CustomEvent('projectSelected', { detail: null }));
+        }
+
+        document.getElementById('selectedProjectText').textContent = projectName;
+
+        for (const option of document.querySelectorAll('#projectDropdown .select-option')) {
+            option.classList.remove('active');
+            if (option.dataset.value === projectId) {
+                option.classList.add('active');
+            }
+        }
+
+        document.getElementById('projectDropdown').classList.remove('show');
+        document.getElementById('projectSelectBtn').classList.remove('open');
+
+        applyFilters();
+    }
+
+    document.addEventListener('click', function (event) {
+        const dropdown = document.getElementById('projectDropdown');
+        const button = document.getElementById('projectSelectBtn');
+
+        if (dropdown && button && !event.target.closest('.custom-select')) {
+            dropdown.classList.remove('show');
+            button.classList.remove('open');
+        }
+    });
+
+    function filterByProject(projectKey) {
+        currentProjectFilter = projectKey;
+        applyFilters();
+    }
+
+    function filterByType(issueType) {
+        currentTypeFilter = issueType;
+
+        for (const btn of document.querySelectorAll('#type-filters .filter-btn')) {
+            btn.classList.remove('active');
+            if (btn.dataset.filter === issueType) {
+                btn.classList.add('active');
+            }
+        }
+
+        applyFilters();
+    }
+
+    function getTypeMatch(issueType, filterType) {
+        if (filterType === 'all') {
+            return true;
+        }
+
+        const lowerType = issueType.toLowerCase();
+
+        const typeMatchers = {
+            'issue': ['tarefa', 'task', 'issue'],
+            'bug': ['bug', 'erro', 'error'],
+            'Story': ['story', 'epic', 'história']
+        };
+
+        const matchers = typeMatchers[filterType];
+        if (matchers) {
+            return matchers.some(matcher => lowerType.includes(matcher) || lowerType === matcher);
+        }
+
+        return issueType === filterType;
+    }
+
+    function getFilterDisplayName(filterType) {
+        const displayNames = {
+            'issue': 'Issue (Tarefa/SubTarefa)',
+            'bug': 'Bug (Bug/Erro)',
+            'Story': 'Story (Story/Epic)'
+        };
+        return displayNames[filterType] || filterType;
+    }
+
+    function updateCardVisibility(card, visibleCount) {
+        const noTasksDiv = card.querySelector('.no-tasks');
+        const table = card.querySelector('.tasks-table');
+
+        if (visibleCount === 0) {
+            if (table) {
+                table.style.display = 'none';
+            }
+            if (noTasksDiv) {
+                const message = currentTypeFilter === 'all'
+                    ? 'Nenhuma task encontrada neste projeto'
+                    : `Nenhuma task do tipo "${getFilterDisplayName(currentTypeFilter)}" encontrada neste projeto`;
+                noTasksDiv.textContent = message;
+                noTasksDiv.style.display = 'block';
+            }
+            card.classList.add('hidden');
+        } else {
+            if (table) {
+                table.style.display = 'table';
+            }
+            if (noTasksDiv) {
+                noTasksDiv.style.display = 'none';
+            }
+            card.classList.remove('hidden');
+        }
+    }
+
+    function filterProjectRows(card) {
+        const rows = card.querySelectorAll('.tasks-table tbody tr');
+        let visibleCount = 0;
+
+        for (const row of rows) {
+            const issueType = row.dataset.issueType;
+            const typeMatch = getTypeMatch(issueType, currentTypeFilter);
+
+            if (typeMatch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        const countElement = card.querySelector('.visible-tasks-count');
+        if (countElement) {
+            countElement.textContent = visibleCount;
+        }
+
+        updateCardVisibility(card, visibleCount);
+    }
+
+    function applyFilters() {
+        const projectCards = document.querySelectorAll('.project-card');
+
+        for (const card of projectCards) {
+            const projectKey = card.dataset.project;
+            const projectMatch = currentProjectFilter === 'all' || projectKey === currentProjectFilter;
+
+            if (projectMatch) {
+                filterProjectRows(card);
+            } else {
+                card.classList.add('hidden');
+            }
+        }
+    }
+</script>
