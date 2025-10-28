@@ -18,11 +18,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
-from .views import index, login_view, logout_view
+from .views import LoginView, index, logout_view
 
 urlpatterns = [
     path("", index, name="home"),
-    path("login/", login_view, name="login"),
+    path("login/", LoginView.as_view(), name="login"),
     path("logout/", logout_view, name="logout"),
     path("admin/", admin.site.urls),
     path("usuarios/", include("apps.usuarios.urls")),

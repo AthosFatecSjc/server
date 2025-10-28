@@ -1,5 +1,7 @@
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_http_methods, require_safe
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.http import require_POST, require_safe
 
 FAKE_USERS = {
     "admin": "123456",
@@ -24,14 +26,25 @@ def index(request):
     )
 
 
-@require_http_methods(["GET", "POST"])
-def login_view(request):
-    if _is_authenticated(request):
-        return redirect("home")
+class LoginView(View):
+    template_name = "auth/login.html"
 
-    context = {"error_message": None}
+    @method_decorator(require_safe)
+    def get(self, request):
+        if _is_authenticated(request):
+            return redirect("home")
 
-    if request.method == "POST":
+        return render(request, self.template_name, {"error_message": None})
+
+    @method_decorator(require_safe)
+    def head(self, request):
+        return self.get(request)
+
+    @method_decorator(require_POST)
+    def post(self, request):
+        if _is_authenticated(request):
+            return redirect("home")
+
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
 
@@ -40,9 +53,8 @@ def login_view(request):
             request.session.modified = True
             return redirect("home")
 
-        context["error_message"] = "Usuário ou senha inválidos."
-
-    return render(request, "auth/login.html", context)
+        context = {"error_message": "Usuário ou senha inválidos."}
+        return render(request, self.template_name, context)
 
 
 @require_safe
