@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block extra_css %}
+<style>
+  /* Garantir que o canvas do Chart.js não cause problemas de layout */
+  canvas {
+    max-width: 100%;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
 {% include "dashboards/_header.html" with header=header_context %}
@@ -36,7 +45,16 @@
     </section>
   </div>
 
+  <div class="mb-6">
+    {% include "projeto/components/_grafico_barras.html" with titulo="Custo por Desenvolvedor" subtitulo="Para onde o dinheiro está indo? Distribuição de custos por recurso" dados=dados_grafico id_grafico="grafico-custo-desenvolvedor" altura=400 %}
+  </div>
+</div>
+
 {% include "dashboards/components/_filter_styles.html" %}
 {% include "dashboards/components/_filter_scripts.html" %}
 
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/vendor/chart.umd.min.js' %}"></script>
 {% endblock %}
