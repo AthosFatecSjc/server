@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db import connections
 
 
@@ -55,7 +53,7 @@ class DesenvolvedoresService:
         partes = nome.split()
         if len(partes) >= 2:
             return (partes[0][0] + partes[1][0]).upper()
-        elif len(partes) == 1:
+        if len(partes) == 1:
             return partes[0][:2].upper()
         return "XX"
 

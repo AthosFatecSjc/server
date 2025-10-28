@@ -88,8 +88,16 @@ body {
 
 .icon-container {
     padding: 8px;
-    background: rgba(59, 130, 246, 0.1);
     border-radius: 8px;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.icon-container--orange {
+    background-color: rgba(249, 115, 22, 0.12);
+}
+
+.icon-container--green {
+    background-color: rgba(16, 185, 129, 0.12);
 }
 
 .icon {
