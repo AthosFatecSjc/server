@@ -15,15 +15,12 @@
 {% include "dashboards/_header.html" with header=header_context %}
 
 <div class="mx-auto px-6 py-3">
-  <div class="filters-container">
-    <div class="filters-top-row">
+  <div class="filters-container space-y-4">
+    <div class="filters-top-row w-full">
       {% include "dashboards/components/_filter_project.html" %}
     </div>
-    <div class="filters-bottom-row">
+    <div class="filters-bottom-row w-full">
       {% include "dashboards/components/_filter_dashboard_tabs.html" %}
-      <div id="typeFilterContainer" class="hidden">
-        {% include "dashboards/components/_filter_type.html" %}
-      </div>
     </div>
   </div>
 
@@ -45,7 +42,7 @@
     </section>
   </div>
 
-  <div class="mb-6">
+  <div id="dashboard-chart-wrapper" class="mb-6">
     {% include "projeto/components/_grafico_barras.html" with titulo="Custo por Desenvolvedor" subtitulo="Para onde o dinheiro está indo? Distribuição de custos por recurso" dados=dados_grafico id_grafico="grafico-custo-desenvolvedor" altura=400 %}
   </div>
 </div>

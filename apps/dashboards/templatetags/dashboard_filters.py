@@ -3,7 +3,6 @@
 import json
 
 from django import template
-from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -11,12 +10,12 @@ register = template.Library()
 @register.filter(name="jsonify")
 def jsonify(value):
     """
-    Converte um objeto Python para JSON e marca como seguro para HTML.
+    Converte um objeto Python para JSON.
 
     Args:
         value: Objeto Python a ser convertido para JSON
 
     Returns:
-        String JSON marcada como segura para HTML
+        String JSON escapada automaticamente pelo template
     """
-    return mark_safe(json.dumps(value))
+    return json.dumps(value)

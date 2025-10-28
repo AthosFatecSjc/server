@@ -28,11 +28,13 @@
         align-items: flex-start;
         gap: 20px;
         width: 100%;
+        flex-wrap: wrap;
     }
 
     .filter-project {
-        flex: 1;
-        max-width: 48%;
+        flex: 1 1 100%;
+        max-width: 100%;
+        width: 100%;
     }
 
     .filter-type {
@@ -57,11 +59,12 @@
         flex-wrap: wrap;
         gap: 12px;
         width: 100%;
+        justify-content: center;
     }
 
     .filter-btn {
-        flex: 1;
-        max-width: 350px;
+        flex: 0 1 260px;
+        max-width: 280px;
         background: white;
         color: #333;
         border: 1px solid #dee2e6;

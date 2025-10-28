@@ -10,7 +10,15 @@ from .services import CustoPorDesenvolvedorService
 @require_http_methods(["GET"])
 def index(request):
     """View principal do dashboard de saúde do projeto."""
-    projeto_id = request.GET.get("projeto_id", 2)
+    default_projeto_id = 2
+    projeto_param = request.GET.get("projeto_id")
+
+    try:
+        projeto_id = (
+            int(projeto_param) if projeto_param is not None else default_projeto_id
+        )
+    except (TypeError, ValueError):
+        projeto_id = default_projeto_id
 
     header_context = {
         "title": "Dashboard de Saúde do Projeto",
@@ -19,6 +27,7 @@ def index(request):
     }
 
     projetos_dimensao = []
+    projeto_selecionado = None
     for projeto in DimProjeto.objects.using("olap").all():
         estatisticas = (
             FatoRegistroHoras.objects.using("olap")
@@ -66,22 +75,25 @@ def index(request):
 
         custo_realizado = float(estatisticas["total_custo"] or 0)
 
-        projetos_dimensao.append(
-            {
-                "id": projeto.id,
-                "nome_projeto": projeto.nome,
-                "data_criacao": projeto.data_criacao,
-                "total_horas": float(estatisticas["total_horas"] or 0),
-                "total_custo": float(estatisticas["total_custo"] or 0),
-                "custo_realizado": custo_realizado,
-                "custo_por_dev": custo_por_dev_list,
-                "total_registros": estatisticas["total_registros"],
-                "media_horas": float(estatisticas["media_horas"] or 0),
-                "primeiro_registro": estatisticas["primeiro_registro"],
-                "ultimo_registro": estatisticas["ultimo_registro"],
-                "funcionarios_count": funcionarios_count,
-            }
-        )
+        projeto_contexto = {
+            "id": projeto.id,
+            "nome_projeto": projeto.nome,
+            "data_criacao": projeto.data_criacao,
+            "total_horas": float(estatisticas["total_horas"] or 0),
+            "total_custo": float(estatisticas["total_custo"] or 0),
+            "custo_realizado": custo_realizado,
+            "custo_por_dev": custo_por_dev_list,
+            "total_registros": estatisticas["total_registros"],
+            "media_horas": float(estatisticas["media_horas"] or 0),
+            "primeiro_registro": estatisticas["primeiro_registro"],
+            "ultimo_registro": estatisticas["ultimo_registro"],
+            "funcionarios_count": funcionarios_count,
+        }
+
+        projetos_dimensao.append(projeto_contexto)
+
+        if projeto.id == projeto_id:
+            projeto_selecionado = projeto_contexto
 
     service = CustoPorDesenvolvedorService()
     dados_custo = service.obter_custo_por_desenvolvedor(projeto_id)
@@ -98,6 +110,8 @@ def index(request):
         "header_context": header_context,
         "projetos_dimensao": list(projetos_dimensao),
         "dados_grafico": context_dados,
+        "projeto_selecionado_id": projeto_id,
+        "projeto_selecionado_nome": (projeto_selecionado or {}).get("nome_projeto"),
     }
 
     return render(request, "projeto/index.html", context)

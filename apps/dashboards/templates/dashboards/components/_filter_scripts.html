@@ -303,6 +303,11 @@
             }
         });
 
+        const chartWrapper = document.getElementById('dashboard-chart-wrapper');
+        if (chartWrapper) {
+            chartWrapper.classList.toggle('hidden', tabKey !== 'custos');
+        }
+
         toggleTypeFilterVisibility(tabKey);
         applyFilters();
     }
@@ -312,7 +317,16 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-        updateDashboardCards(globalThis.selectedProjectData || null);
+        const activeOption = document.querySelector('#projectDropdown .select-option.active');
+
+        if (activeOption) {
+            const projectId = activeOption.dataset.value;
+            const projectName = activeOption.dataset.projectName || activeOption.textContent.trim();
+            selectProject(projectId, projectName);
+        } else {
+            updateDashboardCards(globalThis.selectedProjectData || null);
+        }
+
         switchDashboardTab(currentDashboardTab);
     });
 </script>
