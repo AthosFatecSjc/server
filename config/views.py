@@ -10,7 +10,6 @@ FAKE_USERS = {
 
 
 def _is_authenticated(request) -> bool:
-    """Check whether the current session has a fake authenticated user."""
     return bool(request.session.get("fake_user"))
 
 
@@ -26,21 +25,18 @@ def index(request):
     )
 
 
+@method_decorator(require_safe, name="get")
+@method_decorator(require_POST, name="post")
 class LoginView(View):
     template_name = "auth/login.html"
+    http_method_names = ["get", "head", "post"]
 
-    @method_decorator(require_safe)
     def get(self, request):
         if _is_authenticated(request):
             return redirect("home")
 
         return render(request, self.template_name, {"error_message": None})
 
-    @method_decorator(require_safe)
-    def head(self, request):
-        return self.get(request)
-
-    @method_decorator(require_POST)
     def post(self, request):
         if _is_authenticated(request):
             return redirect("home")
