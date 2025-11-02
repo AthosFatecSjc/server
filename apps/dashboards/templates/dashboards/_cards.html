@@ -135,100 +135,127 @@ function closeOrcamentoModal() {
 }
 
 async function salvarOrcamento() {
-    if (!globalThis.selectedProjectData || !globalThis.selectedProjectData.id) {
-        setBudgetModalError("Selecione um projeto para editar o orçamento.");
-        return;
-    }
+  if (!isProjetoSelecionado()) return;
 
-    const rawValue = document.getElementById('inputOrcamento').value;
-    const numericValue = Number.parseFloat(rawValue) || 0;
+  const numericValue = obterValorOrcamento();
+  if (!valorOrcamentoValido(numericValue)) return;
 
-    if (!Number.isFinite(numericValue) || numericValue <= 0) {
-        setBudgetModalError("Informe um valor de orçamento válido.");
-        return;
-    }
+  limparErroOrcamento();
 
-    setBudgetModalError('');
+  const projectId = globalThis.selectedProjectData.id;
+  const saveButton = prepararBotaoSalvar(true);
 
-    const projectId = globalThis.selectedProjectData.id;
-    const saveButton = document.getElementById('salvarOrcamentoButton');
-    const originalLabel = saveButton ? saveButton.textContent : '';
+  try {
+    const data = await enviarOrcamento(projectId, numericValue);
+    if (!data) return;
 
-    if (saveButton) {
-        saveButton.disabled = true;
-        saveButton.textContent = "Salvando...";
-    }
+    atualizarDadosProjeto(data, numericValue);
+    atualizarDatasetProjetoAtivo();
+    atualizarDashboard();
 
-    try {
-        const response = await fetch(`/dashboards/projeto/api/projetos/${projectId}/orcamento/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken(),
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ valor: numericValue })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            const message = data?.message || "Não foi possível salvar o orçamento.";
-            setBudgetModalError(message);
-            return;
-        }
-
-        const sel = globalThis.selectedProjectData;
-
-        if (Number.isFinite(data?.orcamento_previsto)) {
-        sel.orcamentoPrevisto = data.orcamento_previsto;
-        } else {
-        sel.orcamentoPrevisto = numericValue;
-        }
-
-        if (Number.isFinite(data?.custo_realizado)) {
-        sel.custoRealizado = data.custo_realizado;
-        } else {
-        sel.custoRealizado = sel.custoRealizado || 0;
-        }
-
-        if (Number.isFinite(data?.saldo_remanescente)) {
-        sel.saldoRemanescente = data.saldo_remanescente;
-        } else {
-        sel.saldoRemanescente = sel.orcamentoPrevisto - sel.custoRealizado;
-        }
-
-        let percentualUtilizado = 0;
-
-        if (Number.isFinite(data?.percentual_utilizado)) {
-        percentualUtilizado = data.percentual_utilizado;
-        } else if (sel.orcamentoPrevisto > 0) {
-        percentualUtilizado = (sel.custoRealizado / sel.orcamentoPrevisto) * 100;
-        }
-
-        sel.percentualUtilizado = percentualUtilizado;
-
-        const activeOption = document.querySelector('#projectDropdown .select-option.active');
-        if (activeOption) {
-            activeOption.dataset.projectOrcamentoPrevisto = globalThis.selectedProjectData.orcamentoPrevisto;
-            activeOption.dataset.projectSaldoRemanescente = globalThis.selectedProjectData.saldoRemanescente;
-            activeOption.dataset.projectPercentualUtilizado = globalThis.selectedProjectData.percentualUtilizado;
-            activeOption.dataset.projectCustoRealizado = globalThis.selectedProjectData.custoRealizado;
-        }
-
-        if (typeof updateDashboardCards === 'function') {
-            updateDashboardCards(globalThis.selectedProjectData || null);
-        }
-
-        closeOrcamentoModal();
-    } catch (error) {
-        console.error('Erro ao salvar orçamento previsto', error);
-        setBudgetModalError("Erro inesperado ao salvar o orçamento. Tente novamente.");
-    } finally {
-        if (saveButton) {
-            saveButton.disabled = false;
-            saveButton.textContent = originalLabel;
-        }
-    }
+    closeOrcamentoModal();
+  } catch (error) {
+    console.error("Erro ao salvar orçamento previsto", error);
+    setBudgetModalError("Erro inesperado ao salvar o orçamento. Tente novamente.");
+  } finally {
+    prepararBotaoSalvar(false, saveButton);
+  }
 }
+
+
+function isProjetoSelecionado() {
+  if (!globalThis.selectedProjectData?.id) {
+    setBudgetModalError("Selecione um projeto para editar o orçamento.");
+    return false;
+  }
+  return true;
+}
+
+function obterValorOrcamento() {
+  const rawValue = document.getElementById("inputOrcamento").value;
+  return Number.parseFloat(rawValue) || 0;
+}
+
+function valorOrcamentoValido(numericValue) {
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    setBudgetModalError("Informe um valor de orçamento válido.");
+    return false;
+  }
+  return true;
+}
+
+function limparErroOrcamento() {
+  setBudgetModalError("");
+}
+
+function prepararBotaoSalvar(disable, button = document.getElementById("salvarOrcamentoButton")) {
+  if (!button) return null;
+  const originalLabel = button.textContent;
+  button.disabled = disable;
+  button.textContent = disable ? "Salvando..." : originalLabel;
+  return button;
+}
+
+async function enviarOrcamento(projectId, numericValue) {
+  const response = await fetch(`/dashboards/projeto/api/projetos/${projectId}/orcamento/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCsrfToken(),
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: JSON.stringify({ valor: numericValue }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    const message = data?.message || "Não foi possível salvar o orçamento.";
+    setBudgetModalError(message);
+    return null;
+  }
+  return data;
+}
+
+function atualizarDadosProjeto(data, numericValue) {
+  const sel = globalThis.selectedProjectData;
+
+  sel.orcamentoPrevisto = Number.isFinite(data?.orcamento_previsto)
+    ? data.orcamento_previsto
+    : numericValue;
+
+  sel.custoRealizado = Number.isFinite(data?.custo_realizado)
+    ? data.custo_realizado
+    : sel.custoRealizado || 0;
+
+  sel.saldoRemanescente = Number.isFinite(data?.saldo_remanescente)
+    ? data.saldo_remanescente
+    : sel.orcamentoPrevisto - sel.custoRealizado;
+
+  let percentualUtilizado = 0;
+  if (Number.isFinite(data?.percentual_utilizado)) {
+    percentualUtilizado = data.percentual_utilizado;
+  } else if (sel.orcamentoPrevisto > 0) {
+    percentualUtilizado = (sel.custoRealizado / sel.orcamentoPrevisto) * 100;
+  }
+
+  sel.percentualUtilizado = percentualUtilizado;
+}
+
+function atualizarDatasetProjetoAtivo() {
+  const activeOption = document.querySelector("#projectDropdown .select-option.active");
+  if (!activeOption) return;
+
+  const sel = globalThis.selectedProjectData;
+  activeOption.dataset.projectOrcamentoPrevisto = sel.orcamentoPrevisto;
+  activeOption.dataset.projectSaldoRemanescente = sel.saldoRemanescente;
+  activeOption.dataset.projectPercentualUtilizado = sel.percentualUtilizado;
+  activeOption.dataset.projectCustoRealizado = sel.custoRealizado;
+}
+
+function atualizarDashboard() {
+  if (typeof updateDashboardCards === "function") {
+    updateDashboardCards(globalThis.selectedProjectData || null);
+  }
+}
+
 </script>

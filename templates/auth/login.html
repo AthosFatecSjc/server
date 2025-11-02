@@ -154,9 +154,8 @@
     </div>
   </div>
 
-  <!-- Script do olho -->
   <script>
-    document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+    for (const button of document.querySelectorAll('[data-toggle-password]')) {
       button.addEventListener('click', () => {
         const input = document.getElementById('password');
         const icon = button.querySelector('i');
@@ -165,7 +164,8 @@
         icon.classList.toggle('fa-eye', !isPassword);
         icon.classList.toggle('fa-eye-slash', isPassword);
       });
-    });
+    }
   </script>
+
 </body>
 </html>
