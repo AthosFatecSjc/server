@@ -95,6 +95,19 @@
         button.classList.toggle('open');
     }
 
+    function closeProjectDropdown() {
+        const dropdown = document.getElementById('projectDropdown');
+        const button = document.getElementById('projectSelectBtn');
+
+        if (dropdown) {
+            dropdown.classList.remove('show');
+        }
+
+        if (button) {
+            button.classList.remove('open');
+        }
+    }
+
     function selectProject(projectId, projectName) {
     const normalizedId = String(projectId ?? '').trim();
     currentProjectFilter = normalizedId || 'all';
@@ -105,6 +118,7 @@
     if (!selectedOption || currentProjectFilter === 'all') {
         clearSelectedProject();
         updateUI(null, projectName, selectedOption);
+        closeProjectDropdown();
         return;
     }
 
@@ -113,6 +127,7 @@
 
     dispatchProjectSelected(projectData);
     updateUI(projectData, projectName, selectedOption);
+    closeProjectDropdown();
     }
 
     function findSelectedOption(normalizedId) {
