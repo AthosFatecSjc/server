@@ -50,14 +50,29 @@
             return;
         }
 
-        const realized = Number.isFinite(projectData.custoRealizado) ? projectData.custoRealizado : 0;
-        const budget = Number.isFinite(projectData.orcamentoPrevisto) ? projectData.orcamentoPrevisto : 0;
-        const remaining = Number.isFinite(projectData.saldoRemanescente)
-            ? projectData.saldoRemanescente
-            : (budget - realized);
-        const utilization = Number.isFinite(projectData.percentualUtilizado)
-            ? projectData.percentualUtilizado
-            : budget > 0 ? (realized / budget) * 100 : 0;
+        let realized = 0;
+        if (Number.isFinite(projectData.custoRealizado)) {
+        realized = projectData.custoRealizado;
+        }
+
+        let budget = 0;
+        if (Number.isFinite(projectData.orcamentoPrevisto)) {
+        budget = projectData.orcamentoPrevisto;
+        }
+
+        let remaining = 0;
+        if (Number.isFinite(projectData.saldoRemanescente)) {
+        remaining = projectData.saldoRemanescente;
+        } else {
+        remaining = budget - realized;
+        }
+
+        let utilization = 0;
+        if (Number.isFinite(projectData.percentualUtilizado)) {
+        utilization = projectData.percentualUtilizado;
+        } else if (budget > 0) {
+        utilization = (realized / budget) * 100;
+        }
 
         setText('orcamentoPrevistoValue', formatCurrency(budget));
         setText('custoRealizadoValue', formatCurrency(realized));
@@ -81,97 +96,118 @@
     }
 
     function selectProject(projectId, projectName) {
-        const normalizedId = String(projectId ?? '').trim();
-        currentProjectFilter = normalizedId || 'all';
+    const normalizedId = String(projectId ?? '').trim();
+    currentProjectFilter = normalizedId || 'all';
 
-        let selectedOption = null;
-        if (normalizedId && normalizedId !== 'all') {
-            selectedOption = document.querySelector(`#projectDropdown .select-option[data-value="${normalizedId}"]`);
-        }
+    let selectedOption = findSelectedOption(normalizedId);
+    updateCurrentFilterFromOption(selectedOption);
 
-        if (!selectedOption) {
-            selectedOption = document.querySelector('#projectDropdown .select-option');
-            if (selectedOption) {
-                currentProjectFilter = String(selectedOption.dataset.value || '').trim() || 'all';
-            }
-        }
+    if (!selectedOption || currentProjectFilter === 'all') {
+        clearSelectedProject();
+        updateUI(null, projectName, selectedOption);
+        return;
+    }
 
-        if (selectedOption && currentProjectFilter !== 'all') {
-            let custoPorDev = [];
-            try {
-                const custoPorDevAttr = selectedOption.dataset.projectCustoPorDev;
-                if (custoPorDevAttr) {
-                    custoPorDev = JSON.parse(custoPorDevAttr);
-                }
-            } catch (e) {
-                console.error('Erro ao fazer parse do custo por dev:', e);
-            }
+    const projectData = extractProjectData(selectedOption);
+    globalThis.selectedProjectData = projectData;
 
-            const parsedProjectId = Number.parseInt(selectedOption.dataset.projectId, 10);
+    dispatchProjectSelected(projectData);
+    updateUI(projectData, projectName, selectedOption);
+    }
 
-            const budget = Number.parseFloat(selectedOption.dataset.projectOrcamentoPrevisto);
-            const realized = Number.parseFloat(selectedOption.dataset.projectCustoRealizado);
-            const remaining = Number.parseFloat(selectedOption.dataset.projectSaldoRemanescente);
-            const utilization = Number.parseFloat(selectedOption.dataset.projectPercentualUtilizado);
+    function findSelectedOption(normalizedId) {
+    if (normalizedId && normalizedId !== 'all') {
+        return document.querySelector(`#projectDropdown .select-option[data-value="${normalizedId}"]`);
+    }
+    return document.querySelector('#projectDropdown .select-option');
+    }
 
-            const projectData = {
-                id: Number.isNaN(parsedProjectId) ? null : parsedProjectId,
-                name: selectedOption.dataset.projectName,
-                created: selectedOption.dataset.projectCreated,
-                totalHoras: Number.parseFloat(selectedOption.dataset.projectTotalHoras) || 0,
-                totalCusto: Number.parseFloat(selectedOption.dataset.projectTotalCusto) || 0,
-                custoRealizado: Number.isFinite(realized) ? realized : 0,
-                custoPorDev: custoPorDev,
-                totalRegistros: Number.parseInt(selectedOption.dataset.projectTotalRegistros, 10) || 0,
-                mediaHoras: Number.parseFloat(selectedOption.dataset.projectMediaHoras) || 0,
-                primeiroRegistro: selectedOption.dataset.projectPrimeiroRegistro,
-                ultimoRegistro: selectedOption.dataset.projectUltimoRegistro,
-                funcionariosCount: Number.parseInt(selectedOption.dataset.projectFuncionariosCount, 10) || 0,
-                orcamentoPrevisto: Number.isFinite(budget) ? budget : 0,
-                saldoRemanescente: Number.isFinite(remaining)
-                    ? remaining
-                    : ((Number.isFinite(budget) ? budget : 0) - (Number.isFinite(realized) ? realized : 0)),
-                percentualUtilizado: Number.isFinite(utilization)
-                    ? utilization
-                    : (() => {
-                        const safeBudget = Number.isFinite(budget) ? budget : 0;
-                        const safeRealized = Number.isFinite(realized) ? realized : 0;
-                        return safeBudget > 0 ? (safeRealized / safeBudget) * 100 : 0;
-                    })()
-            };
+    function updateCurrentFilterFromOption(option) {
+    if (option) {
+        currentProjectFilter = String(option.dataset.value || '').trim() || 'all';
+    }
+    }
 
-            globalThis.selectedProjectData = projectData;
+    function clearSelectedProject() {
+    globalThis.selectedProjectData = null;
+    document.dispatchEvent(new CustomEvent('projectSelected', { detail: null }));
+    updateDashboardCards(null);
+    updateExportModalProject(null);
+    }
 
-            // Disparar evento customizado para notificar outras partes da aplicação
-            document.dispatchEvent(new CustomEvent('projectSelected', { detail: projectData }));
+    function extractProjectData(option) {
+    const custoPorDev = parseJSON(option.dataset.projectCustoPorDev);
+    const parsedProjectId = Number.parseInt(option.dataset.projectId, 10);
+    const budget = safeFloat(option.dataset.projectOrcamentoPrevisto);
+    const realized = safeFloat(option.dataset.projectCustoRealizado);
+    const remaining = safeFloat(option.dataset.projectSaldoRemanescente);
+    const utilization = safeFloat(option.dataset.projectPercentualUtilizado);
 
-            updateDashboardCards(projectData);
-            updateExportModalProject(globalThis.selectedProjectData);
-        } else {
-            globalThis.selectedProjectData = null;
-            document.dispatchEvent(new CustomEvent('projectSelected', { detail: null }));
-            updateDashboardCards(null);
-            updateExportModalProject(null);
-        }
+    const safeBudget = Number.isFinite(budget) ? budget : 0;
+    const safeRealized = Number.isFinite(realized) ? realized : 0;
+    const saldo = Number.isFinite(remaining) ? remaining : safeBudget - safeRealized;
+    const percentual = Number.isFinite(utilization)
+        ? utilization
+        : safeBudget > 0
+        ? (safeRealized / safeBudget) * 100
+        : 0;
 
-        const resolvedProjectName = projectName
-            || (selectedOption ? selectedOption.dataset.projectName : null)
-            || 'Selecione um projeto';
+    return {
+        id: Number.isNaN(parsedProjectId) ? null : parsedProjectId,
+        name: option.dataset.projectName,
+        created: option.dataset.projectCreated,
+        totalHoras: safeFloat(option.dataset.projectTotalHoras),
+        totalCusto: safeFloat(option.dataset.projectTotalCusto),
+        custoRealizado: safeRealized,
+        custoPorDev,
+        totalRegistros: safeInt(option.dataset.projectTotalRegistros),
+        mediaHoras: safeFloat(option.dataset.projectMediaHoras),
+        primeiroRegistro: option.dataset.projectPrimeiroRegistro,
+        ultimoRegistro: option.dataset.projectUltimoRegistro,
+        funcionariosCount: safeInt(option.dataset.projectFuncionariosCount),
+        orcamentoPrevisto: safeBudget,
+        saldoRemanescente: saldo,
+        percentualUtilizado: percentual,
+    };
+    }
 
-        document.getElementById('selectedProjectText').textContent = resolvedProjectName;
+    function parseJSON(value) {
+    try {
+        return value ? JSON.parse(value) : [];
+    } catch (e) {
+        console.error('Erro ao fazer parse do custo por dev:', e);
+        return [];
+    }
+    }
+
+    function safeFloat(value) {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function safeInt(value) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function dispatchProjectSelected(projectData) {
+    document.dispatchEvent(new CustomEvent('projectSelected', { detail: projectData }));
+    updateDashboardCards(projectData);
+    updateExportModalProject(projectData);
+    }
+
+    function updateUI(projectData, projectName, selectedOption) {
+    const resolvedName =
+        projectName ||
+        (selectedOption ? selectedOption.dataset.projectName : null) ||
+        'Selecione um projeto';
+    document.getElementById('selectedProjectText').textContent = resolvedName;
 
         for (const option of document.querySelectorAll('#projectDropdown .select-option')) {
-            option.classList.remove('active');
-            if (String(option.dataset.value).trim() === currentProjectFilter) {
-                option.classList.add('active');
-            }
+            option.classList.toggle('active', String(option.dataset.value).trim() === currentProjectFilter);
         }
-
-        document.getElementById('projectDropdown').classList.remove('show');
-        document.getElementById('projectSelectBtn').classList.remove('open');
-
-        applyFilters();
     }
+
 
     document.addEventListener('click', function (event) {
         const dropdown = document.getElementById('projectDropdown');

@@ -178,20 +178,35 @@ async function salvarOrcamento() {
             return;
         }
 
-        globalThis.selectedProjectData.orcamentoPrevisto = Number.isFinite(data?.orcamento_previsto)
-            ? data.orcamento_previsto
-            : numericValue;
-        globalThis.selectedProjectData.custoRealizado = Number.isFinite(data?.custo_realizado)
-            ? data.custo_realizado
-            : globalThis.selectedProjectData.custoRealizado || 0;
-        globalThis.selectedProjectData.saldoRemanescente = Number.isFinite(data?.saldo_remanescente)
-            ? data.saldo_remanescente
-            : (globalThis.selectedProjectData.orcamentoPrevisto - globalThis.selectedProjectData.custoRealizado);
-        globalThis.selectedProjectData.percentualUtilizado = Number.isFinite(data?.percentual_utilizado)
-            ? data.percentual_utilizado
-            : (globalThis.selectedProjectData.orcamentoPrevisto > 0
-                ? (globalThis.selectedProjectData.custoRealizado / globalThis.selectedProjectData.orcamentoPrevisto) * 100
-                : 0);
+        const sel = globalThis.selectedProjectData;
+
+        if (Number.isFinite(data?.orcamento_previsto)) {
+        sel.orcamentoPrevisto = data.orcamento_previsto;
+        } else {
+        sel.orcamentoPrevisto = numericValue;
+        }
+
+        if (Number.isFinite(data?.custo_realizado)) {
+        sel.custoRealizado = data.custo_realizado;
+        } else {
+        sel.custoRealizado = sel.custoRealizado || 0;
+        }
+
+        if (Number.isFinite(data?.saldo_remanescente)) {
+        sel.saldoRemanescente = data.saldo_remanescente;
+        } else {
+        sel.saldoRemanescente = sel.orcamentoPrevisto - sel.custoRealizado;
+        }
+
+        let percentualUtilizado = 0;
+
+        if (Number.isFinite(data?.percentual_utilizado)) {
+        percentualUtilizado = data.percentual_utilizado;
+        } else if (sel.orcamentoPrevisto > 0) {
+        percentualUtilizado = (sel.custoRealizado / sel.orcamentoPrevisto) * 100;
+        }
+
+        sel.percentualUtilizado = percentualUtilizado;
 
         const activeOption = document.querySelector('#projectDropdown .select-option.active');
         if (activeOption) {

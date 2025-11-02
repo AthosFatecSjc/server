@@ -98,14 +98,16 @@ Parâmetros: titulo, subtitulo, dados (labels, values, max_value, has_data), id_
     for (const item of projectData.custoPorDev) {
       labels.push(item.funcionario_nome || item.nome || 'Sem nome');
 
-      const rawValue =
-        (item.custo_total !== undefined && item.custo_total !== null
-          ? item.custo_total
-          : item.custo !== undefined && item.custo !== null
-          ? item.custo
-          : 0);
+      let rawValue = 0;
+
+      if (item.custo_total !== undefined && item.custo_total !== null) {
+        rawValue = item.custo_total;
+      } else if (item.custo !== undefined && item.custo !== null) {
+        rawValue = item.custo;
+      }
 
       values.push(Number.parseFloat(rawValue) || 0);
+
     }
 
     const maxValue = values.length ? Math.max(...values) : 0;

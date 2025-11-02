@@ -39,7 +39,7 @@ class Command(BaseCommand):
             for projeto_jira in projetos:
                 nome = projeto_jira.get("name", "").strip()
                 if not nome:
-                    logger.warning(f"Projeto Jira sem nome ignorado: {projeto_jira}")
+                    logger.warning("Projeto Jira sem nome ignorado: %s", projeto_jira)
                     continue
 
                 try:
@@ -57,7 +57,7 @@ class Command(BaseCommand):
                         atualizados += 1
 
                 except IntegrityError as e:
-                    logger.error(f"Erro ao salvar projeto {nome}: {e}")
+                    logger.error("Erro ao sincronizar %s: %s", projeto_id, e)
                     continue
 
         self.stdout.write(
