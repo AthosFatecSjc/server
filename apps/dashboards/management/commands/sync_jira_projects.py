@@ -57,7 +57,7 @@ class Command(BaseCommand):
                         atualizados += 1
 
                 except IntegrityError as e:
-                    logger.error("Erro ao sincronizar %s: %s", projeto_id, e)
+                    logger.error("Erro ao sincronizar projeto '%s': %s", nome, e)
                     continue
 
         self.stdout.write(
