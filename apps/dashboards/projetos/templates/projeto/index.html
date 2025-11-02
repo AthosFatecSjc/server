@@ -12,12 +12,14 @@
 
 {% block content %}
 
-{% include "dashboards/_header.html" with header=header_context %}
+{% include "dashboards/_header.html" with header=header_context show_export=True %}
 
 <div class="mx-auto px-6 py-3">
   <div class="filters-container space-y-4">
-    <div class="filters-top-row w-full">
-      {% include "dashboards/components/_filter_project.html" %}
+    <div class="filters-top-row w-full flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div class="w-full lg:w-auto flex-1">
+        {% include "dashboards/components/_filter_project.html" %}
+      </div>
     </div>
     <div class="filters-bottom-row w-full">
       {% include "dashboards/components/_filter_dashboard_tabs.html" %}
@@ -45,6 +47,88 @@
   <div id="dashboard-chart-wrapper" class="mb-6">
     {% include "projeto/components/_grafico_barras.html" with titulo="Custo por Desenvolvedor" subtitulo="Para onde o dinheiro está indo? Distribuição de custos por recurso" dados=dados_grafico id_grafico="grafico-custo-desenvolvedor" altura=400 %}
   </div>
+
+<section
+  id="exportPdfModal"
+  class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50"
+  aria-labelledby="exportPdfModalTitle"
+  aria-describedby="exportModalDescription"
+>
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
+    <!-- Cabeçalho -->
+    <header class="px-6 py-5 border-b border-gray-200 flex items-start justify-between gap-4">
+      <div>
+        <h3 id="exportPdfModalTitle" class="text-lg font-semibold text-gray-900">
+          Exportar Relatório PDF
+        </h3>
+        <p id="exportModalDescription" class="text-sm text-gray-500">
+          Gere um relatório consolidado com os dados atuais do dashboard de custos.
+        </p>
+      </div>
+      <button
+        type="button"
+        id="closeExportPdfButton"
+        class="text-gray-400 hover:text-gray-600 transition"
+        aria-label="Fechar modal de exportação"
+      >
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+            d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </header>
+
+    <!-- Corpo -->
+    <div class="px-6 py-5 space-y-4 text-sm text-gray-700">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <span class="block text-xs uppercase text-gray-400 tracking-wide">Projeto</span>
+          <p id="exportModalProjectName" class="font-medium text-gray-900 mt-1">Nenhum projeto selecionado</p>
+        </div>
+        <div>
+          <span class="block text-xs uppercase text-gray-400 tracking-wide">Formato</span>
+          <p class="font-medium text-gray-900 mt-1">1 PDF consolidado</p>
+        </div>
+        <div>
+          <span class="block text-xs uppercase text-gray-400 tracking-wide">Data</span>
+          <p id="exportModalDate" class="font-medium text-gray-900 mt-1">--/--/----</p>
+        </div>
+      </div>
+
+      <div class="border border-dashed border-gray-200 rounded-lg p-4 bg-gray-50">
+        <span class="block text-xs uppercase text-gray-400 tracking-wide mb-2">
+          Conteúdo do relatório
+        </span>
+        <ul class="list-disc list-inside space-y-1 text-gray-600">
+          <li>Dashboard de Custos – Orçamento, custos realizados, saldo e distribuição por desenvolvedor.</li>
+          <li class="text-gray-400">Dashboard de Issues – Em desenvolvimento.</li>
+          <li class="text-gray-400">Dashboard de Bugs – Em desenvolvimento.</li>
+        </ul>
+      </div>
+
+      <p id="exportModalError" class="text-sm text-red-600 hidden"></p>
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+      <button
+        type="button"
+        id="cancelExportPdfButton"
+        class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition text-sm font-medium"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        id="confirmExportPdfButton"
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition text-sm font-medium"
+      >
+        Gerar PDF
+      </button>
+    </footer>
+  </div>
+</section>
+
 </div>
 
 {% include "dashboards/components/_filter_styles.html" %}
