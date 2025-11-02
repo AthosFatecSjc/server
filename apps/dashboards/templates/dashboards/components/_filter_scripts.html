@@ -449,7 +449,7 @@
             return null;
         }
 
-        const filenameRegex = /filename\\*=UTF-8''([^;]+)|filename=\"?([^\";]+)\"?/i;
+        const filenameRegex = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i;
         const match = filenameRegex.exec(disposition);
         if (!match) {
             return null;
