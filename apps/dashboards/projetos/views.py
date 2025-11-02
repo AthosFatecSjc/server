@@ -1,24 +1,30 @@
-from django.db.models import Avg, Count, Max, Min, Sum
+import json
+
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.utils import timezone
+from django.utils.text import slugify
+from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 
-from olap_models.models import DimProjeto, FatoRegistroHoras
-
-from .services import CustoPorDesenvolvedorService
+from .services import (
+    DashboardProjetoError,
+    DashboardProjetoPdfService,
+    DashboardProjetoService,
+    OrcamentoInvalidoError,
+    ProjetoNaoEncontradoError,
+)
 
 
 @require_http_methods(["GET"])
 def index(request):
     """View principal do dashboard de saúde do projeto."""
-    default_projeto_id = 2
     projeto_param = request.GET.get("projeto_id")
 
     try:
-        projeto_id = (
-            int(projeto_param) if projeto_param is not None else default_projeto_id
-        )
+        projeto_id = int(projeto_param) if projeto_param is not None else None
     except (TypeError, ValueError):
-        projeto_id = default_projeto_id
+        projeto_id = None
 
     header_context = {
         "title": "Dashboard de Saúde do Projeto",
@@ -26,92 +32,79 @@ def index(request):
         "breadcrumb": "Saúde do Projeto",
     }
 
-    projetos_dimensao = []
-    projeto_selecionado = None
-    for projeto in DimProjeto.objects.using("olap").all():
-        estatisticas = (
-            FatoRegistroHoras.objects.using("olap")
-            .filter(projeto=projeto)
-            .aggregate(
-                total_horas=Sum("horas_trabalhadas"),
-                total_custo=Sum("custo"),
-                total_registros=Count("id"),
-                media_horas=Avg("horas_trabalhadas"),
-                primeiro_registro=Min("data__data_completa"),
-                ultimo_registro=Max("data__data_completa"),
-            )
-        )
-
-        funcionarios_count = (
-            FatoRegistroHoras.objects.using("olap")
-            .filter(projeto=projeto)
-            .values("funcionario")
-            .distinct()
-            .count()
-        )
-
-        custo_por_dev = (
-            FatoRegistroHoras.objects.using("olap")
-            .filter(projeto=projeto)
-            .values(
-                "funcionario__id",
-                "funcionario__nome",
-                "funcionario__valor_hora",
-            )
-            .annotate(total_horas_dev=Sum("horas_trabalhadas"), custo_dev=Sum("custo"))
-            .order_by("-custo_dev")
-        )
-
-        custo_por_dev_list = [
-            {
-                "funcionario_id": dev["funcionario__id"],
-                "funcionario_nome": dev["funcionario__nome"],
-                "valor_hora": float(dev["funcionario__valor_hora"] or 0),
-                "total_horas": float(dev["total_horas_dev"] or 0),
-                "custo_total": float(dev["custo_dev"] or 0),
-            }
-            for dev in custo_por_dev
-        ]
-
-        custo_realizado = float(estatisticas["total_custo"] or 0)
-
-        projeto_contexto = {
-            "id": projeto.id,
-            "nome_projeto": projeto.nome,
-            "data_criacao": projeto.data_criacao,
-            "total_horas": float(estatisticas["total_horas"] or 0),
-            "total_custo": float(estatisticas["total_custo"] or 0),
-            "custo_realizado": custo_realizado,
-            "custo_por_dev": custo_por_dev_list,
-            "total_registros": estatisticas["total_registros"],
-            "media_horas": float(estatisticas["media_horas"] or 0),
-            "primeiro_registro": estatisticas["primeiro_registro"],
-            "ultimo_registro": estatisticas["ultimo_registro"],
-            "funcionarios_count": funcionarios_count,
-        }
-
-        projetos_dimensao.append(projeto_contexto)
-
-        if projeto.id == projeto_id:
-            projeto_selecionado = projeto_contexto
-
-    service = CustoPorDesenvolvedorService()
-    dados_custo = service.obter_custo_por_desenvolvedor(projeto_id)
-    dados_grafico = service.formatar_para_grafico(dados_custo)
-
-    context_dados = {
-        "labels": dados_grafico["labels"],
-        "values": dados_grafico["values"],
-        "max_value": dados_grafico["max_value"],
-        "has_data": len(dados_grafico["labels"]) > 0,
-    }
+    contexto = DashboardProjetoService.montar_contexto_dashboard(projeto_id)
 
     context = {
         "header_context": header_context,
-        "projetos_dimensao": list(projetos_dimensao),
-        "dados_grafico": context_dados,
-        "projeto_selecionado_id": projeto_id,
-        "projeto_selecionado_nome": (projeto_selecionado or {}).get("nome_projeto"),
+        "projetos_dimensao": contexto.projetos_dimensao,
+        "dados_grafico": contexto.dados_grafico,
+        "projeto_selecionado_id": contexto.projeto_selecionado_id,
+        "projeto_selecionado_nome": contexto.projeto_selecionado_nome,
     }
 
     return render(request, "projeto/index.html", context)
+
+
+@csrf_protect
+@require_http_methods(["POST"])
+def atualizar_orcamento_previsto(request, projeto_id: int):
+    """Atualiza o orçamento previsto de um projeto no banco OLTP."""
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"message": "JSON inválido."}, status=400)
+
+    try:
+        resultado = DashboardProjetoService.atualizar_orcamento_previsto(
+            projeto_id, payload.get("valor")
+        )
+    except ProjetoNaoEncontradoError as exc:
+        return JsonResponse({"message": str(exc)}, status=404)
+    except OrcamentoInvalidoError as exc:
+        return JsonResponse({"message": str(exc)}, status=400)
+    except DashboardProjetoError as exc:
+        return JsonResponse({"message": str(exc)}, status=400)
+
+    return JsonResponse(resultado)
+
+
+@csrf_protect
+@require_http_methods(["POST"])
+def exportar_relatorio_pdf(request):
+    """Gera o PDF do dashboard de custos."""
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"message": "JSON inválido."}, status=400)
+
+    projeto_id = payload.get("projeto_id")
+    if projeto_id is None:
+        return JsonResponse(
+            {"message": "O campo 'projeto_id' é obrigatório."},
+            status=400,
+        )
+
+    try:
+        projeto_id_int = int(projeto_id)
+    except (TypeError, ValueError):
+        return JsonResponse({"message": "ID do projeto inválido."}, status=400)
+
+    try:
+        dados_pdf = DashboardProjetoService.obter_dados_pdf(projeto_id_int)
+        conteudo_pdf = DashboardProjetoPdfService.gerar_pdf(dados_pdf)
+    except ProjetoNaoEncontradoError as exc:
+        return JsonResponse({"message": str(exc)}, status=404)
+    except DashboardProjetoError as exc:
+        return JsonResponse({"message": str(exc)}, status=400)
+    except Exception:
+        return JsonResponse(
+            {"message": "Não foi possível gerar o PDF solicitado."}, status=500
+        )
+
+    nome_projeto_slug = slugify(dados_pdf.get("nome_projeto") or "projeto")
+    data_suffix = timezone.now().strftime("%Y%m%d")
+    filename = f"dashboard-custos-{nome_projeto_slug}-{data_suffix}.pdf"
+
+    response = HttpResponse(conteudo_pdf, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response

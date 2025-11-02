@@ -1,13 +1,12 @@
-<!-- COMPONENTE: Cards do Dashboard de Custos -->
 <section class="mt-6 mb-10">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Card: Orçamento Previsto -->
-        <div class="relative bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+        <div class="relative bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all">
+            <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-blue-500 pointer-events-none"></span>
             <div class="flex justify-between items-start">
                 <span class="text-sm text-gray-500 font-medium">Orçamento Previsto</span>
                 <button
                     class="text-blue-500 hover:text-blue-700 transition-colors"
-                    onclick="document.getElementById('modalOrcamento').classList.remove('hidden')"
+                    onclick="openOrcamentoModal()"
                     title="Editar orçamento previsto"
                 >
                     <i class="fa fa-pen text-sm"></i>
@@ -16,20 +15,21 @@
             <span class="text-3xl font-bold text-blue-600 mt-2 block" id="orcamentoPrevistoValue">--</span>
         </div>
 
-        <!-- Card: Custo Realizado -->
-        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+        <div class="relative bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all">
+            <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-red-500 pointer-events-none"></span>
             <span class="text-sm text-gray-500 font-medium">Custo Realizado</span>
             <span class="text-3xl font-bold text-red-500 mt-2 block" id="custoRealizadoValue">--</span>
         </div>
 
-        <!-- Card: Saldo Remanescente -->
-        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+
+        <div class="relative bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all">
+            <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-green-500 pointer-events-none"></span>
             <span class="text-sm text-gray-500 font-medium">Saldo Remanescente</span>
             <span class="text-3xl font-bold text-green-600 mt-2 block" id="saldoRemanescenteValue">--</span>
         </div>
 
-        <!-- Card: % Orçamento Utilizado -->
-        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+        <div class="relative bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all">
+            <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-indigo-500 pointer-events-none"></span>
             <span class="text-sm text-gray-500 font-medium">% Orçamento Utilizado</span>
             <span class="text-3xl font-bold text-gray-800 mt-2 block" id="orcamentoUtilizadoValue">--</span>
             <div class="w-full h-2 bg-gray-100 rounded mt-3">
@@ -39,7 +39,6 @@
     </div>
 </section>
 
-<!-- Modal de Edição do Orçamento Previsto -->
 <div id="modalOrcamento" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
     <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm animate-fade-in">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Editar Orçamento Previsto</h3>
@@ -50,16 +49,19 @@
             class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="0,00"
             min="0"
+            step="0.01"
         >
+        <p id="orcamentoModalError" class="text-sm text-red-600 mb-4 hidden"></p>
         <div class="flex justify-end gap-2">
             <button
                 class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-medium transition-colors"
-                onclick="document.getElementById('modalOrcamento').classList.add('hidden')"
+                onclick="closeOrcamentoModal()"
             >
                 Cancelar
             </button>
             <button
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                id="salvarOrcamentoButton"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-60"
                 onclick="salvarOrcamento()"
             >
                 Salvar
@@ -69,18 +71,149 @@
 </div>
 
 <script>
-globalThis.customBudgetValue = null;
+function getCsrfToken() {
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfInput) {
+        return csrfInput.value;
+    }
 
-function salvarOrcamento() {
+    const csrfCookie = document.cookie
+        .split('; ')
+        .find(cookie => cookie.startsWith('csrftoken='));
+
+    return csrfCookie ? csrfCookie.split('=')[1] : '';
+}
+
+function setBudgetModalError(message) {
+    const errorElement = document.getElementById('orcamentoModalError');
+    if (!errorElement) {
+        return;
+    }
+
+    if (!message) {
+        errorElement.textContent = '';
+        errorElement.classList.add('hidden');
+        return;
+    }
+
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+}
+
+function openOrcamentoModal() {
+    if (!globalThis.selectedProjectData || !globalThis.selectedProjectData.id) {
+        alert("Selecione um projeto para editar o orçamento.");
+        return;
+    }
+
+    const modal = document.getElementById('modalOrcamento');
+    if (!modal) {
+        return;
+    }
+
+    setBudgetModalError('');
+
+    const input = document.getElementById('inputOrcamento');
+    if (input) {
+        const currentBudget = Number.parseFloat(globalThis.selectedProjectData.orcamentoPrevisto);
+        input.value = Number.isFinite(currentBudget) ? currentBudget.toFixed(2) : '';
+        input.focus();
+        input.select();
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closeOrcamentoModal() {
+    const modal = document.getElementById('modalOrcamento');
+    if (!modal) {
+        return;
+    }
+
+    setBudgetModalError('');
+    modal.classList.add('hidden');
+}
+
+async function salvarOrcamento() {
+    if (!globalThis.selectedProjectData || !globalThis.selectedProjectData.id) {
+        setBudgetModalError("Selecione um projeto para editar o orçamento.");
+        return;
+    }
+
     const rawValue = document.getElementById('inputOrcamento').value;
     const numericValue = Number.parseFloat(rawValue) || 0;
 
-    globalThis.customBudgetValue = numericValue > 0 ? numericValue : null;
-
-    if (typeof updateDashboardCards === 'function') {
-        updateDashboardCards(globalThis.selectedProjectData || null);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+        setBudgetModalError("Informe um valor de orçamento válido.");
+        return;
     }
 
-    document.getElementById('modalOrcamento').classList.add('hidden');
+    setBudgetModalError('');
+
+    const projectId = globalThis.selectedProjectData.id;
+    const saveButton = document.getElementById('salvarOrcamentoButton');
+    const originalLabel = saveButton ? saveButton.textContent : '';
+
+    if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent = "Salvando...";
+    }
+
+    try {
+        const response = await fetch(`/dashboards/projeto/api/projetos/${projectId}/orcamento/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ valor: numericValue })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            const message = data?.message || "Não foi possível salvar o orçamento.";
+            setBudgetModalError(message);
+            return;
+        }
+
+        globalThis.selectedProjectData.orcamentoPrevisto = Number.isFinite(data?.orcamento_previsto)
+            ? data.orcamento_previsto
+            : numericValue;
+        globalThis.selectedProjectData.custoRealizado = Number.isFinite(data?.custo_realizado)
+            ? data.custo_realizado
+            : globalThis.selectedProjectData.custoRealizado || 0;
+        globalThis.selectedProjectData.saldoRemanescente = Number.isFinite(data?.saldo_remanescente)
+            ? data.saldo_remanescente
+            : (globalThis.selectedProjectData.orcamentoPrevisto - globalThis.selectedProjectData.custoRealizado);
+        globalThis.selectedProjectData.percentualUtilizado = Number.isFinite(data?.percentual_utilizado)
+            ? data.percentual_utilizado
+            : (globalThis.selectedProjectData.orcamentoPrevisto > 0
+                ? (globalThis.selectedProjectData.custoRealizado / globalThis.selectedProjectData.orcamentoPrevisto) * 100
+                : 0);
+
+        const activeOption = document.querySelector('#projectDropdown .select-option.active');
+        if (activeOption) {
+            activeOption.dataset.projectOrcamentoPrevisto = globalThis.selectedProjectData.orcamentoPrevisto;
+            activeOption.dataset.projectSaldoRemanescente = globalThis.selectedProjectData.saldoRemanescente;
+            activeOption.dataset.projectPercentualUtilizado = globalThis.selectedProjectData.percentualUtilizado;
+            activeOption.dataset.projectCustoRealizado = globalThis.selectedProjectData.custoRealizado;
+        }
+
+        if (typeof updateDashboardCards === 'function') {
+            updateDashboardCards(globalThis.selectedProjectData || null);
+        }
+
+        closeOrcamentoModal();
+    } catch (error) {
+        console.error('Erro ao salvar orçamento previsto', error);
+        setBudgetModalError("Erro inesperado ao salvar o orçamento. Tente novamente.");
+    } finally {
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalLabel;
+        }
+    }
 }
 </script>

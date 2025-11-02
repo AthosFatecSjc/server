@@ -24,6 +24,9 @@
                 data-project-primeiro-registro="{{ projeto.primeiro_registro|date:'Y-m-d' }}"
                 data-project-ultimo-registro="{{ projeto.ultimo_registro|date:'Y-m-d' }}"
                 data-project-funcionarios-count="{{ projeto.funcionarios_count }}"
+                data-project-orcamento-previsto="{{ projeto.orcamento_previsto }}"
+                data-project-saldo-remanescente="{{ projeto.saldo_remanescente }}"
+                data-project-percentual-utilizado="{{ projeto.percentual_utilizado }}"
                 onclick="selectProject('{{ projeto.id }}', '{{ projeto.nome_projeto|escapejs }}')"
             >
                 {{ projeto.nome_projeto }}

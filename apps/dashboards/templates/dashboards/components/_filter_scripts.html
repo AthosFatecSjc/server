@@ -50,28 +50,25 @@
             return;
         }
 
-        const fallbackBudget = Number.isFinite(projectData.totalCusto) ? projectData.totalCusto : 0;
-        const budget = Number.isFinite(globalThis.customBudgetValue) && globalThis.customBudgetValue > 0
-            ? globalThis.customBudgetValue
-            : fallbackBudget;
-
         const realized = Number.isFinite(projectData.custoRealizado) ? projectData.custoRealizado : 0;
-        const remaining = Math.max(budget - realized, 0);
-        const utilization = budget > 0 ? (realized / budget) * 100 : 0;
+        const budget = Number.isFinite(projectData.orcamentoPrevisto) ? projectData.orcamentoPrevisto : 0;
+        const remaining = Number.isFinite(projectData.saldoRemanescente)
+            ? projectData.saldoRemanescente
+            : (budget - realized);
+        const utilization = Number.isFinite(projectData.percentualUtilizado)
+            ? projectData.percentualUtilizado
+            : budget > 0 ? (realized / budget) * 100 : 0;
 
         setText('orcamentoPrevistoValue', formatCurrency(budget));
         setText('custoRealizadoValue', formatCurrency(realized));
-        setText('saldoRemanescenteValue', formatCurrency(remaining));
+        const formattedRemaining = formatCurrency(Math.abs(remaining));
+        setText('saldoRemanescenteValue', remaining < 0 ? `- ${formattedRemaining}` : formattedRemaining);
         setText('orcamentoUtilizadoValue', `${utilization.toFixed(1)}%`);
         setBarWidth('orcamentoUtilizadoBar', utilization);
 
         const inputOrcamento = document.getElementById('inputOrcamento');
         if (inputOrcamento) {
-            const valueToUse = Number.isFinite(globalThis.customBudgetValue) && globalThis.customBudgetValue > 0
-                ? globalThis.customBudgetValue
-                : budget;
-
-            inputOrcamento.value = valueToUse > 0 ? valueToUse.toFixed(2) : '';
+            inputOrcamento.value = budget > 0 ? budget.toFixed(2) : '';
         }
     }
 
@@ -84,10 +81,22 @@
     }
 
     function selectProject(projectId, projectName) {
-        currentProjectFilter = projectId;
+        const normalizedId = String(projectId ?? '').trim();
+        currentProjectFilter = normalizedId || 'all';
 
-        const selectedOption = document.querySelector(`#projectDropdown .select-option[data-value="${projectId}"]`);
-        if (selectedOption && projectId !== 'all') {
+        let selectedOption = null;
+        if (normalizedId && normalizedId !== 'all') {
+            selectedOption = document.querySelector(`#projectDropdown .select-option[data-value="${normalizedId}"]`);
+        }
+
+        if (!selectedOption) {
+            selectedOption = document.querySelector('#projectDropdown .select-option');
+            if (selectedOption) {
+                currentProjectFilter = String(selectedOption.dataset.value || '').trim() || 'all';
+            }
+        }
+
+        if (selectedOption && currentProjectFilter !== 'all') {
             let custoPorDev = [];
             try {
                 const custoPorDevAttr = selectedOption.dataset.projectCustoPorDev;
@@ -98,19 +107,37 @@
                 console.error('Erro ao fazer parse do custo por dev:', e);
             }
 
+            const parsedProjectId = Number.parseInt(selectedOption.dataset.projectId, 10);
+
+            const budget = Number.parseFloat(selectedOption.dataset.projectOrcamentoPrevisto);
+            const realized = Number.parseFloat(selectedOption.dataset.projectCustoRealizado);
+            const remaining = Number.parseFloat(selectedOption.dataset.projectSaldoRemanescente);
+            const utilization = Number.parseFloat(selectedOption.dataset.projectPercentualUtilizado);
+
             const projectData = {
-                id: selectedOption.dataset.projectId,
+                id: Number.isNaN(parsedProjectId) ? null : parsedProjectId,
                 name: selectedOption.dataset.projectName,
                 created: selectedOption.dataset.projectCreated,
                 totalHoras: Number.parseFloat(selectedOption.dataset.projectTotalHoras) || 0,
                 totalCusto: Number.parseFloat(selectedOption.dataset.projectTotalCusto) || 0,
-                custoRealizado: Number.parseFloat(selectedOption.dataset.projectCustoRealizado) || 0,
+                custoRealizado: Number.isFinite(realized) ? realized : 0,
                 custoPorDev: custoPorDev,
                 totalRegistros: Number.parseInt(selectedOption.dataset.projectTotalRegistros, 10) || 0,
                 mediaHoras: Number.parseFloat(selectedOption.dataset.projectMediaHoras) || 0,
                 primeiroRegistro: selectedOption.dataset.projectPrimeiroRegistro,
                 ultimoRegistro: selectedOption.dataset.projectUltimoRegistro,
-                funcionariosCount: Number.parseInt(selectedOption.dataset.projectFuncionariosCount, 10) || 0
+                funcionariosCount: Number.parseInt(selectedOption.dataset.projectFuncionariosCount, 10) || 0,
+                orcamentoPrevisto: Number.isFinite(budget) ? budget : 0,
+                saldoRemanescente: Number.isFinite(remaining)
+                    ? remaining
+                    : ((Number.isFinite(budget) ? budget : 0) - (Number.isFinite(realized) ? realized : 0)),
+                percentualUtilizado: Number.isFinite(utilization)
+                    ? utilization
+                    : (() => {
+                        const safeBudget = Number.isFinite(budget) ? budget : 0;
+                        const safeRealized = Number.isFinite(realized) ? realized : 0;
+                        return safeBudget > 0 ? (safeRealized / safeBudget) * 100 : 0;
+                    })()
             };
 
             globalThis.selectedProjectData = projectData;
@@ -119,17 +146,23 @@
             document.dispatchEvent(new CustomEvent('projectSelected', { detail: projectData }));
 
             updateDashboardCards(projectData);
+            updateExportModalProject(globalThis.selectedProjectData);
         } else {
             globalThis.selectedProjectData = null;
             document.dispatchEvent(new CustomEvent('projectSelected', { detail: null }));
             updateDashboardCards(null);
+            updateExportModalProject(null);
         }
 
-        document.getElementById('selectedProjectText').textContent = projectName;
+        const resolvedProjectName = projectName
+            || (selectedOption ? selectedOption.dataset.projectName : null)
+            || 'Selecione um projeto';
+
+        document.getElementById('selectedProjectText').textContent = resolvedProjectName;
 
         for (const option of document.querySelectorAll('#projectDropdown .select-option')) {
             option.classList.remove('active');
-            if (option.dataset.value === projectId) {
+            if (String(option.dataset.value).trim() === currentProjectFilter) {
                 option.classList.add('active');
             }
         }
@@ -312,21 +345,211 @@
         applyFilters();
     }
 
+    function updateExportModalProject(projectData) {
+        const nameElement = document.getElementById('exportModalProjectName');
+        const confirmButton = document.getElementById('confirmExportPdfButton');
+
+        if (nameElement) {
+            nameElement.textContent = projectData && projectData.name
+                ? projectData.name
+                : 'Nenhum projeto selecionado';
+        }
+
+        if (confirmButton) {
+            confirmButton.disabled = !(projectData && projectData.id);
+        }
+    }
+
+    function setExportModalError(message) {
+        const errorElement = document.getElementById('exportModalError');
+        if (!errorElement) {
+            return;
+        }
+
+        if (!message) {
+            errorElement.textContent = '';
+            errorElement.classList.add('hidden');
+            return;
+        }
+
+        errorElement.textContent = message;
+        errorElement.classList.remove('hidden');
+    }
+
+    function openExportPdfModal() {
+        const modal = document.getElementById('exportPdfModal');
+        if (!modal) {
+            return;
+        }
+
+        updateExportModalProject(globalThis.selectedProjectData || null);
+
+        const dateElement = document.getElementById('exportModalDate');
+        if (dateElement) {
+            const now = new Date();
+            dateElement.textContent = now.toLocaleDateString('pt-BR');
+        }
+
+        setExportModalError('');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeExportPdfModal() {
+        const modal = document.getElementById('exportPdfModal');
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function parseFilenameFromDisposition(disposition) {
+        if (!disposition) {
+            return null;
+        }
+
+        const filenameRegex = /filename\\*=UTF-8''([^;]+)|filename=\"?([^\";]+)\"?/i;
+        const match = filenameRegex.exec(disposition);
+        if (!match) {
+            return null;
+        }
+
+        const encoded = match[1] || match[2];
+        if (!encoded) {
+            return null;
+        }
+
+        try {
+            return decodeURIComponent(encoded);
+        } catch (_error) {
+            return encoded;
+        }
+    }
+
+    async function gerarRelatorioPdf() {
+        const projectData = globalThis.selectedProjectData;
+
+        if (!projectData || !projectData.id) {
+            setExportModalError('Selecione um projeto para exportar o relatório.');
+            return;
+        }
+
+        const confirmButton = document.getElementById('confirmExportPdfButton');
+        const originalText = confirmButton ? confirmButton.textContent : '';
+
+        if (confirmButton) {
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Gerando...';
+        }
+
+        setExportModalError('');
+
+        try {
+            const response = await fetch('/dashboards/projeto/api/projetos/exportar-pdf/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ projeto_id: projectData.id })
+            });
+
+            if (!response.ok) {
+                let errorMessage = 'Não foi possível gerar o relatório em PDF.';
+                try {
+                    const data = await response.json();
+                    if (data && data.message) {
+                        errorMessage = data.message;
+                    }
+                } catch (_err) {
+                    // Ignora erro de parse
+                }
+                setExportModalError(errorMessage);
+                return;
+            }
+
+            const blob = await response.blob();
+            const disposition = response.headers.get('Content-Disposition');
+            const filename =
+                parseFilenameFromDisposition(disposition) ||
+                `dashboard-custos-${(projectData.name || 'projeto')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')}.pdf`;
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+
+            closeExportPdfModal();
+        } catch (error) {
+            console.error('Erro ao gerar PDF do dashboard de custos:', error);
+            setExportModalError('Erro inesperado ao gerar o relatório. Tente novamente.');
+        } finally {
+            if (confirmButton) {
+                confirmButton.disabled = !(projectData && projectData.id);
+                confirmButton.textContent = originalText || 'Gerar PDF';
+            }
+        }
+    }
+
     document.addEventListener('projectSelected', function (event) {
-        updateDashboardCards(event.detail || null);
+        const projectData = event.detail || null;
+        updateDashboardCards(projectData);
+        updateExportModalProject(projectData);
     });
 
     document.addEventListener('DOMContentLoaded', function () {
         const activeOption = document.querySelector('#projectDropdown .select-option.active');
+        const fallbackOption = activeOption || document.querySelector('#projectDropdown .select-option');
 
-        if (activeOption) {
-            const projectId = activeOption.dataset.value;
-            const projectName = activeOption.dataset.projectName || activeOption.textContent.trim();
+        if (fallbackOption) {
+            const projectId = fallbackOption.dataset.value;
+            const projectName = fallbackOption.dataset.projectName || fallbackOption.textContent.trim();
             selectProject(projectId, projectName);
         } else {
-            updateDashboardCards(globalThis.selectedProjectData || null);
+            updateDashboardCards(null);
         }
 
         switchDashboardTab(currentDashboardTab);
+
+        updateExportModalProject(globalThis.selectedProjectData || null);
+
+        const exportButton = document.getElementById('openExportPdfButton');
+        if (exportButton) {
+            exportButton.addEventListener('click', openExportPdfModal);
+        }
+
+        const closeButton = document.getElementById('closeExportPdfButton');
+        if (closeButton) {
+            closeButton.addEventListener('click', closeExportPdfModal);
+        }
+
+        const cancelButton = document.getElementById('cancelExportPdfButton');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', closeExportPdfModal);
+        }
+
+        const confirmButton = document.getElementById('confirmExportPdfButton');
+        if (confirmButton) {
+            confirmButton.addEventListener('click', gerarRelatorioPdf);
+        }
+
+        const modal = document.getElementById('exportPdfModal');
+        if (modal) {
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    closeExportPdfModal();
+                }
+            });
+        }
     });
 </script>
