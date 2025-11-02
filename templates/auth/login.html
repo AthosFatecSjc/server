@@ -2,69 +2,170 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Athos Insight • Login</title>
-    <link rel="icon" href="{% static 'logo.png' %}" type="image/png" sizes="128x128">
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-          integrity="sha512-pO6H9K4e5phZg0MZz2q4WvSxZQpRtYHAlT7koT6n2lJd3zvB1ZfP3ynGSlMHDnPl0gP5cFVH7W8K6U9tk5eWZQ=="
-          crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Athos Insight • Login</title>
+  <link rel="icon" href="{% static 'logo.png' %}" type="image/png" sizes="128x128">
+    <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: radial-gradient(circle at top, #0f172a, #020617 70%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .login-card {
+      background-color: rgba(17, 24, 39, 0.95);
+      border: 1px solid rgba(75, 85, 99, 0.6);
+      box-shadow: 0 25px 60px -20px rgba(99, 102, 241, 0.3);
+    }
+
+    .input-dark {
+      background-color: rgba(31, 41, 55, 0.9);
+      border: 1px solid rgba(71, 85, 105, 0.8);
+      color: #f8fafc;
+    }
+
+    .label-icon {
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 1rem;
+    }
+
+    .btn-gradient {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(90deg, #2563eb, #7c3aed, #ec4899);
+      background-size: 250% 250%;
+      transition: all 0.4s ease;
+      color: #fff;
+      z-index: 0;
+    }
+
+    .btn-gradient::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -75%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
+      transform: skewX(-25deg);
+      transition: 0.5s;
+      z-index: 1;
+    }
+
+    .btn-gradient:hover::before {
+      left: 125%;
+    }
+
+    .btn-gradient:hover {
+      background: #5b21b6;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(91, 33, 182, 0.5);
+    }
+
+    .eye-icon {
+      color: #93c5fd;
+      transition: color 0.3s ease;
+    }
+
+    .eye-icon:hover {
+      color: #a78bfa;
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-6">
-    <div class="w-full max-w-md">
-        <div class="bg-gray-900 bg-opacity-80 border border-gray-700 shadow-xl rounded-2xl p-10 backdrop-blur">
-            <div class="flex flex-col items-center gap-3 mb-8">
-                <img src="{% static 'logo.png' %}" alt="Athos Insight" class="h-16 w-16 object-contain">
-                <div class="text-center">
-                    <p class="text-2xl font-semibold text-white">Bem-vindo de volta</p>
-                </div>
-            </div>
 
-            {% if error_message %}
-                <div class="mb-6 rounded-lg border border-red-500 bg-red-500 bg-opacity-10 px-4 py-3 text-sm text-red-200">
-                    {{ error_message }}
-                </div>
-            {% endif %}
+<body>
+  <div class="w-full max-w-md">
+    <div class="login-card rounded-2xl p-10 backdrop-blur">
+      <div class="flex flex-col items-center mb-8">
+        <img src="{% static 'logo.png' %}" alt="Athos Insight" class="h-16 w-16 object-contain drop-shadow-[0_0_20px_rgba(99,102,241,0.6)]">
+        <h1 class="text-lg tracking-[0.25em] text-indigo-400 font-semibold mt-2">Athos Insight</h1>
+      </div>
 
-            <form method="post" class="space-y-5">
-                {% csrf_token %}
-                <div>
-                    <label for="username" class="block text-gray-300 text-sm font-medium mb-1">Usuário</label>
-                    <input
-                        id="username"
-                        name="username"
-                        type="text"
-                        required
-                        autofocus
-                        class="w-full rounded-lg border border-gray-700 bg-gray-800 text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    >
-                </div>
+      {% if error_message %}
+      <div class="mb-6 rounded-lg border border-red-500 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        {{ error_message }}
+      </div>
+      {% endif %}
 
-                <div>
-                    <label for="password" class="block text-gray-300 text-sm font-medium mb-1">Senha</label>
-                    <input
-                        id="password"
-                        name="password"
-                        type="password"
-                        required
-                        class="w-full rounded-lg border border-gray-700 bg-gray-800 text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    >
-                </div>
+      <form method="post" class="space-y-6">
+        {% csrf_token %}
 
-                <button
-                    type="submit"
-                    class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 text-white font-semibold py-2.5 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50"
-                >
-                    <span>Entrar</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </form>
-
+        <!-- Usuário -->
+        <div>
+          <label for="username" class="flex items-center gap-2 text-gray-300 text-sm font-medium mb-2">
+            <i class="fas fa-user label-icon"></i>
+            Usuário
+          </label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            required
+            autofocus
+            class="input-dark w-full rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+          >
         </div>
-    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" integrity="sha512-pS8dzFmNzjJ08B78fgXQ9IB0Rc+ZjspHzws22I/a0fOqr0TkbaMHM2R5E4NgWkt50l+4exsbm0PiHw5GogWb1w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <div>
+          <label for="password" class="flex items-center gap-2 text-gray-300 text-sm font-medium mb-2">
+            <i class="fas fa-lock label-icon"></i>
+            Senha
+          </label>
+          <div class="relative">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              class="input-dark w-full rounded-lg py-2 px-3 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            >
+            <button
+              type="button"
+              data-toggle-password
+              aria-label="Mostrar senha"
+              class="absolute inset-y-0 right-0 flex items-center pr-3"
+            >
+              <i class="fas fa-eye eye-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn-gradient w-full inline-flex items-center justify-center gap-2 rounded-lg font-semibold py-2.5 transition focus:outline-none focus:ring-4 focus:ring-indigo-500/50"
+        >
+          <span>Entrar</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Script do olho -->
+  <script>
+    document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const input = document.getElementById('password');
+        const icon = button.querySelector('i');
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        icon.classList.toggle('fa-eye', !isPassword);
+        icon.classList.toggle('fa-eye-slash', isPassword);
+      });
+    });
+  </script>
 </body>
 </html>
