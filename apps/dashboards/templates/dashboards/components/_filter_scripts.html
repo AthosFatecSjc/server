@@ -488,41 +488,31 @@
         setExportModalError('');
 
         try {
-        const response = await fetch('/dashboards/projeto/api/projetos/exportar-pdf/', {
-            method: 'POST',
-            headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCsrfToken(),
-            'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ projeto_id: projectData.id })
-        });
+            const response = await fetch('/dashboards/projeto/api/projetos/exportar-pdf/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ projeto_id: projectData.id })
+            });
 
-        if (!response.ok) {
-            let errorMessage = 'Não foi possível gerar o relatório em PDF.';
+            if (!response.ok) {
+                let errorMessage = 'Não foi possível gerar o relatório em PDF.';
 
-            try {
-            const data = await response.json();
-            if (data && data.message) {
-                errorMessage = data.message;
+                try {
+                    const data = await response.json();
+                    if (data && data.message) {
+                        errorMessage = data.message;
+                    }
+                } catch (parseError) {
+                    console.warn('Falha ao interpretar a resposta JSON do servidor:', parseError);
+                }
+
+                setExportModalError(errorMessage);
+                return;
             }
-            } catch (parseError) {
-            console.warn('Falha ao interpretar a resposta JSON do servidor:', parseError);
-            }
-
-            setExportModalError(errorMessage);
-            return;
-        }
-
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-
-        } catch (error) {
-        console.error('Erro inesperado ao tentar exportar o relatório em PDF:', error);
-        setExportModalError('Erro inesperado ao gerar o relatório. Tente novamente mais tarde.');
-        }
-
 
             const blob = await response.blob();
             const disposition = response.headers.get('Content-Disposition');
