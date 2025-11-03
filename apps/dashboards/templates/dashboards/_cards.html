@@ -190,9 +190,20 @@ function limparErroOrcamento() {
 
 function prepararBotaoSalvar(disable, button = document.getElementById("salvarOrcamentoButton")) {
   if (!button) return null;
-  const originalLabel = button.textContent;
-  button.disabled = disable;
-  button.textContent = disable ? "Salvando..." : originalLabel;
+
+  if (disable) {
+    if (!button.dataset.originalLabel) {
+      button.dataset.originalLabel = button.textContent || "Salvar";
+    }
+    button.disabled = true;
+    button.textContent = "Salvando...";
+  } else {
+    const originalLabel = button.dataset.originalLabel || "Salvar";
+    button.disabled = false;
+    button.textContent = originalLabel;
+    delete button.dataset.originalLabel;
+  }
+
   return button;
 }
 
