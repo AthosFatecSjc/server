@@ -16,6 +16,18 @@ from .services import (
 )
 
 
+def _json_error(message: str, status: int = 400) -> JsonResponse:
+    return JsonResponse({"message": message}, status=status)
+
+
+def _handle_pdf_exception(exc: Exception) -> JsonResponse:
+    if isinstance(exc, ProjetoNaoEncontradoError):
+        return _json_error(str(exc), status=404)
+    if isinstance(exc, DashboardProjetoError):
+        return _json_error(str(exc))
+    return _json_error("Não foi possível gerar o PDF solicitado.", status=500)
+
+
 @require_http_methods(["GET"])
 def index(request):
     """View principal do dashboard de saúde do projeto."""
@@ -72,39 +84,25 @@ def atualizar_orcamento_previsto(request, projeto_id: int):
 @require_http_methods(["POST"])
 def exportar_relatorio_pdf(request):
     """Gera o PDF do dashboard de custos."""
-    error_message = None
-    status_code = 400
-
     try:
         payload = json.loads(request.body.decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError):
-        error_message = "JSON inválido."
+        return _json_error("JSON inválido.")
 
-    if error_message is None:
-        projeto_id = payload.get("projeto_id")
-        if projeto_id is None:
-            error_message = "O campo 'projeto_id' é obrigatório."
-        else:
-            try:
-                projeto_id_int = int(projeto_id)
-            except (TypeError, ValueError):
-                error_message = "ID do projeto inválido."
+    projeto_id = payload.get("projeto_id")
+    if projeto_id is None:
+        return _json_error("O campo 'projeto_id' é obrigatório.")
 
-    if error_message is None:
-        try:
-            dados_pdf = DashboardProjetoService.obter_dados_pdf(projeto_id_int)
-            conteudo_pdf = DashboardProjetoPdfService.gerar_pdf(dados_pdf)
-        except ProjetoNaoEncontradoError as exc:
-            error_message = str(exc)
-            status_code = 404
-        except DashboardProjetoError as exc:
-            error_message = str(exc)
-        except Exception:
-            error_message = "Não foi possível gerar o PDF solicitado."
-            status_code = 500
+    try:
+        projeto_id_int = int(projeto_id)
+    except (TypeError, ValueError):
+        return _json_error("ID do projeto inválido.")
 
-    if error_message is not None:
-        return JsonResponse({"message": error_message}, status=status_code)
+    try:
+        dados_pdf = DashboardProjetoService.obter_dados_pdf(projeto_id_int)
+        conteudo_pdf = DashboardProjetoPdfService.gerar_pdf(dados_pdf)
+    except Exception as exc:  # pylint: disable=broad-except
+        return _handle_pdf_exception(exc)
 
     nome_projeto_slug = slugify(dados_pdf.get("nome_projeto") or "projeto")
     data_suffix = timezone.now().strftime("%Y%m%d")
