@@ -103,6 +103,17 @@ DATABASES = {
 
 DATABASE_ROUTERS = ["config.routers.OlapRouter"]
 
+if not DATABASES["default"]["NAME"]:
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": str(BASE_DIR / "db.sqlite3"),
+    }
+if not DATABASES["olap"]["NAME"]:
+    DATABASES["olap"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": str(BASE_DIR / "db_olap.sqlite3"),
+    }
+
 if os.environ.get("TEST_DB_ENGINE"):
     DATABASES["default"] = {
         "ENGINE": os.environ["TEST_DB_ENGINE"],
