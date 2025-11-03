@@ -1,9 +1,10 @@
 """Testes para os serviços do dashboard de projetos."""
 
+# pylint: disable=protected-access
+
 from datetime import datetime
 from decimal import Decimal
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
 
 from apps.dashboards.projetos.services import (
@@ -137,7 +138,7 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
         self.assertAlmostEqual(resultado["max_value"], 1100.00, places=2)
 
 
-class DashboardProjetoServiceTest(TestCase):
+class DashboardProjetoServiceTest(TestCase):  # pylint: disable=protected-access
     """Testes unitários para o DashboardProjetoService."""
 
     databases = {"default", "olap"}
@@ -195,7 +196,7 @@ class DashboardProjetoServiceTest(TestCase):
         self.assertEqual(resultado["orcamento_previsto"], 10000.0)
 
 
-class DashboardProjetoPdfServiceTest(TestCase):
+class DashboardProjetoPdfServiceTest(TestCase):  # pylint: disable=protected-access
     """Testes unitários para o DashboardProjetoPdfService."""
 
     databases = {"default", "olap"}
