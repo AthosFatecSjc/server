@@ -49,10 +49,11 @@ jobs:
           coverage xml
 
       - name: Análise no SonarCloud
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarcloud-github-action@v5
         with:
           projectBaseDir: .
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Upload do Relatório de Cobertura
