@@ -52,6 +52,8 @@ class Funcionario(models.Model):
 class Projeto(models.Model):
     """Modelo para projetos"""
 
+    jira_id = models.PositiveIntegerField(null=True)
+    jira_key = models.CharField(max_length=50, null=True)
     nome = models.CharField(max_length=100)
     data_criacao = models.DateField(auto_now_add=True)
     orcamento_previsto = models.DecimalField(
