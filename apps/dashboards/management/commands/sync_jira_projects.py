@@ -42,14 +42,41 @@ class Command(BaseCommand):
                     logger.warning("Projeto Jira sem nome ignorado: %s", projeto_jira)
                     continue
 
+                jira_id = projeto_jira.get("id", "").strip()
+                if not jira_id:
+                    logger.warning(f"Projeto Jira sem id, ignorado: {projeto_jira}")
+                    continue
+
+                jira_key = projeto_jira.get("key", "").strip()
+                if not jira_key:
+                    logger.warning(f"Projeto Jira sem key, ignorado: {projeto_jira}")
+                    continue
+
                 try:
-                    _projeto, created = Projeto.objects.update_or_create(
-                        nome=nome,
-                        defaults={
-                            "data_criacao": date.today(),
-                            "orcamento_previsto": DEFAULT_ORCAMENTO,
-                        },
-                    )
+                    projeto = Projeto.objects.filter(jira_id=int(jira_id)).first()
+
+                    if not projeto:
+                        projeto = Projeto.objects.filter(nome=nome).first()
+
+                    if projeto:
+                        # Update existing
+                        projeto.jira_id = int(jira_id)
+                        projeto.jira_key = jira_key
+                        projeto.nome = nome
+                        projeto.data_criacao = date.today()
+                        projeto.orcamento_previsto = DEFAULT_ORCAMENTO
+                        projeto.save()
+                        created = False
+                    else:
+                        # Create new
+                        projeto = Projeto.objects.create(
+                            jira_id=int(jira_id),
+                            jira_key=jira_key,
+                            nome=nome,
+                            data_criacao=date.today(),
+                            orcamento_previsto=DEFAULT_ORCAMENTO,
+                        )
+                        created = True
 
                     if created:
                         criados += 1
