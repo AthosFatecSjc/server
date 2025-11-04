@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -102,6 +103,17 @@ DATABASES = {
 
 DATABASE_ROUTERS = ["config.routers.OlapRouter"]
 
+if not DATABASES["default"]["NAME"]:
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": str(BASE_DIR / "db.sqlite3"),
+    }
+if not DATABASES["olap"]["NAME"]:
+    DATABASES["olap"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": str(BASE_DIR / "db_olap.sqlite3"),
+    }
+
 if os.environ.get("TEST_DB_ENGINE"):
     DATABASES["default"] = {
         "ENGINE": os.environ["TEST_DB_ENGINE"],
@@ -154,6 +166,7 @@ STATICFILES_DIRS = [
 
 # Para onde o 'collectstatic' vai copiar todos os arquivos para produção
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

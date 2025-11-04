@@ -1,0 +1,41 @@
+{% load dashboard_filters %}
+{% with primeiro=projetos_dimensao|first %}
+<div class="filter-group filter-project w-full">
+    <h3>Filtrar por Projeto</h3>
+    <div class="custom-select w-full">
+        <button class="select-button w-full" id="projectSelectBtn" onclick="toggleProjectDropdown()">
+            <span id="selectedProjectText">{% if projeto_selecionado_nome %}{{ projeto_selecionado_nome }}{% elif primeiro %}{{ primeiro.nome_projeto }}{% else %}Selecione um projeto{% endif %}</span>
+        </button>
+        <div class="select-dropdown" id="projectDropdown">
+            {% for projeto in projetos_dimensao %}
+            <button
+                type="button"
+                class="select-option{% if projeto.id == projeto_selecionado_id %} active{% elif not projeto_selecionado_id and forloop.first %} active{% endif %}"
+                data-value="{{ projeto.id }}"
+                data-project-id="{{ projeto.id }}"
+                data-project-name="{{ projeto.nome_projeto }}"
+                data-project-created="{{ projeto.data_criacao|date:'Y-m-d' }}"
+                data-project-total-horas="{{ projeto.total_horas }}"
+                data-project-total-custo="{{ projeto.total_custo }}"
+                data-project-custo-realizado="{{ projeto.custo_realizado }}"
+                data-project-custo-por-dev='{{ projeto.custo_por_dev|jsonify }}'
+                data-project-total-registros="{{ projeto.total_registros }}"
+                data-project-media-horas="{{ projeto.media_horas }}"
+                data-project-primeiro-registro="{{ projeto.primeiro_registro|date:'Y-m-d' }}"
+                data-project-ultimo-registro="{{ projeto.ultimo_registro|date:'Y-m-d' }}"
+                data-project-funcionarios-count="{{ projeto.funcionarios_count }}"
+                data-project-orcamento-previsto="{{ projeto.orcamento_previsto }}"
+                data-project-saldo-remanescente="{{ projeto.saldo_remanescente }}"
+                data-project-percentual-utilizado="{{ projeto.percentual_utilizado }}"
+                onclick="selectProject('{{ projeto.id }}', '{{ projeto.nome_projeto|escapejs }}')"
+            >
+                {{ projeto.nome_projeto }}
+                {% if projeto.data_criacao %}
+                <small style="color: #6c757d;">({{ projeto.data_criacao|date:'d/m/Y' }})</small>
+                {% endif %}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endwith %}
