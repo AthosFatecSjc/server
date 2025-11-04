@@ -49,7 +49,7 @@ jobs:
           coverage xml
 
       - name: Análise no SonarCloud
-        uses: SonarSource/sonarcloud-github-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         with:
           projectBaseDir: .
         env:
