@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -57,3 +58,8 @@ class LoginView(View):
 def logout_view(request):
     request.session.flush()
     return redirect("login")
+
+
+@require_safe
+def chrome_devtools_descriptor(_request):
+    return JsonResponse({"targets": []})

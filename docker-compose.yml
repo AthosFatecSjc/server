@@ -10,6 +10,9 @@ services:
         python manage.py collectstatic --noinput &&
         gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000
       "
+    volumes:
+      - ./static:/app/static
+      - ./templates:/app/templates
     ports:
       - "8000:8000"
     restart: always
