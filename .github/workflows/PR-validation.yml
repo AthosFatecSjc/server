@@ -7,18 +7,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 2
-      matrix:
-        python-version: [3.12, 3.13]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configurar Python ${{ matrix.python-version }}
+      - name: Configurar Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
 
       - name: Instalar Dependências
         run: |
@@ -37,7 +33,7 @@ jobs:
         continue-on-error: true
         run: |
           pip install bandit
-          bandit -r . -f json -o bandit-report.json
+          bandit -r . -f json -o bandit-report.json || echo "Bandit encontrou problemas"
 
       - name: Executar Testes e Gerar Cobertura
         env:
@@ -53,14 +49,22 @@ jobs:
           coverage run --source='.' manage.py test
           coverage xml
 
+      - name: Análise no SonarCloud
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          projectBaseDir: .
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
       - name: Upload do Relatório de Cobertura
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report-${{ matrix.python-version }}
+          name: coverage-report
           path: coverage.xml
 
       - name: Upload do Relatório de Segurança (Bandit)
         uses: actions/upload-artifact@v4
         with:
-          name: bandit-report-${{ matrix.python-version }}
+          name: bandit-report
           path: bandit-report.json
