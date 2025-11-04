@@ -57,3 +57,11 @@ jobs:
           TEST_DB_NAME: ":memory:"
         run: |
           python manage.py test --parallel
+
+      - name: Análise no SonarCloud
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          projectBaseDir: .
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
