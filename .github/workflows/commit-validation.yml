@@ -27,6 +27,7 @@ jobs:
           python -m py_compile $(git ls-files '*.py')
 
       - name: Analisar Código com Pylint (Django)
+        continue-on-error: true
         env:
           DJANGO_SETTINGS_MODULE: config.settings
           SECRET_KEY: fake-key

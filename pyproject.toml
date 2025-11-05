@@ -26,3 +26,15 @@ force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
 skip = ["venv", ".venv", "env"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"  # ajuste se seu módulo principal for outro
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = [
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "-ra",
+    "-q"
+]
+testpaths = ["tests", "apps"]
