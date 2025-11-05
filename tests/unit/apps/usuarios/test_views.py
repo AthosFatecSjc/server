@@ -2,10 +2,23 @@
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.usuarios.models import ContratoChoices, PerfilAcessoChoices
+
+
+def _ensure_secret_key():
+    try:
+        secret = settings.SECRET_KEY
+    except ImproperlyConfigured:
+        secret = ""
+    if not secret:
+        settings.SECRET_KEY = "test-secret-key"
+
+
+_ensure_secret_key()
 
 Usuario = get_user_model()
 
@@ -132,3 +145,11 @@ class UsuarioViewsTests(TestCase):
         self.lider.refresh_from_db()
         self.assertTrue(self.lider.ativo)
         self.assertEqual(response.url, next_url)
+
+    def test_status_toggle_view_ignora_next_externo(self):
+        response = self.client.post(
+            reverse("usuarios:status", args=[self.lider.pk]),
+            {"acao": "ativar", "next": "https://malicioso.com/phish"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("usuarios:lista"))

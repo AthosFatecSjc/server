@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
-from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 
 from config import routers
@@ -24,6 +24,18 @@ from config.views import (
     logout_view,
 )
 from olap_models.models import DimFuncionario, DimProjeto, DimTempo, FatoRegistroHoras
+
+
+def _ensure_secret_key():
+    try:
+        secret = settings.SECRET_KEY
+    except ImproperlyConfigured:
+        secret = ""
+    if not secret:
+        settings.SECRET_KEY = "test-secret-key"
+
+
+_ensure_secret_key()
 
 
 class SettingsModuleLoader:
@@ -255,41 +267,39 @@ class ConfigViewsTests(TestCase):
         request.session.save()
         return request
 
-    @override_settings(SECRET_KEY="")
     def test_add_session_configura_secret_quando_vazio(self):
-        request = self.factory.get("/")
-        self._add_session(request)
-        self.assertEqual(settings.SECRET_KEY, "test-secret")
+        with patch.object(settings, "SECRET_KEY", "", create=True):
+            request = self.factory.get("/")
+            self._add_session(request)
+            self.assertEqual(settings.SECRET_KEY, "test-secret")
 
     def test_add_session_configura_secret_quando_improperly_configurado(self):
         request = self.factory.get("/")
         real_settings = settings
-        original_secret = getattr(real_settings, "SECRET_KEY", None)
 
         class SecretlessSettings:
-            def __init__(self, wrapped):
-                object.__setattr__(self, "_wrapped", wrapped)
+            def __init__(self):
+                self._secret = None
 
             def __getattr__(self, name):
                 if name == "SECRET_KEY":
-                    raise ImproperlyConfigured
-                return getattr(self._wrapped, name)
+                    if self._secret is None:
+                        raise ImproperlyConfigured
+                    return self._secret
+                return getattr(real_settings, name)
 
             def __setattr__(self, name, value):
-                if name == "_wrapped":
+                if name == "_secret":
                     object.__setattr__(self, name, value)
+                elif name == "SECRET_KEY":
+                    object.__setattr__(self, "_secret", value)
                 else:
-                    setattr(self._wrapped, name, value)
+                    setattr(real_settings, name, value)
 
-        try:
-            with patch(
-                "tests.unit.config.test_config_modules.settings",
-                SecretlessSettings(real_settings),
-            ):
-                self._add_session(request)
-            self.assertEqual(real_settings.SECRET_KEY, "test-secret")
-        finally:
-            real_settings.SECRET_KEY = original_secret
+        fake_settings = SecretlessSettings()
+        with patch("tests.unit.config.test_config_modules.settings", fake_settings):
+            self._add_session(request)
+            self.assertEqual(fake_settings.SECRET_KEY, "test-secret")
 
     def test_is_authenticated_helper(self):
         request = self._add_session(self.factory.get("/"))

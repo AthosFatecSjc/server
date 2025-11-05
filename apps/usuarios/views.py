@@ -6,12 +6,27 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
 from apps.usuarios.models import Usuario
 
 from .forms import UsuarioCreateForm, UsuarioFiltroForm, UsuarioUpdateForm
 from .services import alterar_status_usuario, listar_usuarios
+
+LISTA_URL_NAME = "usuarios:lista"
+
+
+def _resolve_redirect_url(request: HttpRequest, fallback: str) -> str:
+    """Retorna uma URL de redirecionamento segura baseada no parâmetro `next`."""
+    candidate = request.POST.get("next")
+    if candidate and url_has_allowed_host_and_scheme(
+        url=candidate,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return candidate
+    return fallback
 
 
 class UsuarioListView(View):
@@ -57,7 +72,7 @@ class UsuarioCreateView(View):
         if form.is_valid():
             form.save()
             messages.success(request, "Usuário criado com sucesso.")
-            return redirect("usuarios:lista")
+            return redirect(LISTA_URL_NAME)
 
         return render(
             request,
@@ -135,7 +150,8 @@ class UsuarioStatusToggleView(View):
         acao = request.POST.get("acao")
         if acao not in {"ativar", "desativar"}:
             messages.error(request, "Ação inválida para atualização de status.")
-            redirect_url = request.POST.get("next") or reverse("usuarios:lista")
+            default_redirect = reverse(LISTA_URL_NAME)
+            redirect_url = _resolve_redirect_url(request, default_redirect)
             return redirect(redirect_url)
 
         novo_status = acao == "ativar"
@@ -146,5 +162,6 @@ class UsuarioStatusToggleView(View):
         else:
             messages.success(request, "Usuário desativado com sucesso.")
 
-        redirect_url = request.POST.get("next") or reverse("usuarios:lista")
+        default_redirect = reverse(LISTA_URL_NAME)
+        redirect_url = _resolve_redirect_url(request, default_redirect)
         return redirect(redirect_url)
