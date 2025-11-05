@@ -22,19 +22,31 @@
         const confirmBtn = document.getElementById("statusModalConfirm");
         const confirmText = document.getElementById("statusModalConfirmText");
         const iconWrapper = document.getElementById("statusModalIcon");
+        const container = modal.querySelector("[data-status-modal-container]");
 
         const closeElements = modal.querySelectorAll("[data-status-modal-close]");
+        let lastTrigger = null;
 
         function openModal() {
             modal.classList.remove("hidden");
             modal.classList.add("flex");
             document.body.classList.add("overflow-hidden");
+            modal.setAttribute("aria-hidden", "false");
+            window.setTimeout(() => {
+                if (confirmBtn) {
+                    confirmBtn.focus();
+                }
+            }, 10);
         }
 
         function closeModal() {
             modal.classList.remove("flex");
             modal.classList.add("hidden");
             document.body.classList.remove("overflow-hidden");
+            modal.setAttribute("aria-hidden", "true");
+            if (lastTrigger) {
+                lastTrigger.focus();
+            }
         }
 
         closeElements.forEach((el) => {
@@ -54,6 +66,8 @@
             }
 
             event.preventDefault();
+
+            lastTrigger = trigger;
 
             const url = trigger.getAttribute("data-url");
             const acao = trigger.getAttribute("data-acao") || "";
@@ -86,5 +100,11 @@
 
             openModal();
         });
+
+        if (container) {
+            container.addEventListener("click", (event) => {
+                event.stopPropagation();
+            });
+        }
     })();
 </script>
