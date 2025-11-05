@@ -66,6 +66,7 @@ class RodarEtlCommandTests(TestCase):
         command = Command()
         command.stdout = io.StringIO()
 
+        real_datetime = datetime
         with (
             patch.object(command, "limpar_tabelas_olap") as limpar,
             patch.object(command, "popular_dim_tempo") as tempo,
@@ -76,10 +77,8 @@ class RodarEtlCommandTests(TestCase):
                 "olap_models.management.commands.rodar_etl.datetime"
             ) as mock_datetime,
         ):
-            mock_datetime.now.return_value = datetime(2024, 1, 1, 12, 0, 0)
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
-                *args, **kwargs
-            )
+            mock_datetime.now.return_value = real_datetime(2024, 1, 1, 12, 0, 0)
+            mock_datetime.side_effect = real_datetime
 
             command.handle()
 
@@ -108,13 +107,12 @@ class RodarEtlCommandTests(TestCase):
         self.assertEqual(DimProjeto.objects.using("olap").count(), 0)
 
     def test_popular_dim_tempo_cria_registros(self):
+        real_datetime = datetime
         with patch(
             "olap_models.management.commands.rodar_etl.datetime"
         ) as mock_datetime:
-            mock_datetime.now.return_value = datetime(2020, 1, 1)
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
-                *args, **kwargs
-            )
+            mock_datetime.now.return_value = real_datetime(2020, 1, 1)
+            mock_datetime.side_effect = real_datetime
             self.command.popular_dim_tempo()
 
         self.assertTrue(
@@ -167,18 +165,16 @@ class RodarEtlCommandTests(TestCase):
         self.command.popular_dim_funcionario()
 
         # Remove o vínculo do controle no mapa utilizado pelo ETL para simular registro incompleto
-        with (
-            patch.object(self.command, "stdout") as mock_stdout,
-            patch(
-                "olap_models.management.commands.rodar_etl.DimProjeto.objects"
-            ) as mock_dim_obj,
-        ):
+        with patch(
+            "olap_models.management.commands.rodar_etl.DimProjeto.objects"
+        ) as mock_dim_obj:
             mock_dim_obj.using.return_value.all.return_value = []
             self.command.popular_fato_registro_horas()
 
         self.assertEqual(FatoRegistroHoras.objects.using("olap").count(), 0)
 
     def test_command_via_call_command(self):
+        real_datetime = datetime
         with (
             patch.object(Command, "limpar_tabelas_olap") as limpar,
             patch.object(Command, "popular_dim_tempo") as tempo,
@@ -189,10 +185,8 @@ class RodarEtlCommandTests(TestCase):
                 "olap_models.management.commands.rodar_etl.datetime"
             ) as mock_datetime,
         ):
-            mock_datetime.now.return_value = datetime(2024, 1, 1)
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
-                *args, **kwargs
-            )
+            mock_datetime.now.return_value = real_datetime(2024, 1, 1)
+            mock_datetime.side_effect = real_datetime
 
             call_command("rodar_etl")
 

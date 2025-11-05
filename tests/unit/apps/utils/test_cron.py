@@ -148,6 +148,10 @@ class CronJobsTests(SimpleTestCase):
 
         messages = [args[0] for args, _ in mock_escrever_log.call_args_list]
         self.assertTrue(any("Erro no cron:" in msg for msg in messages))
+        self.assertEqual(
+            [args[0] for args, _ in mock_call_command.call_args_list],
+            ["sync_jira_users", "sync_jira_projects"],
+        )
         mock_simple_cache.assert_not_called()
 
     @patch("apps.utils.cron.call_command")

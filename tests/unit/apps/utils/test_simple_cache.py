@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 import datetime
 
 from django.test import SimpleTestCase, override_settings

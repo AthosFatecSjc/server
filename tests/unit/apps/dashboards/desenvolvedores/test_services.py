@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 from unittest.mock import patch
 
 from django.test import SimpleTestCase
