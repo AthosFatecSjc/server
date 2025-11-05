@@ -8,6 +8,7 @@ from decimal import Decimal
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from django.conf import settings
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
@@ -243,6 +244,8 @@ class ConfigViewsTests(TestCase):
 
         middleware = SessionMiddleware(lambda req: HttpResponse())
         middleware.process_request(request)
+        if not getattr(settings, "SECRET_KEY", ""):
+            settings.SECRET_KEY = "test-secret"
         request.session.save()
         return request
 
