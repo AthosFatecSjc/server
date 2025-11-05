@@ -22,6 +22,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 # Application definition
 INSTALLED_APPS = [
+    "apps.relatorios",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -31,7 +32,6 @@ INSTALLED_APPS = [
     "django_htmx",
     "django_crontab",
     "apps.usuarios",
-    "apps.relatorios",
     "apps.relatorios.produtividade",
     "apps.relatorios.comparacao.apps.ComparacaoConfig",
     "apps.relatorios.atividade",
@@ -102,6 +102,8 @@ DATABASES = {
 }
 
 DATABASE_ROUTERS = ["config.routers.OlapRouter"]
+
+AUTH_USER_MODEL = "usuarios.Usuario"
 
 if not DATABASES["default"]["NAME"]:
     DATABASES["default"] = {
