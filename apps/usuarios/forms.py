@@ -110,7 +110,7 @@ class BaseUsuarioForm(forms.ModelForm):
         )
         checkbox_classes = "h-4 w-4 text-indigo-600 border-gray-300 rounded"
 
-        for name, field in self.fields.items():
+        for field in self.fields.values():
             widget = field.widget
             if isinstance(widget, forms.Select):
                 widget.attrs.setdefault("class", select_classes)

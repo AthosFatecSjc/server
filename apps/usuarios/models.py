@@ -4,14 +4,14 @@ from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 
 
-class ContratoChoices(models.TextChoices):
+class ContratoChoices(models.TextChoices):  # pylint: disable=too-many-ancestors
     """Tipos de contrato suportados para um usuário."""
 
     CLT = "CLT", "CLT"
     ESTAGIARIO = "ESTAGIARIO", "Estagiário"
 
 
-class PerfilAcessoChoices(models.TextChoices):
+class PerfilAcessoChoices(models.TextChoices):  # pylint: disable=too-many-ancestors
     """Perfis de acesso disponíveis no sistema."""
 
     MEMBRO = "MEMBRO", "Membro"
