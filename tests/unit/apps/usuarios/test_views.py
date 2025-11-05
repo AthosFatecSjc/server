@@ -11,11 +11,12 @@ Usuario = get_user_model()
 
 
 @override_settings(
+    SECRET_KEY="test-secret-key",
     MIDDLEWARE=[
         middleware
         for middleware in settings.MIDDLEWARE
         if "whitenoise.middleware.WhiteNoiseMiddleware" not in middleware
-    ]
+    ],
 )
 class UsuarioViewsTests(TestCase):
     """Comportamento das views públicas do módulo."""
@@ -69,3 +70,65 @@ class UsuarioViewsTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.membro.refresh_from_db()
         self.assertTrue(self.membro.ativo)
+
+    def test_create_view_get_renderiza_formulario(self):
+        response = self.client.get(reverse("usuarios:criar"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("form", response.context)
+
+    def test_create_view_post_invalido_exibe_erros(self):
+        response = self.client.post(
+            reverse("usuarios:criar"),
+            {
+                "nome_completo": "",
+                "username": "",
+                "email": "invalido",
+                "contrato": "",
+                "cargo": "",
+                "perfil_acesso": "",
+                "ativo": "True",
+                "senha": "SenhaInvalida",
+                "confirmar_senha": "OutraSenha",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors)
+
+    def test_update_view_get_renderiza_formulario(self):
+        response = self.client.get(reverse("usuarios:editar", args=[self.membro.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("form", response.context)
+
+    def test_update_view_post_invalido_retorna_template(self):
+        response = self.client.post(
+            reverse("usuarios:editar", args=[self.membro.pk]),
+            {
+                "nome_completo": "Novo Nome",
+                "username": self.membro.username,
+                "email": self.membro.email,
+                "contrato": self.membro.contrato,
+                "cargo": "",
+                "perfil_acesso": self.membro.perfil_acesso,
+                "ativo": "True",
+                "nova_senha": "NovaSenha@123",
+                "confirmar_nova_senha": "OutraSenha@123",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors)
+
+    def test_detail_view_renderiza_usuario(self):
+        response = self.client.get(reverse("usuarios:detalhe", args=[self.membro.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["usuario"], self.membro)
+
+    def test_status_toggle_view_redireciona_para_next(self):
+        next_url = reverse("usuarios:detalhe", args=[self.lider.pk])
+        response = self.client.post(
+            reverse("usuarios:status", args=[self.lider.pk]),
+            {"acao": "ativar", "next": next_url},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.lider.refresh_from_db()
+        self.assertTrue(self.lider.ativo)
+        self.assertEqual(response.url, next_url)

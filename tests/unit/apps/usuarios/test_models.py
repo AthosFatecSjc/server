@@ -30,3 +30,15 @@ class UsuarioModelTests(TestCase):
 
         self.assertFalse(usuario.ativo)
         self.assertFalse(usuario.is_active)
+
+    def test_str_retorna_nome_completo(self):
+        usuario = Usuario.objects.create_user(
+            username="apelido",
+            nome_completo="Nome Completo",
+            email="apelido@example.com",
+            contrato=ContratoChoices.CLT,
+            cargo="Analista",
+            perfil_acesso=PerfilAcessoChoices.MEMBRO,
+            password="Str0ng@123",
+        )
+        self.assertEqual(str(usuario), "Nome Completo")

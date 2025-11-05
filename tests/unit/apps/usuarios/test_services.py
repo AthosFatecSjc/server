@@ -4,7 +4,11 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from apps.usuarios.models import ContratoChoices, PerfilAcessoChoices
-from apps.usuarios.services import alterar_status_usuario, listar_usuarios
+from apps.usuarios.services import (
+    alterar_status_usuario,
+    listar_usuarios,
+    obter_usuario_por_pk,
+)
 
 Usuario = get_user_model()
 
@@ -65,3 +69,7 @@ class UsuarioServiceTests(TestCase):
         self.ativo.refresh_from_db()
         self.assertFalse(self.ativo.ativo)
         self.assertFalse(self.ativo.is_active)
+
+    def test_obter_usuario_por_pk(self):
+        usuario = obter_usuario_por_pk(self.ativo.pk)
+        self.assertEqual(usuario, self.ativo)
