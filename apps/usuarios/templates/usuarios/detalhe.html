@@ -3,7 +3,7 @@
 {% block title %}{{ usuario.nome_completo }}{% endblock %}
 
 {% block content %}
-<div class="mx-auto max-w-6xl px-4 py-6 space-y-6">
+<div class="mx-auto px-4 py-6 space-y-6">
     <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
         <div class="px-6 py-6 space-y-6">
             <nav class="flex items-center gap-2 text-sm text-gray-500">
@@ -112,32 +112,31 @@
                             <span class="h-2 w-2 rounded-full bg-green-500"></span>
                             Ativo
                         </span>
-                        <form method="post" action="{% url 'usuarios:status' usuario.pk %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="acao" value="desativar">
-                            <input type="hidden" name="next" value="{% url 'usuarios:detalhe' usuario.pk %}">
-                            <button type="submit"
-                                    class="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:border-red-300 hover:bg-red-50"
-                                    onclick="return confirm('Deseja desativar este usuário?')">
-                                <i class="fas fa-user-slash"></i>
-                                Desativar
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:border-red-300 hover:bg-red-50"
+                                data-status-modal
+                                data-url="{% url 'usuarios:status' usuario.pk %}"
+                                data-acao="desativar"
+                                data-nome="{{ usuario.nome_completo|escape }}"
+                                data-next="{% url 'usuarios:detalhe' usuario.pk %}">
+                            <i class="fas fa-user-slash"></i>
+                            Desativar
+                        </button>
                     {% else %}
                         <span class="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
                             <span class="h-2 w-2 rounded-full bg-red-500"></span>
                             Inativo
                         </span>
-                        <form method="post" action="{% url 'usuarios:status' usuario.pk %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="acao" value="ativar">
-                            <input type="hidden" name="next" value="{% url 'usuarios:detalhe' usuario.pk %}">
-                            <button type="submit"
-                                    class="inline-flex items-center gap-2 rounded-xl border border-green-200 px-3 py-1.5 text-xs font-medium text-green-600 transition hover:border-green-300 hover:bg-green-50">
-                                <i class="fas fa-user-check"></i>
-                                Reativar
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="inline-flex items-center gap-2 rounded-xl border border-green-200 px-3 py-1.5 text-xs font-medium text-green-600 transition hover:border-green-300 hover:bg-green-50"
+                                data-status-modal
+                                data-url="{% url 'usuarios:status' usuario.pk %}"
+                                data-acao="ativar"
+                                data-nome="{{ usuario.nome_completo|escape }}"
+                                data-next="{% url 'usuarios:detalhe' usuario.pk %}">
+                            <i class="fas fa-user-check"></i>
+                            Reativar
+                        </button>
                     {% endif %}
                 </div>
             </div>
@@ -153,4 +152,10 @@
         </div>
     </div>
 </div>
+{% include "usuarios/componentes/modal_confirmacao_status.html" %}
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    {% include "usuarios/componentes/modal_confirmacao_status_script.html" %}
 {% endblock %}
