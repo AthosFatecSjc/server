@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 
-from apps.relatorios.models import Usuario
+from apps.usuarios.models import Usuario
 
 from .forms import UsuarioCreateForm, UsuarioFiltroForm, UsuarioUpdateForm
 from .services import alterar_status_usuario, listar_usuarios
@@ -21,8 +21,10 @@ class UsuarioListView(View):
 
     def get(self, request: HttpRequest) -> HttpResponse:
         filtro_form = UsuarioFiltroForm(request.GET or None)
-        filtro_form.is_valid()
-        usuarios = listar_usuarios(filtro_form.cleaned_data)
+        filtros = {}
+        if filtro_form.is_bound and filtro_form.is_valid():
+            filtros = filtro_form.cleaned_data
+        usuarios = listar_usuarios(filtros)
         contexto = {
             "filtro_form": filtro_form,
             "usuarios": usuarios,

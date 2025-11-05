@@ -7,7 +7,7 @@ from typing import Any
 from django.db import transaction
 from django.db.models import Q
 
-from apps.relatorios.models import Usuario
+from apps.usuarios.models import Usuario
 
 
 def listar_usuarios(filtros: dict[str, Any] | None = None):

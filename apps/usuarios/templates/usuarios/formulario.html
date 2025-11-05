@@ -3,33 +3,52 @@
 {% block title %}{{ titulo }}{% endblock %}
 
 {% block content %}
-<div class="relative">
-    <div class="fixed inset-0 hidden bg-gray-900/30 backdrop-blur-sm md:block"></div>
-    <div class="relative z-10 mx-auto max-w-4xl px-4 py-10">
-        <div class="mx-auto max-w-xl space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-semibold text-gray-800">{{ titulo }}</h1>
-                    <p class="text-sm text-gray-500">{{ descricao }}</p>
-                </div>
-                <a href="{% url 'usuarios:lista' %}"
-                   class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:border-gray-300 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
+<div class="mx-auto max-w-5xl px-4 py-6 space-y-6">
+    <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
+        <div class="px-6 py-6 space-y-6">
+            <nav class="flex items-center gap-2 text-sm text-gray-500">
+                <a href="/" class="inline-flex items-center gap-2 text-gray-500 transition hover:text-gray-700">
+                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-500 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <rect x="3" y="3" width="7" height="7" rx="2" stroke-width="2" />
+                            <rect x="14" y="3" width="7" height="7" rx="2" stroke-width="2" />
+                            <rect x="14" y="14" width="7" height="7" rx="2" stroke-width="2" />
+                            <rect x="3" y="14" width="7" height="7" rx="2" stroke-width="2" />
+                        </svg>
+                    </span>
+                    <span class="font-medium tracking-wide">ATHOS INSIGHT</span>
                 </a>
-            </div>
+                <span class="text-gray-300">›</span>
+                <a href="{% url 'usuarios:lista' %}" class="text-gray-500 transition hover:text-gray-700">Usuários</a>
+                <span class="hidden text-gray-300 sm:inline">›</span>
+                <span class="hidden text-gray-700 sm:inline font-semibold">{{ titulo }}</span>
+            </nav>
 
-            {% if messages %}
-                <div class="space-y-2">
-                    {% for message in messages %}
-                        <div class="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
+            <div class="flex flex-col gap-3">
+                <div class="flex items-start gap-3">
+                    <a href="{% url 'usuarios:lista' %}"
+                       class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50">
+                        ← Voltar
+                    </a>
+                    <h1 class="text-2xl font-semibold text-slate-900">{{ titulo }}</h1>
                 </div>
-            {% endif %}
-
-            {% include "usuarios/componentes/form_usuario.html" with usuario=usuario submit_label=submit_label %}
+                <p class="text-sm text-gray-500">{{ descricao }}</p>
+            </div>
         </div>
+    </section>
+
+    {% if messages %}
+        <div class="space-y-2">
+            {% for message in messages %}
+                <div class="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-700">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        {% include "usuarios/componentes/form_usuario.html" with usuario=usuario submit_label=submit_label %}
     </div>
 </div>
 {% endblock %}

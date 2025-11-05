@@ -5,7 +5,7 @@ from __future__ import annotations
 from django import forms
 from django.contrib.auth import password_validation
 
-from apps.relatorios.models import PerfilAcessoChoices, Usuario
+from apps.usuarios.models import PerfilAcessoChoices, Usuario
 
 
 class UsuarioFiltroForm(forms.Form):
@@ -61,8 +61,8 @@ class BaseUsuarioForm(forms.ModelForm):
             "ativo",
         ]
         widgets = {
-            "contrato": forms.RadioSelect(),
-            "perfil_acesso": forms.RadioSelect(),
+            "contrato": forms.Select(),
+            "perfil_acesso": forms.Select(),
         }
 
     def clean_email(self):
@@ -86,17 +86,39 @@ class BaseUsuarioForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        ativo_initial = (
+            self.instance.ativo if getattr(self.instance, "pk", None) else True
+        )
+        self.fields["ativo"] = forms.TypedChoiceField(
+            label="Status",
+            choices=(("True", "Ativo"), ("False", "Inativo")),
+            coerce=lambda value: (
+                value == "True" if isinstance(value, str) else bool(value)
+            ),
+            widget=forms.Select(),
+        )
+        if not self.is_bound:
+            self.initial["ativo"] = "True" if ativo_initial else "False"
+
         text_input_classes = (
             "mt-1 block w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700 "
-            "focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+            "focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
         )
-        checkbox_classes = "h-4 w-4 text-blue-600 border-gray-300 rounded"
-        radio_container_classes = "space-y-2"
+        select_classes = (
+            "mt-1 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 "
+            "focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 pr-10"
+        )
+        checkbox_classes = "h-4 w-4 text-indigo-600 border-gray-300 rounded"
 
-        for field in self.fields.values():
+        for name, field in self.fields.items():
             widget = field.widget
-            if isinstance(widget, forms.RadioSelect):
-                widget.attrs.setdefault("class", radio_container_classes)
+            if isinstance(widget, forms.Select):
+                widget.attrs.setdefault("class", select_classes)
+                widget.attrs.setdefault("data-input-type", "select")
+                widget.attrs.setdefault(
+                    "style",
+                    "appearance: none; -moz-appearance: none; -webkit-appearance: none;",
+                )
             elif isinstance(widget, forms.CheckboxInput):
                 widget.attrs.setdefault("class", checkbox_classes)
             else:
@@ -106,7 +128,7 @@ class BaseUsuarioForm(forms.ModelForm):
             "nome_completo": "Digite o nome completo",
             "username": "Digite o username (ex: joao.silva)",
             "email": "Digite o e-mail",
-            "cargo": "Selecione o cargo",
+            "cargo": "Digite o cargo",
         }
         for field_name, placeholder in placeholders.items():
             if field_name in self.fields:
@@ -121,12 +143,12 @@ class UsuarioCreateForm(BaseUsuarioForm):
     senha = forms.CharField(
         label="Senha",
         widget=forms.PasswordInput,
-        help_text=password_validation.password_validators_help_text_html(),
+        help_text="Use ao menos 8 caracteres, misturando letras e números.",
     )
     confirmar_senha = forms.CharField(
         label="Confirmar Senha",
         widget=forms.PasswordInput,
-        help_text="Confirme a senha informada acima.",
+        help_text="Repita a senha para confirmar.",
     )
 
     def __init__(self, *args, **kwargs):
@@ -170,13 +192,13 @@ class UsuarioUpdateForm(BaseUsuarioForm):
         label="Nova Senha",
         widget=forms.PasswordInput,
         required=False,
-        help_text="Informe para atualizar a senha. Deixe em branco para manter a atual.",
+        help_text="Preencha apenas se quiser alterar a senha.",
     )
     confirmar_nova_senha = forms.CharField(
         label="Confirmar Nova Senha",
         widget=forms.PasswordInput,
         required=False,
-        help_text="Confirme a nova senha informada acima.",
+        help_text="Repita a nova senha.",
     )
 
     def __init__(self, *args, **kwargs):
