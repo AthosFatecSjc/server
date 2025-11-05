@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
@@ -244,8 +245,13 @@ class ConfigViewsTests(TestCase):
 
         middleware = SessionMiddleware(lambda req: HttpResponse())
         middleware.process_request(request)
-        if not getattr(settings, "SECRET_KEY", ""):
+        try:
+            secret_key = settings.SECRET_KEY
+        except ImproperlyConfigured:
             settings.SECRET_KEY = "test-secret"
+        else:
+            if not secret_key:
+                settings.SECRET_KEY = "test-secret"
         request.session.save()
         return request
 
