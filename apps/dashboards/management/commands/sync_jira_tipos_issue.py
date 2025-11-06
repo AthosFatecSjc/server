@@ -9,6 +9,8 @@ from apps.utils.enums.status_integracao_enum import StatusIntegracao
 
 logger = logging.getLogger(__name__)
 
+TIPOS_DE_ISSUE_ACORDADOS = ["BUG", "ERRO", "TAREFA"]
+
 
 class Command(BaseCommand):
     """
@@ -80,6 +82,10 @@ class Command(BaseCommand):
             return status
 
         tipo_issue_jira_description = tipo_issue_jira.get("description", "").strip()
+
+        if tipo_issue_jira_name.upper() not in TIPOS_DE_ISSUE_ACORDADOS:
+            logger.warning(f"Tipo de issue '{tipo_issue_jira_name}' não está na lista de tipos acordados, ignorado.")
+            return status
 
         try:
             tipo_issue = TipoIssue.objects.filter(jira_id=int(tipo_issue_jira_id)).first()
