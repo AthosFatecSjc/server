@@ -202,3 +202,37 @@ class JiraService:
             )
 
         return projetos_com_tasks
+
+    def get_tipos_issue(self, projeto_id: int) -> List[Dict] | None:
+        """
+        Busca todos os projetos do Jira, monitorizando a performance.
+        """
+
+        if not self.credentials_are_valid:
+            return None
+
+        url = f"{self.base_url}/rest/api/3/issuetype/project?projectId={projeto_id}"
+        self._enrich_sentry_scope(url)
+
+        try:
+            with sentry_sdk.start_span(
+                op="http.client", description="Request Jira IssueTypes for Project"
+            ):
+                response = requests.get(
+                    url, auth=self.auth, headers=self.headers, timeout=15
+                )
+
+            response.raise_for_status()
+
+            tipos_issue = response.json()
+            if not tipos_issue:
+                sentry_sdk.capture_message(
+                    "A API do Jira retornou uma lista de tipos de issue vazia.",
+                    level="warning",
+                )
+            return tipos_issue or []
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erro ao buscar tipos de issue para o projeto {projeto_id} do Jira: {e}")
+            sentry_sdk.capture_exception(e)
+            return None
