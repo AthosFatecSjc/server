@@ -202,6 +202,11 @@ CACHE_JIRA = {
     "validade": datetime.timedelta(minutes=10),
 }
 
+# Session management
+SESSION_COOKIE_AGE = env.int("SESSION_COOKIE_AGE", default=2 * 60 * 60)  # 2 hours
+SESSION_SAVE_EVERY_REQUEST = True  # refresh expiry on activity
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
 # Sentry Configuration
 SENTRY_DSN = env("SENTRY_DSN", default="")
 

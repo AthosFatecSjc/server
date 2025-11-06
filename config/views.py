@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -110,6 +111,7 @@ class LoginView(View):
             return render(request, self.template_name, context)
 
         login(request, user)
+        request.session.set_expiry(settings.SESSION_COOKIE_AGE)
         redirect_url = _resolve_next(request, _get_redirect_for_user(user))
         return redirect(redirect_url)
 

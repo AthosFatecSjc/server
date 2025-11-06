@@ -2,6 +2,8 @@ import importlib.util
 import json
 import os
 import runpy
+import secrets
+import string
 import sys
 from datetime import date
 from decimal import Decimal
@@ -32,6 +34,12 @@ def _ensure_secret_key():
 
 
 _ensure_secret_key()
+
+_PASSWORD_ALPHABET = string.ascii_letters + string.digits + "@#"
+
+
+def _generate_test_password(length: int = 16) -> str:
+    return "".join(secrets.choice(_PASSWORD_ALPHABET) for _ in range(length))
 
 
 class SettingsModuleLoader:
@@ -94,6 +102,9 @@ class ConfigSettingsTests(SimpleTestCase):
         self.assertEqual(
             module.DATABASES["olap"]["ENGINE"], "django.db.backends.sqlite3"
         )
+        self.assertEqual(module.SESSION_COOKIE_AGE, 2 * 60 * 60)
+        self.assertTrue(module.SESSION_SAVE_EVERY_REQUEST)
+        self.assertFalse(module.SESSION_EXPIRE_AT_BROWSER_CLOSE)
 
     def test_settings_respects_test_db_engine(self):
         module = SettingsModuleLoader.load(
@@ -248,22 +259,24 @@ class ConfigViewsTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.user_model = get_user_model()
+        self.password_field = self.user_model._meta.get_field("password").name
+        self.test_password = _generate_test_password()
         self.user = self.user_model.objects.create_user(
             username="gerente",
-            password="senha123",
             email="gerente@example.com",
             nome_completo="Gerente Teste",
             perfil_acesso=PerfilAcessoChoices.GERENTE,
             cargo="Gerente de Projetos",
+            **{self.password_field: self.test_password},
         )
         self.inactive_user = self.user_model.objects.create_user(
             username="inativo",
-            password="senha123",
             email="inativo@example.com",
             nome_completo="Usuário Inativo",
             perfil_acesso=PerfilAcessoChoices.MEMBRO,
             cargo="Analista",
             ativo=False,
+            **{self.password_field: self.test_password},
         )
 
     def _add_session(self, request):
@@ -359,7 +372,10 @@ class ConfigViewsTests(TestCase):
         request = self._add_session(
             self.factory.post(
                 "/login/",
-                data={"username": self.user.username, "password": "senha123"},
+                data={
+                    "username": self.user.username,
+                    self.password_field: self.test_password,
+                },
             )
         )
         request.user = AnonymousUser()
@@ -369,13 +385,20 @@ class ConfigViewsTests(TestCase):
         self.assertEqual(response.url, reverse("home"))
         self.assertTrue(request.user.is_authenticated)
         self.assertEqual(request.user.pk, self.user.pk)
+        self.assertEqual(
+            request.session.get_expiry_age(),
+            settings.SESSION_COOKIE_AGE,
+        )
 
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_login_view_post_erro(self, mock_render):
         request = self._add_session(
             self.factory.post(
                 "/login/",
-                data={"username": self.user.username, "password": "errado"},
+                data={
+                    "username": self.user.username,
+                    self.password_field: "CredencialInvalida@123",
+                },
             )
         )
         request.user = AnonymousUser()
@@ -391,7 +414,10 @@ class ConfigViewsTests(TestCase):
         request = self._add_session(
             self.factory.post(
                 "/login/",
-                data={"username": self.user.username, "password": "senha123"},
+                data={
+                    "username": self.user.username,
+                    self.password_field: self.test_password,
+                },
             )
         )
         request.user = self.user
@@ -408,7 +434,7 @@ class ConfigViewsTests(TestCase):
                 "/login/",
                 data={
                     "username": self.inactive_user.username,
-                    "password": "senha123",
+                    self.password_field: self.test_password,
                 },
             )
         )
@@ -431,7 +457,7 @@ class ConfigViewsTests(TestCase):
                 "/login/?next=/relatorios/",
                 data={
                     "username": self.user.username,
-                    "password": "senha123",
+                    self.password_field: self.test_password,
                     "next": "/relatorios/",
                 },
             )
@@ -482,10 +508,10 @@ class OlapModelsSmokeTests(TestCase):
         )
 
         with self.assertRaises(TypeError):
-            str(projeto)
+            _ = str(projeto)
         with self.assertRaises(TypeError):
-            str(funcionario)
+            _ = str(funcionario)
         self.assertIn("Maio", tempo.mes_nome)
         with self.assertRaises(TypeError):
-            str(fato)
+            _ = str(fato)
         self.assertEqual(funcionario.nome_gerente, "Alice")
