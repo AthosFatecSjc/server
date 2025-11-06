@@ -102,6 +102,9 @@
 
       <form method="post" class="space-y-6">
         {% csrf_token %}
+        {% if next %}
+        <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
 
         <!-- Usuário -->
         <div>
@@ -115,6 +118,7 @@
             type="text"
             required
             autofocus
+            value="{{ username }}"
             class="input-dark w-full rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
           >
         </div>
