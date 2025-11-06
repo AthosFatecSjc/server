@@ -50,6 +50,8 @@ def buscar_dados_api():
         
         sync_tipos_issue()
 
+        sync_issues()
+
         escrever_log("Buscando dados do Jira (listagem de projetos e tasks)...")
         projetos_com_tasks = jira_service.get_all_tasks_data()
 
@@ -137,3 +139,15 @@ def sync_tipos_issue():
         escrever_log("Sincronização de tipos de issue concluída com sucesso.")
     except Exception as e:
         escrever_log(f"ERRO na sincronização de tipos de issue: {str(e)}")
+
+def sync_issues():
+    """
+    Função auxiliar para buscar issues do Jira.
+    """
+
+    escrever_log("Sincronizando issues do Jira...")
+    try:
+        call_command("sync_jira_issues")
+        escrever_log("Sincronização de issues concluída com sucesso.")
+    except Exception as e:
+        escrever_log(f"ERRO na sincronização de issues: {str(e)}")
