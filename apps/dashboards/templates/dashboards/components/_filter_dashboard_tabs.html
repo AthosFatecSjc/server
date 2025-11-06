@@ -1,25 +1,133 @@
-<div class="filter-group filter-dashboard-tabs w-full">
-    <div class="filter-buttons" id="dashboard-tabs">
-        <button
-            class="filter-btn active"
-            data-dashboard="custos"
-            onclick="switchDashboardTab('custos')"
-        >
-            Custos
-        </button>
-        <button
-            class="filter-btn"
-            data-dashboard="issues"
-            onclick="switchDashboardTab('issues')"
-        >
-            Issues
-        </button>
-        <button
-            class="filter-btn"
-            data-dashboard="bugs"
-            onclick="switchDashboardTab('bugs')"
-        >
-            Bugs
-        </button>
+<div class="tabs-container">
+    <div class="tabs-root">
+        <div class="tabs-list">
+            <div class="tabs-indicator" id="tab-indicator"></div>
+
+            <button class="tabs-trigger active" data-value="custos" data-dashboard="custos">
+                Custos
+            </button>
+
+            <button class="tabs-trigger" data-value="issues" data-dashboard="issues">
+                Issues & Bugs
+            </button>
+        </div>
     </div>
 </div>
+
+<style>
+.tabs-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 0rem 0;
+}
+
+.tabs-root {
+    width: 100%;
+    max-width: 2880px;
+}
+
+.tabs-list {
+    position: relative;
+    display: flex;
+    background: #f3f4f6;
+    border-radius: 0.75rem;
+    padding: 0.25rem;
+    width: 100%;
+}
+
+#tab-indicator {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.25rem;
+    height: calc(100% - 0.5rem);
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+    width: calc(50% - 0.25rem);
+    z-index: 0;
+}
+
+.tabs-trigger {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    transition: all 0.2s ease-in-out;
+    white-space: nowrap;
+}
+
+.tabs-trigger.active {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.tabs-trigger:hover:not(.active) {
+    color: #374151;
+    background: rgba(255, 255, 255, 0.5);
+}
+</style>
+
+<script>
+function switchDashboardTab(tab) {
+
+    document.querySelectorAll('.tabs-trigger').forEach(trigger => {
+        trigger.classList.remove('active');
+    });
+
+    const activeTrigger = document.querySelector(`[data-value="${tab}"]`);
+    if (activeTrigger) {
+        activeTrigger.classList.add('active');
+    }
+
+    const indicator = document.getElementById('tab-indicator');
+    if (indicator) {
+        const newLeft = tab === 'custos' ? '0.25rem' : 'calc(50% + 0.125rem)';
+        indicator.style.left = newLeft;
+
+
+    } else {
+        console.log(' Indicador NÃO encontrado!');
+    }
+
+    document.querySelectorAll('.dashboard-panel').forEach(panel => {
+        panel.classList.remove('active');
+        panel.style.display = 'none';
+    });
+
+    const activePanel = document.getElementById(`dashboard-${tab}`);
+    if (activePanel) {
+        activePanel.classList.add('active');
+        activePanel.style.display = 'block';
+    }
+
+    if (tab === 'issues' && typeof IssuesBugsDashboard !== 'undefined') {
+        IssuesBugsDashboard.init();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.tabs-trigger').forEach(trigger => {
+        trigger.addEventListener('click', function() {
+            console.log('🖱️ Clicou na tab:', this.dataset.value);
+            switchDashboardTab(this.dataset.value);
+        });
+    });
+
+    const activeTrigger = document.querySelector('.tabs-trigger.active');
+    if (activeTrigger) {
+        console.log('📍 Tab ativa inicial:', activeTrigger.dataset.value);
+        switchDashboardTab(activeTrigger.dataset.value);
+    }
+});
+
+window.switchDashboardTab = switchDashboardTab;
+</script>
