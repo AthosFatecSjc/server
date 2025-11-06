@@ -1,5 +1,6 @@
 """Modelos para relatórios e controle de horas da equipe."""
 
+from datetime import date, datetime
 from pprint import pformat
 
 from django.db import models
@@ -184,3 +185,30 @@ class TempoControleValores(models.Model):
 
     def __str__(self):
         return f"Aproveitamento: {self.aproveitamento}%"
+
+class TipoIssue(models.Model):
+    """
+    Modelo para tipos de issue do projeto
+    """
+
+    id = models.AutoField(primary_key=True)
+    nome = models.CharField(max_length=255, null=False, blank=False)
+    descricao = models.CharField(max_length=1024, null=True, blank=True)
+    jira_id = models.PositiveIntegerField(null=False, blank=False)
+    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, null=False, blank=False)
+    data_criacao = models.DateField(default=datetime.now)
+
+    class Meta:
+        """
+        Regras para criação da tabela no banco de dados
+        """
+
+        db_table = "tipo_issue"
+
+    def save(self, *args, **kwargs):
+        if not self.data_criacao:
+            self.data_criacao = datetime.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return pformat(self.__dict__, indent=4, width=120)
