@@ -53,6 +53,7 @@ class Funcionario(models.Model):
 class Projeto(models.Model):
     """Modelo para projetos"""
 
+    id = models.AutoField(primary_key=True)
     jira_id = models.PositiveIntegerField(null=True)
     jira_key = models.CharField(max_length=50, null=True)
     nome = models.CharField(max_length=100)
