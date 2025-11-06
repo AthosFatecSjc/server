@@ -1,6 +1,6 @@
 """Modelos para relatórios e controle de horas da equipe."""
 
-from datetime import date
+from pprint import pformat
 
 from django.db import models
 
@@ -71,7 +71,7 @@ class Projeto(models.Model):
         db_table = "projeto"
 
     def __str__(self):
-        return str(self.__dict__, indent=4, ensure_ascii=False)
+        return pformat(self.__dict__, indent=4, width=120)
 
 
 class ControleHorasEquipeResumo(models.Model):
