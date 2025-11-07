@@ -4,13 +4,21 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 # Modelos OLTP
-from apps.relatorios.models import TempoGastoEquipe  # usado para granularidade diária
-from apps.relatorios.models import Cargo, ControleHorasEquipe, Funcionario, Projeto
+# usado para granularidade diária
+from apps.relatorios.models import (
+    Cargo,
+    ControleHorasEquipe,
+    Funcionario,
+    Issue,
+    Projeto,
+    TempoGastoEquipe,
+)
 
 # Modelos OLAP
 from olap_models.models import (
     DimCargo,
     DimFuncionario,
+    DimIssue,
     DimProjeto,
     DimTempo,
     FatoRegistroHoras,
@@ -39,6 +47,8 @@ class Command(BaseCommand):
         self.popular_dim_tempo()
         self.popular_dimensoes_simples()
         self.popular_dim_funcionario()
+        # Nova etapa: popular dimensão de Issues do sistema OLTP
+        self.popular_dim_issue()
         self.popular_fato_registro_horas()
 
         fim = datetime.now()
@@ -164,6 +174,34 @@ class Command(BaseCommand):
             self.style.SUCCESS(f" DimFuncionario populada com {count} registros.")
         )
 
+    def popular_dim_issue(self):
+        """
+        Popula DimIssue a partir do modelo Issue no banco OLTP.
+        Armazena a chave da issue, tipo, sumário e data de criação.
+        """
+        self.stdout.write(" Populando Dimensão Issue...")
+
+        count = 0
+        for issue in Issue.objects.select_related("tipo_issue").all():
+            # prefira a jira_key (ex: PROJ-123) como identificador legível
+            issue_key = issue.jira_key if issue.jira_key else str(issue.jira_id)
+            created_date = issue.criado_em.date() if issue.criado_em else None
+            issue_type = issue.tipo_issue.nome if issue.tipo_issue else None
+
+            DimIssue.objects.using("olap").update_or_create(
+                issue_id=issue_key,
+                defaults={
+                    "issue_type": issue_type,
+                    "issue_title": issue.titulo,
+                    "created_date": created_date,
+                },
+            )
+            count += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(f" DimIssue populada com {count} registros.")
+        )
+
     def popular_fato_registro_horas(self):
         """
         Popula FatoRegistroHoras com granularidade diária.
@@ -179,6 +217,21 @@ class Command(BaseCommand):
         funcionarios_dim = {f.id: f for f in DimFuncionario.objects.using("olap").all()}
         projetos_dim = {p.id: p for p in DimProjeto.objects.using("olap").all()}
         tempos_dim = {t.data_completa: t for t in DimTempo.objects.using("olap").all()}
+
+        # Monta lookup de issues por (funcionario_id, projeto_id, created_date)
+        issues_lookup = {}
+        for issue in Issue.objects.all():
+            if not issue.criado_em:
+                continue
+            key = (issue.funcionario_id, issue.projeto_id, issue.criado_em.date())
+            # busca dimensão já criada via jira_key
+            issue_dim = (
+                DimIssue.objects.using("olap").filter(issue_id=issue.jira_key).first()
+                if issue.jira_key
+                else None
+            )
+            if issue_dim:
+                issues_lookup[key] = issue_dim
 
         controle_por_func_mes = {
             (c.funcionario_id, c.mes): c.projeto_id
@@ -202,6 +255,11 @@ class Command(BaseCommand):
             )
             projeto_dim = projetos_dim.get(projeto_id) if projeto_id else None
 
+            # tenta associar uma issue pela tupla (funcionario, projeto, data)
+            issue_dim = issues_lookup.get(
+                (registro.funcionario_id, projeto_id, data_completa)
+            )
+
             if not (func_dim and data_dim and projeto_dim):
                 registros_ignorados += 1
                 continue
@@ -215,6 +273,7 @@ class Command(BaseCommand):
                 defaults={
                     "horas_trabalhadas": registro.tempo_gasto,
                     "custo": custo_dia,
+                    "issue": issue_dim,
                 },
             )
             registros_criados += 1
