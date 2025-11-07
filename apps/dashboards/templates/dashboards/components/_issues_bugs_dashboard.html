@@ -1,0 +1,398 @@
+<section class="mt-6 mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="relative bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
+             onclick="toggleIssuesBugsFilter('issues')">
+            <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-blue-500 pointer-events-none"></span>
+            <div class="flex justify-between items-start">
+                <span class="text-sm text-gray-500 font-medium">Total de Issues — clique para filtrar</span>
+                <div class="text-blue-500">
+                    <i class="fa fa-filter text-sm"></i>
+                </div>
+            </div>
+            <span class="text-3xl font-bold text-blue-600 mt-2 block" id="totalIssuesValue">--</span>
+            <div class="flex items-center mt-2 text-sm text-gray-500">
+                <i class="fa fa-circle text-blue-400 mr-1"></i>
+                <span id="issuesAbertasValue">-- abertas</span>
+            </div>
+        </div>
+
+        <div class="relative bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
+             onclick="toggleIssuesBugsFilter('bugs')">
+            <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-red-500 pointer-events-none"></span>
+            <div class="flex justify-between items-start">
+                <span class="text-sm text-gray-500 font-medium">Total de Bugs — clique para filtrar</span>
+                <div class="text-red-500">
+                    <i class="fa fa-filter text-sm"></i>
+                </div>
+            </div>
+            <span class="text-3xl font-bold text-red-600 mt-2 block" id="totalBugsValue">--</span>
+            <div class="flex items-center mt-2 text-sm text-gray-500">
+                <i class="fa fa-circle text-red-400 mr-1"></i>
+                <span id="bugsAtivosValue">-- ativos</span>
+            </div>
+        </div>
+
+        <div class="relative bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
+             onclick="toggleIssuesBugsFilter('all')">
+            <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-green-500 pointer-events-none"></span>
+            <div class="flex justify-between items-start">
+                <span class="text-sm text-gray-500 font-medium">Valor Total - clique para filtrar</span>
+                <div class="text-green-500">
+                    <i class="fa fa-eye text-sm"></i>
+                </div>
+            </div>
+            <span class="text-3xl font-bold text-green-600 mt-2 block" id="valorTotalValue">--</span>
+            <div class="flex items-center mt-2 text-sm text-gray-500">
+                <i class="fa fa-dollar-sign text-green-400 mr-1"></i>
+                <span id="tipoFiltroValue">Todos os itens</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900" id="graficoTitle">Distribuição por Status</h2>
+                <p class="text-sm text-gray-500" id="graficoSubtitle">Status dos itens no projeto</p>
+            </div>
+            <div class="flex space-x-2">
+                <button
+                    onclick="toggleIssuesBugsFilter('issues')"
+                    class="px-3 py-1 text-xs font-medium rounded-full border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                    id="btnIssues"
+                >
+                    Issues
+                </button>
+                <button
+                    onclick="toggleIssuesBugsFilter('bugs')"
+                    class="px-3 py-1 text-xs font-medium rounded-full border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                    id="btnBugs"
+                >
+                    Bugs
+                </button>
+                <button
+                    onclick="toggleIssuesBugsFilter('all')"
+                    class="px-3 py-1 text-xs font-medium rounded-full border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+                    id="btnAll"
+                >
+                    Todos
+                </button>
+            </div>
+        </div>
+        <div class="h-80">
+            <canvas id="graficoPizzaIssuesBugs"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+        <div class="px-6 py-4 border-b border-gray-200 flex-shrink-0">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900" id="tabelaTitle">Itens do Projeto</h2>
+                    <p class="text-sm text-gray-500" id="tabelaSubtitle">Detalhamento completo</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm text-gray-500" id="contadorItens">0 itens</span>
+                    <div class="flex bg-gray-100 rounded-lg p-1">
+                        <button
+                            onclick="toggleIssuesBugsFilter('issues')"
+                            class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
+                            id="tabIssues"
+                        >
+                            Issues
+                        </button>
+                        <button
+                            onclick="toggleIssuesBugsFilter('bugs')"
+                            class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
+                            id="tabBugs"
+                        >
+                            Bugs
+                        </button>
+                        <button
+                            onclick="toggleIssuesBugsFilter('all')"
+                            class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
+                            id="tabAll"
+                        >
+                            Todos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-auto flex-1 max-h-96">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200 sticky top-0">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Desenvolvedor</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horas</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Custo</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="tabelaItens">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+const IssuesBugsDashboard = {
+    currentFilter: 'all',
+    pizzaChart: null,
+
+    dadosIssues: [
+        { id: "ISSUE-001", tipo: "issue", developer: "João Silva", status: "Concluído", horas: 30, custo: 1500 },
+        { id: "ISSUE-002", tipo: "issue", developer: "Maria Santos", status: "Em progresso", horas: 24, custo: 1200 },
+        { id: "ISSUE-003", tipo: "issue", developer: "Pedro Oliveira", status: "MR", horas: 36, custo: 1800 },
+        { id: "ISSUE-004", tipo: "issue", developer: "Ana Costa", status: "Não iniciado", horas: 18, custo: 900 },
+        { id: "ISSUE-005", tipo: "issue", developer: "Carlos Lima", status: "Concluído", horas: 27, custo: 1350 },
+        { id: "ISSUE-006", tipo: "issue", developer: "Fernanda Souza", status: "Em progresso", horas: 21, custo: 1050 },
+        { id: "ISSUE-007", tipo: "issue", developer: "Rafael Mendes", status: "Não iniciado", horas: 15, custo: 750 },
+        { id: "ISSUE-008", tipo: "issue", developer: "Juliana Rocha", status: "MR", horas: 12, custo: 600 },
+        { id: "ISSUE-009", tipo: "issue", developer: "Bruno Almeida", status: "Concluído", horas: 25, custo: 1250 },
+        { id: "ISSUE-010", tipo: "issue", developer: "Camila Ferreira", status: "Em progresso", horas: 19, custo: 950 }
+    ],
+
+    dadosBugs: [
+        { id: "BUG-001", tipo: "bug", developer: "João Silva", status: "Concluído", horas: 20, custo: 800 },
+        { id: "BUG-002", tipo: "bug", developer: "Maria Santos", status: "Em progresso", horas: 16, custo: 640 },
+        { id: "BUG-003", tipo: "bug", developer: "Pedro Oliveira", status: "Não iniciado", horas: 30, custo: 1200 },
+        { id: "BUG-004", tipo: "bug", developer: "Ana Costa", status: "MR", horas: 12, custo: 480 },
+        { id: "BUG-005", tipo: "bug", developer: "Carlos Lima", status: "Concluído", horas: 24, custo: 960 },
+        { id: "BUG-006", tipo: "bug", developer: "Fernanda Souza", status: "Em progresso", horas: 18, custo: 720 },
+        { id: "BUG-007", tipo: "bug", developer: "Rafael Mendes", status: "Não iniciado", horas: 14, custo: 560 },
+        { id: "BUG-008", tipo: "bug", developer: "Juliana Rocha", status: "Concluído", horas: 10, custo: 400 }
+    ],
+
+    init: function() {
+        this.atualizarCardsComTotais();
+        this.atualizarDashboard();
+    },
+
+    toggleFilter: function(tipo) {
+        this.currentFilter = tipo;
+        this.atualizarDashboard();
+    },
+
+    atualizarDashboard: function() {
+        this.atualizarGraficoPizza();
+        this.atualizarTabela();
+        this.atualizarBotoesAtivos();
+    },
+
+    atualizarCardsComTotais: function() {
+        const statsTotais = this.calcularEstatisticas([...this.dadosIssues, ...this.dadosBugs]);
+
+        document.getElementById('totalIssuesValue').textContent = statsTotais.totalIssues;
+        document.getElementById('issuesAbertasValue').textContent = `${statsTotais.issuesAbertas} abertas`;
+
+        document.getElementById('totalBugsValue').textContent = statsTotais.totalBugs;
+        document.getElementById('bugsAtivosValue').textContent = `${statsTotais.bugsAtivos} ativos`;
+
+        document.getElementById('valorTotalValue').textContent = `R$ ${statsTotais.valorTotal.toLocaleString('pt-BR')}`;
+    },
+
+    atualizarCardsComFiltro: function() {
+        const dadosFiltrados = this.obterDadosFiltrados();
+        const stats = this.calcularEstatisticas(dadosFiltrados);
+
+        const tipoFiltroElement = document.getElementById('tipoFiltroValue');
+        switch(this.currentFilter) {
+            case 'issues':
+                tipoFiltroElement.textContent = 'Apenas issues';
+                document.getElementById('valorTotalValue').textContent = `R$ ${stats.valorTotal.toLocaleString('pt-BR')}`;
+                break;
+            case 'bugs':
+                tipoFiltroElement.textContent = 'Apenas bugs';
+                document.getElementById('valorTotalValue').textContent = `R$ ${stats.valorTotal.toLocaleString('pt-BR')}`;
+                break;
+            default:
+                tipoFiltroElement.textContent = 'Todos os itens';
+                document.getElementById('valorTotalValue').textContent = `R$ ${stats.valorTotal.toLocaleString('pt-BR')}`;
+        }
+    },
+
+    atualizarGraficoPizza: function() {
+        const dadosFiltrados = this.obterDadosFiltrados();
+        const dadosGrafico = this.agruparPorStatus(dadosFiltrados);
+
+        const ctx = document.getElementById('graficoPizzaIssuesBugs').getContext('2d');
+
+        if (this.pizzaChart) {
+            this.pizzaChart.destroy();
+        }
+
+        this.pizzaChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: dadosGrafico.labels,
+                datasets: [{
+                    data: dadosGrafico.valores,
+                    backgroundColor: dadosGrafico.cores,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        document.getElementById('graficoTitle').textContent = 'Distribuição por Status';
+        let subtitulo = 'Status de todos os itens';
+        if (this.currentFilter === 'issues') subtitulo = 'Status das issues';
+        if (this.currentFilter === 'bugs') subtitulo = 'Status dos bugs';
+        document.getElementById('graficoSubtitle').textContent = subtitulo;
+    },
+
+    atualizarTabela: function() {
+        const dadosFiltrados = this.obterDadosFiltrados();
+        const tbody = document.getElementById('tabelaItens');
+
+        tbody.innerHTML = '';
+
+        dadosFiltrados.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50 transition-colors';
+
+            const badgeClass = item.tipo === 'issue'
+                ? 'bg-blue-100 text-blue-800'
+                : 'bg-red-100 text-red-800';
+
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClass}">
+                        ${item.id}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    ${item.tipo === 'issue' ? 'Issue' : 'Bug'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${item.developer}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${item.horas}h
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                    R$ ${item.custo.toLocaleString('pt-BR')}
+                </td>
+            `;
+
+            tbody.appendChild(row);
+        });
+
+        document.getElementById('contadorItens').textContent = `${dadosFiltrados.length} itens`;
+
+        document.getElementById('tabelaTitle').textContent =
+            this.currentFilter === 'issues' ? 'Issues do Projeto' :
+            this.currentFilter === 'bugs' ? 'Bugs do Projeto' :
+            'Itens do Projeto';
+
+        document.getElementById('tabelaSubtitle').textContent =
+            this.currentFilter === 'issues' ? 'Lista completa de issues' :
+            this.currentFilter === 'bugs' ? 'Lista completa de bugs' :
+            'Todos os itens do projeto';
+
+        this.atualizarCardsComFiltro();
+    },
+
+    atualizarBotoesAtivos: function() {
+
+        document.querySelectorAll('[id^="btn"], [id^="tab"]').forEach(btn => {
+            btn.classList.remove('bg-blue-500', 'text-white', 'bg-red-500', 'bg-gray-200', 'text-gray-900');
+        });
+
+        const activeClass = this.currentFilter === 'issues' ? 'bg-blue-500 text-white' :
+                           this.currentFilter === 'bugs' ? 'bg-red-500 text-white' :
+                           'bg-gray-200 text-gray-900';
+
+        const btnActive = document.getElementById(`btn${this.currentFilter.charAt(0).toUpperCase() + this.currentFilter.slice(1)}`);
+        const tabActive = document.getElementById(`tab${this.currentFilter.charAt(0).toUpperCase() + this.currentFilter.slice(1)}`);
+
+        if (btnActive) btnActive.className = `px-3 py-1 text-xs font-medium rounded-full border transition-colors ${activeClass}`;
+        if (tabActive) tabActive.className = `px-3 py-1 text-sm font-medium rounded-md transition-colors ${activeClass}`;
+    },
+
+    obterDadosFiltrados: function() {
+        switch(this.currentFilter) {
+            case 'issues':
+                return this.dadosIssues;
+            case 'bugs':
+                return this.dadosBugs;
+            default:
+                return [...this.dadosIssues, ...this.dadosBugs];
+        }
+    },
+
+    calcularEstatisticas: function(dados) {
+        const issues = dados.filter(item => item.tipo === 'issue');
+        const bugs = dados.filter(item => item.tipo === 'bug');
+
+        return {
+            totalIssues: issues.length,
+            issuesAbertas: issues.filter(i => i.status !== 'Concluído').length,
+            totalBugs: bugs.length,
+            bugsAtivos: bugs.filter(b => b.status !== 'Concluído').length,
+            valorTotal: dados.reduce((sum, item) => sum + item.custo, 0)
+        };
+    },
+
+    agruparPorStatus: function(dados) {
+        const statusCount = {};
+
+        dados.forEach(item => {
+            statusCount[item.status] = (statusCount[item.status] || 0) + 1;
+        });
+
+        const coresStatus = {
+            'Não iniciado': '#94a3b8',
+            'Em progresso': '#f59e0b',
+            'MR': '#3b82f6',
+            'Concluído': '#10b981'
+        };
+
+        return {
+            labels: Object.keys(statusCount),
+            valores: Object.values(statusCount),
+            cores: Object.keys(statusCount).map(status => coresStatus[status] || '#6b7280')
+        };
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('graficoPizzaIssuesBugs')) {
+        IssuesBugsDashboard.init();
+    }
+});
+
+function toggleIssuesBugsFilter(tipo) {
+    IssuesBugsDashboard.toggleFilter(tipo);
+}
+</script>
