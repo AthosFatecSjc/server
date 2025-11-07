@@ -1,0 +1,612 @@
+<script>
+    let currentProjectFilter = 'all';
+    let currentTypeFilter = 'all';
+    let currentDashboardTab = 'custos';
+
+    function formatCurrency(value) {
+        const numericValue = Number.parseFloat(value);
+        if (!Number.isFinite(numericValue)) {
+            return '--';
+        }
+
+        return numericValue.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+    }
+
+    function setText(elementId, text) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = text;
+        }
+    }
+
+    function setBarWidth(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            const width = Math.max(0, Math.min(100, value));
+            element.style.width = `${width}%`;
+        }
+    }
+
+    function updateDashboardCards(projectData) {
+        const hasCardElements =
+            document.getElementById('orcamentoPrevistoValue') &&
+            document.getElementById('custoRealizadoValue') &&
+            document.getElementById('saldoRemanescenteValue') &&
+            document.getElementById('orcamentoUtilizadoValue');
+
+        if (!hasCardElements) {
+            return;
+        }
+
+        if (!projectData) {
+            setText('orcamentoPrevistoValue', '--');
+            setText('custoRealizadoValue', '--');
+            setText('saldoRemanescenteValue', '--');
+            setText('orcamentoUtilizadoValue', '--');
+            setBarWidth('orcamentoUtilizadoBar', 0);
+            return;
+        }
+
+        let realized = 0;
+        if (Number.isFinite(projectData.custoRealizado)) {
+        realized = projectData.custoRealizado;
+        }
+
+        let budget = 0;
+        if (Number.isFinite(projectData.orcamentoPrevisto)) {
+        budget = projectData.orcamentoPrevisto;
+        }
+
+        let remaining = 0;
+        if (Number.isFinite(projectData.saldoRemanescente)) {
+        remaining = projectData.saldoRemanescente;
+        } else {
+        remaining = budget - realized;
+        }
+
+        let utilization = 0;
+        if (Number.isFinite(projectData.percentualUtilizado)) {
+        utilization = projectData.percentualUtilizado;
+        } else if (budget > 0) {
+        utilization = (realized / budget) * 100;
+        }
+
+        setText('orcamentoPrevistoValue', formatCurrency(budget));
+        setText('custoRealizadoValue', formatCurrency(realized));
+        const formattedRemaining = formatCurrency(Math.abs(remaining));
+        setText('saldoRemanescenteValue', remaining < 0 ? `- ${formattedRemaining}` : formattedRemaining);
+        setText('orcamentoUtilizadoValue', `${utilization.toFixed(1)}%`);
+        setBarWidth('orcamentoUtilizadoBar', utilization);
+
+        const inputOrcamento = document.getElementById('inputOrcamento');
+        if (inputOrcamento) {
+            inputOrcamento.value = budget > 0 ? budget.toFixed(2) : '';
+        }
+    }
+
+    function toggleProjectDropdown() {
+        const dropdown = document.getElementById('projectDropdown');
+        const button = document.getElementById('projectSelectBtn');
+
+        dropdown.classList.toggle('show');
+        button.classList.toggle('open');
+    }
+
+    function closeProjectDropdown() {
+        const dropdown = document.getElementById('projectDropdown');
+        const button = document.getElementById('projectSelectBtn');
+
+        if (dropdown) {
+            dropdown.classList.remove('show');
+        }
+
+        if (button) {
+            button.classList.remove('open');
+        }
+    }
+
+    function selectProject(projectId, projectName) {
+    const normalizedId = String(projectId ?? '').trim();
+    currentProjectFilter = normalizedId || 'all';
+
+    let selectedOption = findSelectedOption(normalizedId);
+    updateCurrentFilterFromOption(selectedOption);
+
+    if (!selectedOption || currentProjectFilter === 'all') {
+        clearSelectedProject();
+        updateUI(null, projectName, selectedOption);
+        closeProjectDropdown();
+        return;
+    }
+
+    const projectData = extractProjectData(selectedOption);
+    globalThis.selectedProjectData = projectData;
+
+    dispatchProjectSelected(projectData);
+    updateUI(projectData, projectName, selectedOption);
+    closeProjectDropdown();
+    }
+
+    function findSelectedOption(normalizedId) {
+    if (normalizedId && normalizedId !== 'all') {
+        return document.querySelector(`#projectDropdown .select-option[data-value="${normalizedId}"]`);
+    }
+    return document.querySelector('#projectDropdown .select-option');
+    }
+
+    function updateCurrentFilterFromOption(option) {
+    if (option) {
+        currentProjectFilter = String(option.dataset.value || '').trim() || 'all';
+    }
+    }
+
+    function clearSelectedProject() {
+    globalThis.selectedProjectData = null;
+    document.dispatchEvent(new CustomEvent('projectSelected', { detail: null }));
+    updateDashboardCards(null);
+    updateExportModalProject(null);
+    }
+
+    function extractProjectData(option) {
+    const custoPorDev = parseJSON(option.dataset.projectCustoPorDev);
+    const parsedProjectId = Number.parseInt(option.dataset.projectId, 10);
+    const budget = safeFloat(option.dataset.projectOrcamentoPrevisto);
+    const realized = safeFloat(option.dataset.projectCustoRealizado);
+    const remaining = safeFloat(option.dataset.projectSaldoRemanescente);
+    const utilization = safeFloat(option.dataset.projectPercentualUtilizado);
+
+    const safeBudget = Number.isFinite(budget) ? budget : 0;
+    const safeRealized = Number.isFinite(realized) ? realized : 0;
+    const saldo = Number.isFinite(remaining) ? remaining : safeBudget - safeRealized;
+
+    let percentual = 0;
+
+    if (Number.isFinite(utilization)) {
+    percentual = utilization;
+    } else if (safeBudget > 0) {
+    percentual = (safeRealized / safeBudget) * 100;
+    }
+
+    return {
+        id: Number.isNaN(parsedProjectId) ? null : parsedProjectId,
+        name: option.dataset.projectName,
+        created: option.dataset.projectCreated,
+        totalHoras: safeFloat(option.dataset.projectTotalHoras),
+        totalCusto: safeFloat(option.dataset.projectTotalCusto),
+        custoRealizado: safeRealized,
+        custoPorDev,
+        totalRegistros: safeInt(option.dataset.projectTotalRegistros),
+        mediaHoras: safeFloat(option.dataset.projectMediaHoras),
+        primeiroRegistro: option.dataset.projectPrimeiroRegistro,
+        ultimoRegistro: option.dataset.projectUltimoRegistro,
+        funcionariosCount: safeInt(option.dataset.projectFuncionariosCount),
+        orcamentoPrevisto: safeBudget,
+        saldoRemanescente: saldo,
+        percentualUtilizado: percentual,
+    };
+    }
+
+    function parseJSON(value) {
+    try {
+        return value ? JSON.parse(value) : [];
+    } catch (e) {
+        console.error('Erro ao fazer parse do custo por dev:', e);
+        return [];
+    }
+    }
+
+    function safeFloat(value) {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function safeInt(value) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function dispatchProjectSelected(projectData) {
+    document.dispatchEvent(new CustomEvent('projectSelected', { detail: projectData }));
+    updateDashboardCards(projectData);
+    updateExportModalProject(projectData);
+    }
+
+    function updateUI(projectData, projectName, selectedOption) {
+    const resolvedName =
+        projectName ||
+        (selectedOption ? selectedOption.dataset.projectName : null) ||
+        'Selecione um projeto';
+    document.getElementById('selectedProjectText').textContent = resolvedName;
+
+        for (const option of document.querySelectorAll('#projectDropdown .select-option')) {
+            option.classList.toggle('active', String(option.dataset.value).trim() === currentProjectFilter);
+        }
+    }
+
+
+    document.addEventListener('click', function (event) {
+        const dropdown = document.getElementById('projectDropdown');
+        const button = document.getElementById('projectSelectBtn');
+
+        if (dropdown && button && !event.target.closest('.custom-select')) {
+            dropdown.classList.remove('show');
+            button.classList.remove('open');
+        }
+    });
+
+    function filterByProject(projectKey) {
+        currentProjectFilter = projectKey;
+        applyFilters();
+    }
+
+    function filterByType(issueType) {
+        currentTypeFilter = issueType;
+
+        for (const btn of document.querySelectorAll('#type-filters .filter-btn')) {
+            btn.classList.remove('active');
+            if (btn.dataset.filter === issueType) {
+                btn.classList.add('active');
+            }
+        }
+
+        applyFilters();
+    }
+
+    function getTypeMatch(issueType, filterType) {
+        if (filterType === 'all') {
+            return true;
+        }
+
+        const lowerType = issueType.toLowerCase();
+
+        const typeMatchers = {
+            'issue': ['tarefa', 'task', 'issue'],
+            'bug': ['bug', 'erro', 'error'],
+            'Story': ['story', 'epic', 'história']
+        };
+
+        const matchers = typeMatchers[filterType];
+        if (matchers) {
+            return matchers.some(matcher => lowerType.includes(matcher) || lowerType === matcher);
+        }
+
+        return issueType === filterType;
+    }
+
+    function getFilterDisplayName(filterType) {
+        const displayNames = {
+            'issue': 'Issue (Tarefa/SubTarefa)',
+            'bug': 'Bug (Bug/Erro)',
+            'Story': 'Story (Story/Epic)'
+        };
+        return displayNames[filterType] || filterType;
+    }
+
+    function updateCardVisibility(card, visibleCount) {
+        const noTasksDiv = card.querySelector('.no-tasks');
+        const table = card.querySelector('.tasks-table');
+
+        if (visibleCount === 0) {
+            if (table) {
+                table.style.display = 'none';
+            }
+            if (noTasksDiv) {
+                const message = currentTypeFilter === 'all'
+                    ? 'Nenhuma task encontrada neste projeto'
+                    : `Nenhuma task do tipo "${getFilterDisplayName(currentTypeFilter)}" encontrada neste projeto`;
+                noTasksDiv.textContent = message;
+                noTasksDiv.style.display = 'block';
+            }
+            card.classList.add('hidden');
+        } else {
+            if (table) {
+                table.style.display = 'table';
+            }
+            if (noTasksDiv) {
+                noTasksDiv.style.display = 'none';
+            }
+            card.classList.remove('hidden');
+        }
+    }
+
+    function filterProjectRows(card) {
+        const rows = card.querySelectorAll('.tasks-table tbody tr');
+        let visibleCount = 0;
+
+        for (const row of rows) {
+            const issueType = row.dataset.issueType;
+            const typeMatch = getTypeMatch(issueType, currentTypeFilter);
+
+            if (typeMatch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        const countElement = card.querySelector('.visible-tasks-count');
+        if (countElement) {
+            countElement.textContent = visibleCount;
+        }
+
+        updateCardVisibility(card, visibleCount);
+    }
+
+    function applyFilters() {
+        const projectCards = document.querySelectorAll('.project-card');
+
+        for (const card of projectCards) {
+            const projectKey = card.dataset.project;
+            const projectMatch = currentProjectFilter === 'all' || projectKey === currentProjectFilter;
+
+            if (projectMatch) {
+                filterProjectRows(card);
+            } else {
+                card.classList.add('hidden');
+            }
+        }
+    }
+
+    function toggleTypeFilterVisibility(tabKey) {
+        const typeFilterContainer = document.getElementById('typeFilterContainer');
+        if (!typeFilterContainer) {
+            return;
+        }
+
+        if (tabKey === 'issues' || tabKey === 'bugs') {
+            typeFilterContainer.classList.remove('hidden');
+        } else {
+            typeFilterContainer.classList.add('hidden');
+        }
+    }
+
+    function switchDashboardTab(tabKey) {
+        currentDashboardTab = tabKey;
+
+        const tabButtons = document.querySelectorAll('#dashboard-tabs .filter-btn');
+        for (const button of tabButtons) {
+            button.classList.toggle('active', button.dataset.dashboard === tabKey);
+        }
+
+        const panels = {
+            custos: document.getElementById('dashboard-custos'),
+            issues: document.getElementById('dashboard-issues'),
+            bugs: document.getElementById('dashboard-bugs')
+        };
+
+        for (const [key, panel] of Object.entries(panels)) {
+            if (!panel) continue;
+
+            if (key === tabKey) {
+                panel.classList.remove('hidden');
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+
+        const chartWrapper = document.getElementById('dashboard-chart-wrapper');
+        if (chartWrapper) {
+            chartWrapper.classList.toggle('hidden', tabKey !== 'custos');
+        }
+
+        toggleTypeFilterVisibility(tabKey);
+        applyFilters();
+    }
+
+    function updateExportModalProject(projectData) {
+        const nameElement = document.getElementById('exportModalProjectName');
+        const confirmButton = document.getElementById('confirmExportPdfButton');
+
+        if (nameElement) {
+            nameElement.textContent = projectData && projectData.name
+                ? projectData.name
+                : 'Nenhum projeto selecionado';
+        }
+
+        if (confirmButton) {
+            confirmButton.disabled = !(projectData && projectData.id);
+        }
+    }
+
+    function setExportModalError(message) {
+        const errorElement = document.getElementById('exportModalError');
+        if (!errorElement) {
+            return;
+        }
+
+        if (!message) {
+            errorElement.textContent = '';
+            errorElement.classList.add('hidden');
+            return;
+        }
+
+        errorElement.textContent = message;
+        errorElement.classList.remove('hidden');
+    }
+
+    function openExportPdfModal() {
+        const modal = document.getElementById('exportPdfModal');
+        if (!modal) {
+            return;
+        }
+
+        updateExportModalProject(globalThis.selectedProjectData || null);
+
+        const dateElement = document.getElementById('exportModalDate');
+        if (dateElement) {
+            const now = new Date();
+            dateElement.textContent = now.toLocaleDateString('pt-BR');
+        }
+
+        setExportModalError('');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeExportPdfModal() {
+        const modal = document.getElementById('exportPdfModal');
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function parseFilenameFromDisposition(disposition) {
+        if (!disposition) {
+            return null;
+        }
+
+        const filenameRegex = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i;
+        const match = filenameRegex.exec(disposition);
+        if (!match) {
+            return null;
+        }
+
+        const encoded = match[1] || match[2];
+        if (!encoded) {
+            return null;
+        }
+
+        try {
+        return decodeURIComponent(encoded);
+        } catch (error) {
+        console.warn("Falha ao decodificar URI:", error);
+        return encoded;
+        }
+
+    }
+
+    async function gerarRelatorioPdf() {
+        const projectData = globalThis.selectedProjectData;
+
+        if (!projectData || !projectData.id) {
+            setExportModalError('Selecione um projeto para exportar o relatório.');
+            return;
+        }
+
+        const confirmButton = document.getElementById('confirmExportPdfButton');
+        const originalText = confirmButton ? confirmButton.textContent : '';
+
+        if (confirmButton) {
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Gerando...';
+        }
+
+        setExportModalError('');
+
+        try {
+            const response = await fetch('/dashboards/projeto/api/projetos/exportar-pdf/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ projeto_id: projectData.id })
+            });
+
+            if (!response.ok) {
+                let errorMessage = 'Não foi possível gerar o relatório em PDF.';
+
+                try {
+                    const data = await response.json();
+                    if (data && data.message) {
+                        errorMessage = data.message;
+                    }
+                } catch (parseError) {
+                    console.warn('Falha ao interpretar a resposta JSON do servidor:', parseError);
+                }
+
+                setExportModalError(errorMessage);
+                return;
+            }
+
+            const blob = await response.blob();
+            const disposition = response.headers.get('Content-Disposition');
+            const filename =
+                parseFilenameFromDisposition(disposition) ||
+                `dashboard-custos-${(projectData.name || 'projeto')
+                    .toLowerCase()
+                    .replaceAll(/[^a-z0-9]+/g, '-')}.pdf`;
+
+            const url = globalThis.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            globalThis.URL.revokeObjectURL(url);
+
+            closeExportPdfModal();
+        } catch (error) {
+            console.error('Erro ao gerar PDF do dashboard de custos:', error);
+            setExportModalError('Erro inesperado ao gerar o relatório. Tente novamente.');
+        } finally {
+            if (confirmButton) {
+                confirmButton.disabled = !(projectData && projectData.id);
+                confirmButton.textContent = originalText || 'Gerar PDF';
+            }
+        }
+    }
+
+    document.addEventListener('projectSelected', function (event) {
+        const projectData = event.detail || null;
+        updateDashboardCards(projectData);
+        updateExportModalProject(projectData);
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const activeOption = document.querySelector('#projectDropdown .select-option.active');
+        const fallbackOption = activeOption || document.querySelector('#projectDropdown .select-option');
+
+        if (fallbackOption) {
+            const projectId = fallbackOption.dataset.value;
+            const projectName = fallbackOption.dataset.projectName || fallbackOption.textContent.trim();
+            selectProject(projectId, projectName);
+        } else {
+            updateDashboardCards(null);
+        }
+
+        switchDashboardTab(currentDashboardTab);
+
+        updateExportModalProject(globalThis.selectedProjectData || null);
+
+        const exportButton = document.getElementById('openExportPdfButton');
+        if (exportButton) {
+            exportButton.addEventListener('click', openExportPdfModal);
+        }
+
+        const closeButton = document.getElementById('closeExportPdfButton');
+        if (closeButton) {
+            closeButton.addEventListener('click', closeExportPdfModal);
+        }
+
+        const cancelButton = document.getElementById('cancelExportPdfButton');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', closeExportPdfModal);
+        }
+
+        const confirmButton = document.getElementById('confirmExportPdfButton');
+        if (confirmButton) {
+            confirmButton.addEventListener('click', gerarRelatorioPdf);
+        }
+
+        const modal = document.getElementById('exportPdfModal');
+        if (modal) {
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    closeExportPdfModal();
+                }
+            });
+        }
+    });
+</script>

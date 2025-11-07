@@ -1,448 +1,162 @@
 {% extends "base.html" %}
 {% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dashboards/css/dashboards.css' %}">
+{% endblock %}
+
 {% block content %}
-
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboards - ATHOS INSIGHT</title>
-</head>
-
-<style>
-    * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-}
-
-:root {
-    --primary: #3b82f6;
-    --primary-foreground: #ffffff;
-    --muted-foreground: #6b7280;
-    --border: #e5e7eb;
-    --card-background: #ffffff;
-    --background: #f8fafc;
-}
-
-body {
-    background: var(--background);
-    min-height: 100vh;
-    padding: 0;
-}
-
-.container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 24px;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 32px;
-}
-
-.header-content h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 8px;
-}
-
-.header-content p {
-    font-size: 1.1rem;
-    color: var(--muted-foreground);
-}
-
-.grid {
-    display: grid;
-    gap: 24px;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    margin-bottom: 32px;
-}
-
-.card {
-    background: var(--card-background);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    padding: 0;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-    color: inherit;
-    display: block;
-}
-
-.card:hover {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    border-color: var(--primary);
-    transform: translateY(-2px);
-}
-
-.card-header {
-    padding: 24px 24px 16px;
-    border-bottom: 1px solid var(--border);
-}
-
-.card-header-top {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-.icon-container {
-    padding: 8px;
-    background: rgba(59, 131, 246, 0);
-    border-radius: 8px;
-}
-
-.icon {
-    width: 24px;
-    height: 24px;
-    color: var(--primary);
-}
-
-.badge {
-    background: transparent;
-    color: var(--muted-foreground);
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.card-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1f2937;
-    line-height: 1.4;
-    margin-bottom: 8px;
-}
-
-.card-description {
-    color: var(--muted-foreground);
-    line-height: 1.5;
-}
-
-.card-content {
-    padding: 16px 24px 24px;
-}
-
-/* === Info Sections === */
-.info-grid {
-    display: grid;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.875rem;
-}
-
-.info-label {
-    color: var(--muted-foreground);
-}
-
-.badge-secondary {
-    background: #f3f4f6;
-    color: #374151;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-/* === Buttons === */
-.btn {
-    width: 100%;
-    background: var(--primary);
-    color: var(--primary-foreground);
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.btn:hover {
-    background: #2563eb;
-}
-
-.info-card {
-    background: var(--card-background);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
-    margin-top: 32px;
-}
-
-.info-card-header {
-    margin-bottom: 20px;
-}
-
-.info-card-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 8px;
-}
-
-.info-card-description {
-    color: var(--muted-foreground);
-}
-
-.info-grid-cols {
-    display: grid;
-    gap: 16px;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-}
-
-.info-item {
-    text-align: center;
-    padding: 20px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.info-item:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-}
-
-.info-icon {
-    width: 32px;
-    height: 32px;
-    color: var(--primary);
-    margin: 0 auto 12px;
-}
-
-.info-item h4 {
-    font-weight: 500;
-    color: #1f2937;
-    margin-bottom: 8px;
-}
-
-.info-item p {
-    font-size: 0.875rem;
-    color: var(--muted-foreground);
-    line-height: 1.4;
-}
-
-@media (max-width: 768px) {
-    .container {
-        padding: 16px;
-    }
-
-    .header {
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .header-content h1 {
-        font-size: 2rem;
-    }
-
-    .grid {
-        grid-template-columns: 1fr;
-    }
-
-    .info-grid-cols {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* === Inline SVG icons === */
-.icon-users {
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'%3E%3C/path%3E%3Ccircle cx='9' cy='7' r='4'%3E%3C/circle%3E%3Cpath d='M22 21v-2a4 4 0 0 0-3-3.87'%3E%3C/path%3E%3Cpath d='M16 3.13a4 4 0 0 1 0 7.75'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
-}
-
-.icon-activity {
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23f97316' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 12h-4l-3 9L9 3l-3 9H2'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
-}
-
-.icon-trending-up {
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m23 6-9.5 9.5-5-5L1 18'%3E%3C/path%3E%3Cpath d='M17 6h6v6'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
-}
-
-.icon-arrow-right {
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'%3E%3C/path%3E%3Cpath d='m12 5 7 7-7 7'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
-}
-
-</style>
-
-<body class="bg-gray-50 min-h-screen">
-  <div class="container mx-auto px-4 py-8">
-    <div class="header">
-      <div class="header-content">
-        <h1>Dashboards</h1>
-        <p>Painel de controle e gestão do projeto ATHOS INSIGHT</p>
-      </div>
-    </div>
-
-    <!-- Grid principal -->
-    <div class="grid">
-      <!-- Dashboard Desenvolvedores -->
-      <button type="button" class="card w-full text-left"
-              onclick="location.href='{% url 'desenvolvedores_index' %}'">
-        <div class="card-header">
-          <div class="card-header-top">
-            <div class="icon-container">
-              <div class="icon icon-users"></div>
-            </div>
-            <span class="badge">Gestão</span>
-          </div>
-          <div>
-            <h3 class="card-title">Gerenciamento de Desenvolvedores</h3>
-            <p class="card-description">Configure valores por hora e visualize estatísticas da equipe</p>
-          </div>
-        </div>
-        <div class="card-content">
-          <div class="info-grid">
-            <div class="info-row">
-              <span class="info-label">Funcionalidades:</span>
-              <span class="text-sm">Tabela de desenvolvedores, valores por hora e estatísticas de custos</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Acesso:</span>
-              <span class="badge-secondary">Gerente</span>
-            </div>
-          </div>
-          <span class="btn">
-            Acessar Dashboard
-            <div class="icon icon-arrow-right"></div>
-          </span>
-        </div>
-      </button>
-
-      <!-- Dashboard Saúde -->
-      <button type="button" class="card w-full text-left"
-              onclick="location.href='{% url 'projetos_index' %}'">
-        <div class="card-header">
-          <div class="card-header-top">
-            <div class="icon-container bg-orange-50">
-              <div class="icon icon-activity"></div>
-            </div>
-            <span class="badge">Análise</span>
-          </div>
-          <div>
-            <h3 class="card-title">Dashboard de Saúde do Projeto</h3>
-            <p class="card-description">Análise completa de custos, issues e bugs por projeto e desenvolvedor</p>
-          </div>
-        </div>
-        <div class="card-content">
-          <div class="info-grid">
-            <div class="info-row">
-              <span class="info-label">Funcionalidades:</span>
-              <span class="text-sm">Três dashboards integrados: custos, issues abertas e bugs</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Acesso:</span>
-              <span class="badge-secondary">Gerente, Líder e Membro</span>
-            </div>
-          </div>
-          <span class="btn">
-            Acessar Dashboard
-            <div class="icon icon-arrow-right"></div>
-          </span>
-        </div>
-      </button>
-
-
-      <!-- Dashboard Produtividade -->
-      <button type="button" class="card w-full text-left"
-              onclick="location.href='{% url 'produtividade_index' %}'">
-        <div class="card-header">
-          <div class="card-header-top">
-            <div class="icon-container bg-green-50">
-              <div class="icon icon-trending-up"></div>
-            </div>
-            <span class="badge">Produtividade</span>
-          </div>
-          <div>
-            <h3 class="card-title">Dashboard de Produtividade da Equipe</h3>
-            <p class="card-description">Acompanhe horas por atividade, módulo e desenvolvedor</p>
-          </div>
-        </div>
-        <div class="card-content">
-          <div class="info-grid">
-            <div class="info-row">
-              <span class="info-label">Funcionalidades:</span>
-              <span class="text-sm">Análise de horas por módulo/epic e desenvolvedor</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Acesso:</span>
-              <span class="badge-secondary">Gerente, Líder e Membro</span>
-            </div>
-          </div>
-          <span class="btn">
-            Acessar Dashboard
-            <div class="icon icon-arrow-right"></div>
-          </span>
-        </div>
-      </button>
-    </div>
-
-
-    <!-- Informações adicionais -->
-    <div class="info-card">
-      <div class="info-card-header">
-        <h2 class="info-card-title">Informações dos Dashboards</h2>
-        <p class="info-card-description">
-          Detalhes sobre as funcionalidades disponíveis no sistema
-        </p>
-      </div>
-      <div class="info-grid-cols">
-        <div class="info-item">
-          <div class="icon icon-users info-icon"></div>
-          <h4>Gerenciamento de Desenvolvedores</h4>
-          <p>Configure valores por hora, visualize estatísticas e gerencie custos da equipe de desenvolvimento</p>
-        </div>
-        <div class="info-item">
-          <div class="icon icon-activity info-icon"></div>
-          <h4>Saúde do Projeto</h4>
-          <p>Acompanhe orçamento vs realizado, issues abertas e bugs com gráficos e tabelas detalhadas</p>
-        </div>
-        <div class="info-item">
-          <div class="icon icon-trending-up info-icon"></div>
-          <h4>Produtividade da Equipe</h4>
-          <p>Análise detalhada de horas por módulo/epic e desenvolvedor com gráficos evolutivos</p>
-        </div>
-      </div>
+<div class="container mx-auto px-4 py-8">
+  <div class="header">
+    <div class="header-content">
+      <h1>Dashboards</h1>
+      <p>Painel de controle e gestão do projeto ATHOS INSIGHT</p>
     </div>
   </div>
 
+  <div class="grid">
+    <button type="button" class="card w-full text-left"
+            onclick="location.href='{% url 'desenvolvedores_index' %}'">
+      <div class="card-header">
+        <div class="card-header-top">
+          <div class="icon-container">
+            <div class="icon icon-users"></div>
+          </div>
+          <span class="badge">Gestão</span>
+        </div>
+        <div>
+          <h3 class="card-title">Gerenciamento de Desenvolvedores</h3>
+          <p class="card-description">Configure valores por hora e visualize estatísticas da equipe</p>
+        </div>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-row">
+            <span class="info-label">Funcionalidades:</span>
+            <span class="text-sm">Tabela de desenvolvedores, valores por hora e estatísticas de custos</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Acesso:</span>
+            <span class="badge-secondary">Gerente</span>
+          </div>
+        </div>
+        <span class="btn">
+          Acessar Dashboard
+          <div class="icon icon-arrow-right"></div>
+        </span>
+      </div>
+    </button>
+
+    <button type="button" class="card w-full text-left"
+            onclick="location.href='{% url 'projetos_index' %}'">
+      <div class="card-header">
+        <div class="card-header-top">
+          <div class="icon-container icon-container--orange">
+            <div class="icon icon-activity"></div>
+          </div>
+          <span class="badge">Análise</span>
+        </div>
+        <div>
+          <h3 class="card-title">Dashboard de Saúde do Projeto</h3>
+          <p class="card-description">Análise completa de custos, issues e bugs por projeto e desenvolvedor</p>
+        </div>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-row">
+            <span class="info-label">Funcionalidades:</span>
+            <span class="text-sm">Três dashboards integrados: custos, issues abertas e bugs</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Acesso:</span>
+            <span class="badge-secondary">Gerente, Líder e Membro</span>
+          </div>
+        </div>
+        <span class="btn">
+          Acessar Dashboard
+          <div class="icon icon-arrow-right"></div>
+        </span>
+      </div>
+    </button>
+
+    <button type="button" class="card w-full text-left"
+            onclick="location.href='{% url 'produtividade_index' %}'">
+      <div class="card-header">
+        <div class="card-header-top">
+          <div class="icon-container icon-container--green">
+            <div class="icon icon-trending-up"></div>
+          </div>
+          <span class="badge">Produtividade</span>
+        </div>
+        <div>
+          <h3 class="card-title">Dashboard de Produtividade da Equipe</h3>
+          <p class="card-description">Acompanhe horas por atividade, módulo e desenvolvedor</p>
+        </div>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-row">
+            <span class="info-label">Funcionalidades:</span>
+            <span class="text-sm">Análise de horas por módulo/epic e desenvolvedor</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Acesso:</span>
+            <span class="badge-secondary">Gerente, Líder e Membro</span>
+          </div>
+        </div>
+        <span class="btn">
+          Acessar Dashboard
+          <div class="icon icon-arrow-right"></div>
+        </span>
+      </div>
+    </button>
+  </div>
+
+  <div class="info-card">
+    <div class="info-card-header">
+      <h2 class="info-card-title">Informações dos Dashboards</h2>
+      <p class="info-card-description">
+        Detalhes sobre as funcionalidades disponíveis no sistema
+      </p>
+    </div>
+    <div class="info-grid-cols">
+      <div class="info-item">
+        <div class="icon icon-users info-icon"></div>
+        <h4>Gerenciamento de Desenvolvedores</h4>
+        <p>Configure valores por hora, visualize estatísticas e gerencie custos da equipe de desenvolvimento</p>
+      </div>
+      <div class="info-item">
+        <div class="icon icon-activity info-icon"></div>
+        <h4>Saúde do Projeto</h4>
+        <p>Acompanhe orçamento vs realizado, issues abertas e bugs com gráficos e tabelas detalhadas</p>
+      </div>
+      <div class="info-item">
+        <div class="icon icon-trending-up info-icon"></div>
+        <h4>Produtividade da Equipe</h4>
+        <p>Análise detalhada de horas por módulo/epic e desenvolvedor com gráficos evolutivos</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
   function animateElements(selector, delay = 150) {
     const elements = document.querySelectorAll(selector);
     let index = 0;
 
-    for (const el of elements) {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(20px)';
+    for (const element of elements) {
+      element.style.opacity = '0';
+      element.style.transform = 'translateY(20px)';
 
       setTimeout(() => {
-        el.style.transition = 'all 0.5s ease';
-        el.style.opacity = '1';
-        el.style.transform = 'translateY(0)';
+        element.style.transition = 'all 0.5s ease';
+        element.style.opacity = '1';
+        element.style.transform = 'translateY(0)';
       }, index * delay);
 
-      index++;
+      index += 1;
     }
   }
 
@@ -451,8 +165,4 @@ body {
     animateElements('.info-item', 100);
   });
 </script>
-
-</body>
-</html>
-
 {% endblock %}
