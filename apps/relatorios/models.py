@@ -1,6 +1,7 @@
 """Modelos para relatórios e controle de horas da equipe."""
 
-from datetime import date
+from datetime import date, datetime
+from pprint import pformat
 
 from django.db import models
 
@@ -52,6 +53,9 @@ class Funcionario(models.Model):
 class Projeto(models.Model):
     """Modelo para projetos"""
 
+    id = models.AutoField(primary_key=True)
+    jira_id = models.PositiveIntegerField(null=True)
+    jira_key = models.CharField(max_length=50, null=True)
     nome = models.CharField(max_length=100)
     data_criacao = models.DateField(auto_now_add=True)
     orcamento_previsto = models.DecimalField(
@@ -69,7 +73,7 @@ class Projeto(models.Model):
         db_table = "projeto"
 
     def __str__(self):
-        return str(self.__dict__, indent=4, ensure_ascii=False)
+        return pformat(self.__dict__, indent=4, width=120)
 
 
 class ControleHorasEquipeResumo(models.Model):
@@ -182,3 +186,64 @@ class TempoControleValores(models.Model):
 
     def __str__(self):
         return f"Aproveitamento: {self.aproveitamento}%"
+
+
+class TipoIssue(models.Model):
+    """
+    Modelo para tipos de issue do projeto
+    """
+
+    id = models.AutoField(primary_key=True)
+    nome = models.CharField(max_length=255, null=False, blank=False)
+    descricao = models.CharField(max_length=1024, null=True, blank=True)
+    jira_id = models.PositiveIntegerField(null=False, blank=False)
+    projeto = models.ForeignKey(
+        Projeto, on_delete=models.CASCADE, null=False, blank=False
+    )
+    data_criacao = models.DateField(default=datetime.now)
+
+    class Meta:
+        """
+        Regras para criação da tabela no banco de dados
+        """
+
+        db_table = "tipo_issue"
+
+    def save(self, *args, **kwargs):
+        if not self.data_criacao:
+            self.data_criacao = datetime.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return pformat(self.__dict__, indent=4, width=120)
+
+
+class Issue(models.Model):
+    """
+    Modelo para issues do projeto
+    """
+
+    id = models.AutoField(primary_key=True)
+    jira_id = models.PositiveIntegerField(null=False, blank=False)
+    jira_key = models.CharField(max_length=50, null=False, blank=False)
+    projeto = models.ForeignKey(
+        Projeto, on_delete=models.CASCADE, null=False, blank=False
+    )
+    titulo = models.CharField(max_length=255, null=False, blank=False)
+    tipo_issue = models.ForeignKey(TipoIssue, on_delete=models.SET_NULL, null=True)
+    criado_em = models.DateTimeField(null=True)
+    tempo_gasto_seconds = models.PositiveIntegerField(default=0, null=True)
+    tempo_estimado_seconds = models.PositiveIntegerField(default=0, null=True)
+    funcionario = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True)
+    atualizado_em = models.DateTimeField(null=True)
+    status = models.CharField(max_length=100, null=True)
+
+    class Meta:
+        """
+        Regras para criação da tabela no banco de dados
+        """
+
+        db_table = "issue"
+
+    def __str__(self):
+        return pformat(self.__dict__, indent=4, width=120)
