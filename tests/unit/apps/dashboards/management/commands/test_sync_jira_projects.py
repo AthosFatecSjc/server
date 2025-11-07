@@ -27,7 +27,9 @@ class SyncJiraProjectsCommandTests(TestCase):
         self.assertEqual(float(projeto.orcamento_previsto), DEFAULT_ORCAMENTO)
 
         output = out.getvalue()
-        self.assertIn("Sincronização concluída: 2 criados, 0 atualizados.", output)
+        self.assertIn(
+            "Sincronização concluída: 2 criados, 0 atualizados, 0 ignorados.", output
+        )
 
     @patch(
         "apps.dashboards.management.commands.sync_jira_projects.JiraService.get_projects"
@@ -46,7 +48,9 @@ class SyncJiraProjectsCommandTests(TestCase):
         self.assertEqual(float(projeto.orcamento_previsto), DEFAULT_ORCAMENTO)
 
         output = out.getvalue()
-        self.assertIn("Sincronização concluída: 0 criados, 1 atualizados.", output)
+        self.assertIn(
+            "Sincronização concluída: 0 criados, 1 atualizados, 0 ignorados.", output
+        )
 
     @patch(
         "apps.dashboards.management.commands.sync_jira_projects.JiraService.get_projects"
@@ -78,26 +82,28 @@ class SyncJiraProjectsCommandTests(TestCase):
         self.assertTrue(Projeto.objects.filter(nome="Projeto Válido").exists())
         mock_logger.warning.assert_called()
         self.assertIn(
-            "Sincronização concluída: 1 criados, 0 atualizados.", out.getvalue()
+            "Sincronização concluída: 1 criados, 0 atualizados, 2 ignorados.",
+            out.getvalue(),
         )
 
     @patch("apps.dashboards.management.commands.sync_jira_projects.logger")
     @patch(
-        "apps.dashboards.management.commands.sync_jira_projects.Projeto.objects.update_or_create"
+        "apps.dashboards.management.commands.sync_jira_projects.Projeto.objects.create"
     )
     @patch(
         "apps.dashboards.management.commands.sync_jira_projects.JiraService.get_projects"
     )
     def test_sync_registra_integrity_error(
-        self, mock_get_projects, mock_update_or_create, mock_logger
+        self, mock_get_projects, mock_projeto_create, mock_logger
     ):
         mock_get_projects.return_value = [{"name": "Projeto Alpha"}]
-        mock_update_or_create.side_effect = IntegrityError("duplicated")
+        mock_projeto_create.side_effect = IntegrityError("duplicated")
 
         out = StringIO()
         call_command("sync_jira_projects", stdout=out)
 
         mock_logger.error.assert_called()
         self.assertIn(
-            "Sincronização concluída: 0 criados, 0 atualizados.", out.getvalue()
+            "Sincronização concluída: 0 criados, 0 atualizados, 0 ignorados.",
+            out.getvalue(),
         )
