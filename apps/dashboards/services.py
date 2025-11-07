@@ -9,6 +9,7 @@ import sentry_sdk
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+SENTRY_HTTP_OP = "http.client"
 
 
 class JiraService:
@@ -63,7 +64,7 @@ class JiraService:
 
         try:
             with sentry_sdk.start_span(
-                op="http.client", description="Request Jira Projects"
+                op=SENTRY_HTTP_OP, description="Request Jira Projects"
             ):
                 response = requests.get(
                     url, auth=self.auth, headers=self.headers, timeout=15
@@ -133,7 +134,7 @@ class JiraService:
 
             try:
                 with sentry_sdk.start_span(
-                    op="http.client",
+                    op=SENTRY_HTTP_OP,
                     description=f"Request Jira Tasks for {project_key}",
                 ):
                     response = requests.post(
@@ -255,7 +256,7 @@ class JiraService:
 
         try:
             with sentry_sdk.start_span(
-                op="http.client", description="Request Jira IssueTypes for Project"
+                op=SENTRY_HTTP_OP, description="Request Jira IssueTypes for Project"
             ):
                 response = requests.get(
                     url, auth=self.auth, headers=self.headers, timeout=15

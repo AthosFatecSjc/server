@@ -94,7 +94,7 @@ class Command(BaseCommand):
                 # Create new
                 projeto = Projeto.objects.create(
                     jira_id=int(jira_id) if jira_id else None,
-                    jira_key=jira_key or None,
+                    jira_key=jira_key or "",
                     nome=nome,
                     data_criacao=date.today(),
                     orcamento_previsto=DEFAULT_ORCAMENTO,

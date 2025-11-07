@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Preparar ambiente (.env)
+        run: cp config/.env.template .env
+
       - name: Configurar Python 3.12
         uses: actions/setup-python@v5
         with:
