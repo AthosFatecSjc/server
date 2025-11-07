@@ -70,9 +70,7 @@ class Command(BaseCommand):
                 atualizados += 1
 
         self.stdout.write(self.style.SUCCESS("\nSincronização concluída com sucesso!"))
-        self.stdout.write(
-            self.style.SUCCESS(f"  - {criados} funcionários criados.")
-        )
+        self.stdout.write(self.style.SUCCESS(f"  - {criados} funcionários criados."))
         self.stdout.write(
             self.style.SUCCESS(f"  - {atualizados} funcionários já existentes.")
         )

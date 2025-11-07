@@ -19,7 +19,7 @@ class DimModelsTests(TestCase):
         self.assertEqual(funcionario.cargo, "dev")
         self.assertEqual(funcionario.nome_gerente, "Alice Example")
 
-    def test_dim_tempo_str_raises_type_error(self):
+    def test_dim_tempo_str_retorna_dados_formatados(self):
         tempo = DimTempo.objects.using("olap").create(
             data_completa=date(2024, 1, 1),
             ano=2024,
@@ -31,5 +31,5 @@ class DimModelsTests(TestCase):
             dia_da_semana="Segunda",
         )
 
-        with self.assertRaises(TypeError):
-            str(tempo)
+        tempo_str = str(tempo)
+        self.assertIn("2024", tempo_str)
