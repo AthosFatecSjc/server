@@ -1,5 +1,7 @@
 import json
 import logging
+from datetime import time
+from http import HTTPStatus
 from typing import Dict, List
 
 import requests
@@ -82,8 +84,8 @@ class JiraService:
             sentry_sdk.capture_exception(e)
             return None
 
-    def get_tasks_by_project(
-        self, project_key: str, max_results: int = 100
+    def get_issues(
+        self, project_key: str, max_results_per_page: int = 100
     ) -> List[Dict]:
         """
         Busca tarefas de um projeto específico, validando a resposta da API.
@@ -91,59 +93,88 @@ class JiraService:
         url = f"{self.base_url}/rest/api/3/search/jql"
         jql_query = f"project = {project_key}"
 
-        payload = {
-            "jql": jql_query,
-            "fields": [
-                "summary",
-                "assignee",
-                "timetracking",
-                "issuetype",
-                "timeoriginalestimate",
-                "timeestimate",
-                "timespent",
-                "status",
-                "created",
-                "updated",
-            ],
-            "maxResults": max_results,
-        }
+        all_issues = []
 
-        self._enrich_sentry_scope(url, payload=payload)
+        next_page_token = None
 
-        try:
-            with sentry_sdk.start_span(
-                op="http.client", description=f"Request Jira Tasks for {project_key}"
-            ):
-                response = requests.post(
-                    url,
-                    auth=self.auth,
-                    headers=self.headers,
-                    data=json.dumps(payload),
-                    timeout=15,
-                )
-            response.raise_for_status()
+        while True:
 
-            data = response.json()
+            payload = {
+                "jql": jql_query,
+                "fields": [
+                    "summary",
+                    "assignee",
+                    "timetracking",
+                    "issuetype",
+                    "timeoriginalestimate",
+                    "timeestimate",
+                    "timespent",
+                    "status",
+                    "created",
+                    "updated",
+                ],
+            }
 
-            if "issues" not in data:
-                sentry_sdk.capture_message(
-                    f"A resposta da API do Jira para o projeto {project_key} não continha a chave 'issues'.",
-                    level="warning",
-                )
+            if max_results_per_page is not None:
+                payload["maxResults"] = max_results_per_page
+
+            if next_page_token is not None:
+                payload["nextPageToken"] = next_page_token
+
+            self._enrich_sentry_scope(url, payload=payload)
+
+            try:
+                with sentry_sdk.start_span(
+                    op="http.client",
+                    description=f"Request Jira Tasks for {project_key}",
+                ):
+                    response = requests.post(
+                        url,
+                        auth=self.auth,
+                        headers=self.headers,
+                        data=json.dumps(payload),
+                        timeout=15,
+                    )
+
+                if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+                    retry_after = int(response.headers.get("Retry-After", 5))
+                    time.sleep(retry_after)
+                    continue
+
+                response.raise_for_status()
+
+                data = response.json()
+
+                if "issues" not in data:
+                    sentry_sdk.capture_message(
+                        f"A resposta da API do Jira para o projeto {project_key} não continha a chave 'issues'.",
+                        level="warning",
+                    )
+                    break
+
+                issues = data.get("issues", [])
+                if not issues:
+                    sentry_sdk.capture_message(
+                        f"Nenhuma task encontrada para o projeto '{project_key}'.",
+                        level="info",
+                    )
+                    break
+
+                all_issues.extend(issues)
+
+                # Paging info
+                is_last = data.get("isLast", True)
+                if is_last:
+                    break
+
+                next_page_token = data.get("nextPageToken", None)
+
+            except requests.exceptions.RequestException as e:
+                logger.error("Erro ao buscar tasks do projeto %s: %s", project_key, e)
+                sentry_sdk.capture_exception(e)
                 return []
 
-            issues = data.get("issues", [])
-            if not issues:
-                sentry_sdk.capture_message(
-                    f"Nenhuma task encontrada para o projeto '{project_key}'.",
-                    level="info",
-                )
-            return issues
-
-        except requests.exceptions.RequestException as e:
-            logger.error("Erro ao buscar tasks do projeto %s: %s", project_key, e)
-            sentry_sdk.capture_exception(e)
-            return []
+        return all_issues
 
     def get_all_tasks_data(self) -> List[Dict] | None:
         """
@@ -157,7 +188,7 @@ class JiraService:
         projetos_com_tasks = []
         for projeto in projetos:
             project_key = projeto["key"]
-            tasks = self.get_tasks_by_project(project_key, max_results=100)
+            tasks = self.get_issues(project_key, 100)
 
             tasks_formatadas = []
             for task in tasks:
@@ -202,3 +233,41 @@ class JiraService:
             )
 
         return projetos_com_tasks
+
+    def get_tipos_issue(self, projeto_id: int) -> List[Dict] | None:
+        """
+        Busca todos os projetos do Jira, monitorizando a performance.
+        """
+
+        if not self.credentials_are_valid:
+            return None
+
+        url = f"{self.base_url}/rest/api/3/issuetype/project?projectId={projeto_id}"
+        self._enrich_sentry_scope(url)
+
+        try:
+            with sentry_sdk.start_span(
+                op="http.client", description="Request Jira IssueTypes for Project"
+            ):
+                response = requests.get(
+                    url, auth=self.auth, headers=self.headers, timeout=15
+                )
+
+            response.raise_for_status()
+
+            tipos_issue = response.json()
+            if not tipos_issue:
+                sentry_sdk.capture_message(
+                    "A API do Jira retornou uma lista de tipos de issue vazia.",
+                    level="warning",
+                )
+            return tipos_issue or []
+
+        except requests.exceptions.RequestException as e:
+            logger.error(
+                "Erro ao buscar tipos de issue para o projeto %s do Jira: %s",
+                projeto_id,
+                e,
+            )
+            sentry_sdk.capture_exception(e)
+            return None
