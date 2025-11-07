@@ -3,6 +3,7 @@
 import json
 from datetime import datetime
 
+from django.db.models.functions import ExtractMonth, ExtractYear
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
@@ -45,11 +46,9 @@ def index(request):
     }
 
     meses_disponiveis_query = (
-        TempoGastoEquipe.objects.extra(
-            select={
-                "ano": "EXTRACT(YEAR FROM mes)",
-                "mes_num": "EXTRACT(MONTH FROM mes)",
-            }
+        TempoGastoEquipe.objects.annotate(
+            ano=ExtractYear("mes"),
+            mes_num=ExtractMonth("mes"),
         )
         .values("ano", "mes_num")
         .distinct()

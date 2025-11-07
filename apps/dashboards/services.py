@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import time
+import time
 from http import HTTPStatus
 from typing import Dict, List
 
@@ -9,6 +9,7 @@ import sentry_sdk
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+SENTRY_HTTP_OP = "http.client"
 
 
 class JiraService:
@@ -63,7 +64,7 @@ class JiraService:
 
         try:
             with sentry_sdk.start_span(
-                op="http.client", description="Request Jira Projects"
+                op=SENTRY_HTTP_OP, description="Request Jira Projects"
             ):
                 response = requests.get(
                     url, auth=self.auth, headers=self.headers, timeout=15
@@ -83,6 +84,14 @@ class JiraService:
             logger.error("Erro ao buscar projetos do Jira: %s", e)
             sentry_sdk.capture_exception(e)
             return None
+
+    def get_tasks_by_project(
+        self, project_key: str, max_results_per_page: int = 100
+    ) -> List[Dict]:
+        """
+        Mantido para retrocompatibilidade: delega para `get_issues`.
+        """
+        return self.get_issues(project_key, max_results_per_page)
 
     def get_issues(
         self, project_key: str, max_results_per_page: int = 100
@@ -125,7 +134,7 @@ class JiraService:
 
             try:
                 with sentry_sdk.start_span(
-                    op="http.client",
+                    op=SENTRY_HTTP_OP,
                     description=f"Request Jira Tasks for {project_key}",
                 ):
                     response = requests.post(
@@ -188,7 +197,7 @@ class JiraService:
         projetos_com_tasks = []
         for projeto in projetos:
             project_key = projeto["key"]
-            tasks = self.get_issues(project_key, 100)
+            tasks = self.get_tasks_by_project(project_key, 100)
 
             tasks_formatadas = []
             for task in tasks:
@@ -247,7 +256,7 @@ class JiraService:
 
         try:
             with sentry_sdk.start_span(
-                op="http.client", description="Request Jira IssueTypes for Project"
+                op=SENTRY_HTTP_OP, description="Request Jira IssueTypes for Project"
             ):
                 response = requests.get(
                     url, auth=self.auth, headers=self.headers, timeout=15

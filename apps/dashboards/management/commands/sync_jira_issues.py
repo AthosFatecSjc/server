@@ -99,84 +99,29 @@ class Command(BaseCommand):
         issue_jira_key = issue_data["key"]
         issue_jira_summary = issue_data["summary"]
         tipo_issue = issue_data["tipo_issue"]
-        issue_jira_assignee = (
-            issue_jira_fields.get("assignee", {}).get("displayName", "").strip()
-            if issue_jira_fields.get("assignee")
-            else None
+        issue_jira_assignee = self._extract_assignee_name(issue_jira_fields)
+        funcionario_id = self._get_funcionario_id(issue_jira_assignee)
+
+        issue_payload = self._build_issue_payload(
+            issue_jira_summary,
+            tipo_issue.id,
+            issue_jira_fields,
+            funcionario_id,
         )
 
         try:
             issue = Issue.objects.filter(jira_id=issue_jira_id).first()
 
             if issue:
-                # Update existing
-                issue.titulo = issue_jira_summary
-                issue.tipo_issue_id = tipo_issue.id
-                issue.tempo_gasto_seconds = (
-                    issue_jira_fields.get("timespent", 0)
-                    if issue_jira_fields.get("timespent", 0)
-                    else None
-                )
-                issue.tempo_estimado_seconds = (
-                    issue_jira_fields.get("timeestimate", 0)
-                    if issue_jira_fields.get("timeestimate", 0)
-                    else None
-                )
-                issue.funcionario_id = (
-                    Funcionario.objects.filter(nome=issue_jira_assignee).first().id
-                    if issue_jira_assignee
-                    else None
-                )
-                issue.atualizado_em = (
-                    issue_jira_fields.get("updated", "")
-                    if issue_jira_fields.get("updated")
-                    else None
-                )
-                issue.status = (
-                    issue_jira_fields.get("status", {}).get("name", "")
-                    if issue_jira_fields.get("status")
-                    else None
-                )
-                issue.save()
+                self._update_issue(issue, issue_payload)
                 status = StatusIntegracao.STATUS_ATUALIZADO
             else:
-                # Create new
-                issue = Issue.objects.create(
-                    jira_id=int(issue_jira_id),
-                    jira_key=issue_jira_key,
-                    projeto_id=projeto.id,
-                    titulo=issue_jira_summary,
-                    tipo_issue_id=tipo_issue.id,
-                    criado_em=(
-                        issue_jira_fields.get("created", "")
-                        if issue_jira_fields.get("created")
-                        else None
-                    ),
-                    tempo_gasto_seconds=(
-                        issue_jira_fields.get("timespent", 0)
-                        if issue_jira_fields.get("timespent", 0)
-                        else None
-                    ),
-                    tempo_estimado_seconds=(
-                        issue_jira_fields.get("timeestimate", 0)
-                        if issue_jira_fields.get("timeestimate", 0)
-                        else None
-                    ),
-                    funcionario_id=(
-                        Funcionario.objects.filter(nome=issue_jira_assignee).first().id
-                        if issue_jira_assignee
-                        else None
-                    ),
-                    atualizado_em=(
-                        issue_jira_fields.get("updated", "")
-                        if issue_jira_fields.get("updated")
-                        else None
-                    ),
-                    status=(
-                        issue_jira_fields.get("status", {}).get("name", "")
-                        if issue_jira_fields.get("status")
-                        else None
-                    ),
+                self._create_issue(
+                    projeto,
+                    issue_jira_id,
+                    issue_jira_key,
+                    self._optional_field(issue_jira_fields, "created"),
+                    issue_payload,
                 )
                 status = StatusIntegracao.STATUS_CRIADO
 
@@ -242,3 +187,66 @@ class Command(BaseCommand):
             },
             None,
         )
+
+    def _build_issue_payload(
+        self,
+        summary: str,
+        tipo_issue_id: int,
+        issue_fields: dict,
+        funcionario_id: int | None,
+    ) -> dict:
+        return {
+            "titulo": summary,
+            "tipo_issue_id": tipo_issue_id,
+            "tempo_gasto_seconds": self._optional_field(issue_fields, "timespent"),
+            "tempo_estimado_seconds": self._optional_field(
+                issue_fields, "timeestimate"
+            ),
+            "funcionario_id": funcionario_id,
+            "atualizado_em": self._optional_field(issue_fields, "updated"),
+            "status": self._extract_status(issue_fields),
+        }
+
+    @staticmethod
+    def _update_issue(issue: Issue, data: dict) -> None:
+        for attr, value in data.items():
+            setattr(issue, attr, value)
+        issue.save()
+
+    @staticmethod
+    def _create_issue(
+        projeto: Projeto,
+        issue_jira_id: int,
+        issue_jira_key: str,
+        created_at,
+        data: dict,
+    ) -> None:
+        Issue.objects.create(
+            jira_id=int(issue_jira_id),
+            jira_key=issue_jira_key,
+            projeto_id=projeto.id,
+            criado_em=created_at,
+            **data,
+        )
+
+    @staticmethod
+    def _optional_field(issue_fields: dict, key: str):
+        value = issue_fields.get(key)
+        return value if value else None
+
+    @staticmethod
+    def _extract_status(issue_fields: dict) -> str:
+        status_info = issue_fields.get("status") or {}
+        return status_info.get("name", "").strip()
+
+    @staticmethod
+    def _extract_assignee_name(issue_fields: dict) -> str:
+        assignee = issue_fields.get("assignee") or {}
+        return assignee.get("displayName", "").strip()
+
+    @staticmethod
+    def _get_funcionario_id(nome: str | None):
+        if not nome:
+            return None
+        funcionario = Funcionario.objects.filter(nome=nome).first()
+        return funcionario.id if funcionario else None
