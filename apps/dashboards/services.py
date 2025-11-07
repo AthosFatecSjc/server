@@ -84,6 +84,14 @@ class JiraService:
             sentry_sdk.capture_exception(e)
             return None
 
+    def get_tasks_by_project(
+        self, project_key: str, max_results_per_page: int = 100
+    ) -> List[Dict]:
+        """
+        Mantido para retrocompatibilidade: delega para `get_issues`.
+        """
+        return self.get_issues(project_key, max_results_per_page)
+
     def get_issues(
         self, project_key: str, max_results_per_page: int = 100
     ) -> List[Dict]:
@@ -188,7 +196,7 @@ class JiraService:
         projetos_com_tasks = []
         for projeto in projetos:
             project_key = projeto["key"]
-            tasks = self.get_issues(project_key, 100)
+            tasks = self.get_tasks_by_project(project_key, 100)
 
             tasks_formatadas = []
             for task in tasks:

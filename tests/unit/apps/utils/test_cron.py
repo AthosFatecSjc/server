@@ -41,7 +41,12 @@ class CronJobsTests(SimpleTestCase):
         mock_instance.get_all_tasks_data.assert_called_once()
         self.assertEqual(
             mock_call_command.call_args_list,
-            [call("sync_jira_users"), call("sync_jira_projects")],
+            [
+                call("sync_jira_users"),
+                call("sync_jira_projects"),
+                call("sync_jira_tipos_issue"),
+                call("sync_jira_issues"),
+            ],
         )
         mock_simple_cache.assert_called_once()
 
@@ -120,6 +125,8 @@ class CronJobsTests(SimpleTestCase):
         mock_call_command.side_effect = [
             Exception("users fail"),
             Exception("projects fail"),
+            None,
+            None,
         ]
 
         cron.buscar_dados_api()
@@ -150,7 +157,12 @@ class CronJobsTests(SimpleTestCase):
         self.assertTrue(any("Erro no cron:" in msg for msg in messages))
         self.assertEqual(
             [args[0] for args, _ in mock_call_command.call_args_list],
-            ["sync_jira_users", "sync_jira_projects"],
+            [
+                "sync_jira_users",
+                "sync_jira_projects",
+                "sync_jira_tipos_issue",
+                "sync_jira_issues",
+            ],
         )
         mock_simple_cache.assert_not_called()
 

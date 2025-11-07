@@ -371,11 +371,11 @@ class OlapModelsSmokeTests(TestCase):
             custo=Decimal("320.00"),
         )
 
-        with self.assertRaises(TypeError):
-            str(projeto)
-        with self.assertRaises(TypeError):
-            str(funcionario)
+        projeto_str = str(projeto)
+        self.assertIn("Projeto Demo", projeto_str)
+        funcionario_str = str(funcionario)
+        self.assertIn("Alice", funcionario_str)
         self.assertIn("Maio", tempo.mes_nome)
-        with self.assertRaises(TypeError):
-            str(fato)
+        fato_str = str(fato)
+        self.assertIn("320.00", fato_str)
         self.assertEqual(funcionario.nome_gerente, "Alice")

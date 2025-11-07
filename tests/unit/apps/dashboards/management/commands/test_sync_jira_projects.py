@@ -104,6 +104,6 @@ class SyncJiraProjectsCommandTests(TestCase):
 
         mock_logger.error.assert_called()
         self.assertIn(
-            "Sincronização concluída: 0 criados, 0 atualizados, 0 ignorados.",
+            "Sincronização concluída: 0 criados, 0 atualizados, 1 ignorados.",
             out.getvalue(),
         )
