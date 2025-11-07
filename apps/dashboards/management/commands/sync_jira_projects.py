@@ -61,26 +61,30 @@ class Command(BaseCommand):
             logger.warning("Projeto Jira sem nome ignorado: %s", projeto)
             return status
 
-        jira_id = projeto.get("id", "").strip()
+        jira_id = self._clean_str(projeto.get("id"))
         if not jira_id:
             logger.warning("Projeto Jira sem id, ignorado: %s", projeto)
-            return status
 
-        jira_key = projeto.get("key", "").strip()
+        jira_key = self._clean_str(projeto.get("key"))
         if not jira_key:
             logger.warning("Projeto Jira sem key, ignorado: %s", projeto)
-            return status
 
         try:
-            projeto = Projeto.objects.filter(jira_id=int(jira_id)).first()
+            projeto = (
+                Projeto.objects.filter(jira_id=int(jira_id)).first()
+                if jira_id
+                else None
+            )
 
             if not projeto:
                 projeto = Projeto.objects.filter(nome=nome).first()
 
             if projeto:
                 # Update existing
-                projeto.jira_id = int(jira_id)
-                projeto.jira_key = jira_key
+                if jira_id:
+                    projeto.jira_id = int(jira_id)
+                if jira_key:
+                    projeto.jira_key = jira_key
                 projeto.nome = nome
                 projeto.data_criacao = date.today()
                 projeto.orcamento_previsto = DEFAULT_ORCAMENTO
@@ -89,8 +93,8 @@ class Command(BaseCommand):
             else:
                 # Create new
                 projeto = Projeto.objects.create(
-                    jira_id=int(jira_id),
-                    jira_key=jira_key,
+                    jira_id=int(jira_id) if jira_id else None,
+                    jira_key=jira_key or None,
                     nome=nome,
                     data_criacao=date.today(),
                     orcamento_previsto=DEFAULT_ORCAMENTO,
@@ -102,3 +106,9 @@ class Command(BaseCommand):
         except IntegrityError as e:
             logger.error("Erro ao sincronizar projeto '%s': %s", nome, e)
             return status
+
+    @staticmethod
+    def _clean_str(value):
+        if value is None:
+            return ""
+        return str(value).strip()
