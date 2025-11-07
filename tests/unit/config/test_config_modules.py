@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
-from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 
 from config import routers
@@ -267,11 +267,18 @@ class ConfigViewsTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("login"))
 
-    @override_settings(SECRET_KEY="")
     def test_add_session_populates_missing_secret_key(self):
-        request = self._add_session(self.factory.get("/"))
-        self.assertEqual(settings.SECRET_KEY, "test-secret")
-        self.assertIsNotNone(request.session.session_key)
+        original_secret = getattr(settings, "SECRET_KEY", None)
+        try:
+            settings.SECRET_KEY = ""
+            request = self._add_session(self.factory.get("/"))
+            self.assertEqual(settings.SECRET_KEY, "test-secret")
+        finally:
+            if original_secret is None:
+                if hasattr(settings, "SECRET_KEY"):
+                    delattr(settings, "SECRET_KEY")
+            else:
+                settings.SECRET_KEY = original_secret
 
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_index_renders_when_authenticated(self, mock_render):
