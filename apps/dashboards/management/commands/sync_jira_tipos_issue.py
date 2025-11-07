@@ -9,7 +9,7 @@ from apps.utils.enums.status_integracao_enum import StatusIntegracao
 
 logger = logging.getLogger(__name__)
 
-TIPOS_DE_ISSUE_ACORDADOS = ["BUG", "ERRO", "TAREFA"]
+TIPOS_DE_ISSUE_ACORDADOS = ["BUG", "ERRO", "TAREFA", "SUBTAREFA"]
 
 
 class Command(BaseCommand):
