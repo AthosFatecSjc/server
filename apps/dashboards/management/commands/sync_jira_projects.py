@@ -63,12 +63,12 @@ class Command(BaseCommand):
 
         jira_id = projeto.get("id", "").strip()
         if not jira_id:
-            logger.warning(f"Projeto Jira sem id, ignorado: {projeto}")
+            logger.warning("Projeto Jira sem id, ignorado: %s", projeto)
             return status
 
         jira_key = projeto.get("key", "").strip()
         if not jira_key:
-            logger.warning(f"Projeto Jira sem key, ignorado: {projeto}")
+            logger.warning("Projeto Jira sem key, ignorado: %s", projeto)
             return status
 
         try:

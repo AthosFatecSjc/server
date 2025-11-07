@@ -46,12 +46,17 @@ class Command(BaseCommand):
                 )
             )
             logger.error(
-                f""" Projeto<id: {projeto.id}, jira_id: {jira_project_id}, tipos_issue: {tipos_issue_acordados})>."""
+                " Projeto<id: %s, jira_id: %s, tipos_issue: %s)>.",
+                projeto.id,
+                jira_project_id,
+                tipos_issue_acordados,
             )
 
             jira_issues = jira_service.get_issues(projeto.jira_key)
             logger.error(
-                f"""RTX | jira_service.get_issues({jira_project_id}): {len(jira_issues)}"""
+                "RTX | jira_service.get_issues(%s): %s",
+                jira_project_id,
+                len(jira_issues),
             )
 
             if not jira_issues:
@@ -84,74 +89,29 @@ class Command(BaseCommand):
     def salva_issue(self, issue_jira: dict, projeto: Projeto) -> StatusIntegracao:
         status = StatusIntegracao.STATUS_IGNORADO
 
-        issue_jira_id = issue_jira.get("id", "").strip()
-        if not issue_jira_id:
-            self.stdout.write(self.style.ERROR(f"Issue sem id, ignorado."))
+        issue_data, error_message = self._extract_issue_data(issue_jira, projeto)
+        if error_message:
+            self.stdout.write(self.style.ERROR(error_message))
             return status
 
-        issue_jira_key = issue_jira.get("key", "").strip()
-        if not issue_jira_key:
-            self.stdout.write(
-                self.style.ERROR(f"Issue sem key, ignorado: {issue_jira_id}.")
-            )
-            return status
-
-        issue_jira_fields = issue_jira.get("fields", {})
-        if not issue_jira_fields:
-            self.stdout.write(
-                self.style.ERROR(f"Issue sem fields, ignorado: {issue_jira_key},")
-            )
-            return status
-
-        issue_jira_summary = issue_jira_fields.get("summary", "")
-        if not issue_jira_summary:
-            self.stdout.write(
-                self.style.ERROR(f"Issue sem summary, ignorado: {issue_jira_key}.")
-            )
-            return status
-
-        issue_jira_tipo_issue_id = (
-            issue_jira_fields.get("issuetype", {}).get("id", "").strip()
-        )
-        if not issue_jira_tipo_issue_id:
-            self.stdout.write(
-                self.style.ERROR(
-                    f"Issue sem tipo de issue id, ignorado: {issue_jira_key}."
-                )
-            )
-            return status
-
-        if not TipoIssue.objects.filter(
-            jira_id=int(issue_jira_tipo_issue_id), projeto_id=projeto.id
-        ).first():
-            issue_jira_tipo_issue_name = (
-                issue_jira_fields.get("issuetype", {}).get("name", "").strip()
-            )
-
-            self.stdout.write(
-                self.style.ERROR(
-                    f"Tipo de issue não permitida no projeto: {projeto.nome} ({issue_jira_tipo_issue_name}), ignorado: {issue_jira_key}."
-                )
-            )
-            return status
-
+        issue_jira_fields = issue_data["fields"]
+        issue_jira_id = int(issue_data["id"])
+        issue_jira_key = issue_data["key"]
+        issue_jira_summary = issue_data["summary"]
+        tipo_issue = issue_data["tipo_issue"]
         issue_jira_assignee = (
             issue_jira_fields.get("assignee", {}).get("displayName", "").strip()
-            if issue_jira_fields.get("assignee", 0)
+            if issue_jira_fields.get("assignee")
             else None
         )
 
         try:
-            issue = Issue.objects.filter(jira_id=int(issue_jira_id)).first()
+            issue = Issue.objects.filter(jira_id=issue_jira_id).first()
 
             if issue:
                 # Update existing
                 issue.titulo = issue_jira_summary
-                issue.tipo_issue_id = (
-                    TipoIssue.objects.filter(jira_id=issue_jira_tipo_issue_id)
-                    .first()
-                    .id
-                )
+                issue.tipo_issue_id = tipo_issue.id
                 issue.tempo_gasto_seconds = (
                     issue_jira_fields.get("timespent", 0)
                     if issue_jira_fields.get("timespent", 0)
@@ -186,11 +146,7 @@ class Command(BaseCommand):
                     jira_key=issue_jira_key,
                     projeto_id=projeto.id,
                     titulo=issue_jira_summary,
-                    tipo_issue_id=TipoIssue.objects.filter(
-                        jira_id=issue_jira_tipo_issue_id
-                    )
-                    .first()
-                    .id,
+                    tipo_issue_id=tipo_issue.id,
                     criado_em=(
                         issue_jira_fields.get("created", "")
                         if issue_jira_fields.get("created")
@@ -224,10 +180,65 @@ class Command(BaseCommand):
                 )
                 status = StatusIntegracao.STATUS_CRIADO
 
-            return status
-
         except IntegrityError as e:
             self.stdout.write(
                 self.style.ERROR(f"Erro ao sincronizar issue: {issue_jira_key}. {e}.")
             )
-            return status
+
+        return status
+
+    def _extract_issue_data(self, issue_jira: dict, projeto: Projeto):
+        issue_jira_id = issue_jira.get("id", "").strip()
+        issue_jira_key = issue_jira.get("key", "").strip()
+        issue_jira_fields = issue_jira.get("fields", {})
+        issue_jira_summary = issue_jira_fields.get("summary", "")
+        issue_jira_tipo_issue_id = (
+            issue_jira_fields.get("issuetype", {}).get("id", "").strip()
+        )
+
+        validations = (
+            (not issue_jira_id, "Issue sem id, ignorado."),
+            (
+                not issue_jira_key,
+                f"Issue sem key, ignorado: {issue_jira_id}.",
+            ),
+            (
+                not issue_jira_fields,
+                f"Issue sem fields, ignorado: {issue_jira_key},",
+            ),
+            (
+                not issue_jira_summary,
+                f"Issue sem summary, ignorado: {issue_jira_key}.",
+            ),
+            (
+                not issue_jira_tipo_issue_id,
+                f"Issue sem tipo de issue id, ignorado: {issue_jira_key}.",
+            ),
+        )
+
+        for condition, message in validations:
+            if condition:
+                return None, message
+
+        tipo_issue = TipoIssue.objects.filter(
+            jira_id=int(issue_jira_tipo_issue_id), projeto_id=projeto.id
+        ).first()
+        if not tipo_issue:
+            issue_jira_tipo_issue_name = (
+                issue_jira_fields.get("issuetype", {}).get("name", "").strip()
+            )
+            return (
+                None,
+                f"Tipo de issue não permitida no projeto: {projeto.nome} ({issue_jira_tipo_issue_name}), ignorado: {issue_jira_key}.",
+            )
+
+        return (
+            {
+                "id": issue_jira_id,
+                "key": issue_jira_key,
+                "fields": issue_jira_fields,
+                "summary": issue_jira_summary,
+                "tipo_issue": tipo_issue,
+            },
+            None,
+        )

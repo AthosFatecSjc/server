@@ -265,7 +265,9 @@ class JiraService:
 
         except requests.exceptions.RequestException as e:
             logger.error(
-                f"Erro ao buscar tipos de issue para o projeto {projeto_id} do Jira: {e}"
+                "Erro ao buscar tipos de issue para o projeto %s do Jira: %s",
+                projeto_id,
+                e,
             )
             sentry_sdk.capture_exception(e)
             return None

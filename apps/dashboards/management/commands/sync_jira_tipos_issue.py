@@ -78,19 +78,20 @@ class Command(BaseCommand):
 
         tipo_issue_jira_id = tipo_issue_jira.get("id", "").strip()
         if not tipo_issue_jira_id:
-            logger.warning(f"Tipo de issue sem id, ignorado: {tipo_issue_jira}")
+            logger.warning("Tipo de issue sem id, ignorado: %s", tipo_issue_jira)
             return status
 
         tipo_issue_jira_name = tipo_issue_jira.get("name", "").strip()
         if not tipo_issue_jira_name:
-            logger.warning(f"Tipo de issue sem nome, ignorado: {tipo_issue_jira}")
+            logger.warning("Tipo de issue sem nome, ignorado: %s", tipo_issue_jira)
             return status
 
         tipo_issue_jira_description = tipo_issue_jira.get("description", "").strip()
 
         if tipo_issue_jira_name.upper() not in TIPOS_DE_ISSUE_ACORDADOS:
             logger.warning(
-                f"Tipo de issue '{tipo_issue_jira_name}' não está na lista de tipos acordados, ignorado."
+                "Tipo de issue '%s' não está na lista de tipos acordados, ignorado.",
+                tipo_issue_jira_name,
             )
             return status
 
@@ -119,6 +120,9 @@ class Command(BaseCommand):
 
         except IntegrityError as e:
             logger.error(
-                f"Erro ao sincronizar tipo de issue - id: {tipo_issue_jira_id}, name: {tipo_issue_jira_name}. {e}"
+                "Erro ao sincronizar tipo de issue - id: %s, name: %s. %s",
+                tipo_issue_jira_id,
+                tipo_issue_jira_name,
+                e,
             )
             return status
