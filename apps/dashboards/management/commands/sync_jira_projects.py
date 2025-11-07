@@ -34,12 +34,12 @@ class Command(BaseCommand):
             )
             return
 
-        criados, atualizados, ignorados = 0, 0, 0 
+        criados, atualizados, ignorados = 0, 0, 0
 
         with transaction.atomic():
             for projeto in projetos:
                 status = self.salva_projeto(projeto)
-                
+
                 if status == StatusIntegracao.STATUS_CRIADO:
                     criados += 1
                 elif status == StatusIntegracao.STATUS_ATUALIZADO:
@@ -52,7 +52,7 @@ class Command(BaseCommand):
                 f" Sincronização concluída: {criados} criados, {atualizados} atualizados, {ignorados} ignorados."
             )
         )
-    
+
     def salva_projeto(self, projeto):
         status = StatusIntegracao.STATUS_IGNORADO
         nome = projeto.get("name", "").strip()

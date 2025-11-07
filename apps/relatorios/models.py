@@ -187,6 +187,7 @@ class TempoControleValores(models.Model):
     def __str__(self):
         return f"Aproveitamento: {self.aproveitamento}%"
 
+
 class TipoIssue(models.Model):
     """
     Modelo para tipos de issue do projeto
@@ -196,7 +197,9 @@ class TipoIssue(models.Model):
     nome = models.CharField(max_length=255, null=False, blank=False)
     descricao = models.CharField(max_length=1024, null=True, blank=True)
     jira_id = models.PositiveIntegerField(null=False, blank=False)
-    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, null=False, blank=False)
+    projeto = models.ForeignKey(
+        Projeto, on_delete=models.CASCADE, null=False, blank=False
+    )
     data_criacao = models.DateField(default=datetime.now)
 
     class Meta:
@@ -223,7 +226,9 @@ class Issue(models.Model):
     id = models.AutoField(primary_key=True)
     jira_id = models.PositiveIntegerField(null=False, blank=False)
     jira_key = models.CharField(max_length=50, null=False, blank=False)
-    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, null=False, blank=False)
+    projeto = models.ForeignKey(
+        Projeto, on_delete=models.CASCADE, null=False, blank=False
+    )
     titulo = models.CharField(max_length=255, null=False, blank=False)
     tipo_issue = models.ForeignKey(TipoIssue, on_delete=models.SET_NULL, null=True)
     criado_em = models.DateTimeField(null=True)

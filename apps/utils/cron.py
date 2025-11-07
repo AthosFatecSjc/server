@@ -47,7 +47,7 @@ def buscar_dados_api():
             escrever_log("Sincronização de projetos concluída com sucesso.")
         except Exception as e:
             escrever_log(f"ERRO na sincronização de projetos: {str(e)}")
-        
+
         sync_tipos_issue()
 
         sync_issues()
@@ -128,6 +128,7 @@ def buscar_dados_com_etl():
         escrever_log(f"Erro no cron completo: {str(e)}")
         raise
 
+
 def sync_tipos_issue():
     """
     Função auxiliar para buscar tipos de issue do Jira.
@@ -139,6 +140,7 @@ def sync_tipos_issue():
         escrever_log("Sincronização de tipos de issue concluída com sucesso.")
     except Exception as e:
         escrever_log(f"ERRO na sincronização de tipos de issue: {str(e)}")
+
 
 def sync_issues():
     """

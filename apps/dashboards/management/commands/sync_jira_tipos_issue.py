@@ -24,14 +24,18 @@ class Command(BaseCommand):
             self.style.WARNING(" Iniciando sincronização de tipos de issue do Jira...")
         )
 
-        jira_project_ids = list(Projeto.objects.filter(jira_id__isnull=False).values_list("jira_id", flat=True))
+        jira_project_ids = list(
+            Projeto.objects.filter(jira_id__isnull=False).values_list(
+                "jira_id", flat=True
+            )
+        )
 
         if not jira_project_ids:
             self.stdout.write(
                 self.style.ERROR("Nenhum projeto Jira encontrado na base OLTP.")
             )
             return
-        
+
         jira_service = JiraService()
 
         for jira_project_id in jira_project_ids:
@@ -39,7 +43,7 @@ class Command(BaseCommand):
             tipos_issue = jira_service.get_tipos_issue(jira_project_id)
 
             projeto = Projeto.objects.filter(jira_id=jira_project_id).first()
-            
+
             if not tipos_issue:
                 self.stdout.write(
                     self.style.NOTICE(
@@ -47,28 +51,29 @@ class Command(BaseCommand):
                     )
                 )
                 continue
-            
+
             criados, atualizados, ignorados = 0, 0, 0
-                        
+
             for tipo_issue in tipos_issue:
                 with transaction.atomic():
                     status = self.salva_tipo_issue(tipo_issue, projeto.id)
-                
+
                     if status == StatusIntegracao.STATUS_CRIADO:
                         criados += 1
                     elif status == StatusIntegracao.STATUS_ATUALIZADO:
                         atualizados += 1
                     else:
                         ignorados += 1
-            
+
             self.stdout.write(
                 self.style.SUCCESS(
                     f" Sincronização de tipo de issue para o projeto {projeto.jira_id} - {projeto.nome} concluída: {criados} criados, {atualizados} atualizados, {ignorados} ignorados."
                 )
             )
 
-
-    def salva_tipo_issue(self, tipo_issue_jira: dict, projeto_id: int) -> StatusIntegracao:
+    def salva_tipo_issue(
+        self, tipo_issue_jira: dict, projeto_id: int
+    ) -> StatusIntegracao:
         status = StatusIntegracao.STATUS_IGNORADO
 
         tipo_issue_jira_id = tipo_issue_jira.get("id", "").strip()
@@ -84,11 +89,15 @@ class Command(BaseCommand):
         tipo_issue_jira_description = tipo_issue_jira.get("description", "").strip()
 
         if tipo_issue_jira_name.upper() not in TIPOS_DE_ISSUE_ACORDADOS:
-            logger.warning(f"Tipo de issue '{tipo_issue_jira_name}' não está na lista de tipos acordados, ignorado.")
+            logger.warning(
+                f"Tipo de issue '{tipo_issue_jira_name}' não está na lista de tipos acordados, ignorado."
+            )
             return status
 
         try:
-            tipo_issue = TipoIssue.objects.filter(jira_id=int(tipo_issue_jira_id)).first()
+            tipo_issue = TipoIssue.objects.filter(
+                jira_id=int(tipo_issue_jira_id)
+            ).first()
 
             if tipo_issue:
                 # Update existing
@@ -102,12 +111,14 @@ class Command(BaseCommand):
                     jira_id=int(tipo_issue_jira_id),
                     nome=tipo_issue_jira_name,
                     descricao=tipo_issue_jira_description,
-                    projeto_id=projeto_id
+                    projeto_id=projeto_id,
                 )
                 status = StatusIntegracao.STATUS_CRIADO
 
             return status
 
         except IntegrityError as e:
-            logger.error(f"Erro ao sincronizar tipo de issue - id: {tipo_issue_jira_id}, name: {tipo_issue_jira_name}. {e}")
+            logger.error(
+                f"Erro ao sincronizar tipo de issue - id: {tipo_issue_jira_id}, name: {tipo_issue_jira_name}. {e}"
+            )
             return status

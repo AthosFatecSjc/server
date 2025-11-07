@@ -1,7 +1,7 @@
-from datetime import time
-from http import HTTPStatus
 import json
 import logging
+from datetime import time
+from http import HTTPStatus
 from typing import Dict, List
 
 import requests
@@ -114,10 +114,10 @@ class JiraService:
                     "updated",
                 ],
             }
-            
+
             if max_results_per_page is not None:
                 payload["maxResults"] = max_results_per_page
-            
+
             if next_page_token is not None:
                 payload["nextPageToken"] = next_page_token
 
@@ -125,7 +125,8 @@ class JiraService:
 
             try:
                 with sentry_sdk.start_span(
-                    op="http.client", description=f"Request Jira Tasks for {project_key}"
+                    op="http.client",
+                    description=f"Request Jira Tasks for {project_key}",
                 ):
                     response = requests.post(
                         url,
@@ -172,7 +173,7 @@ class JiraService:
                 logger.error("Erro ao buscar tasks do projeto %s: %s", project_key, e)
                 sentry_sdk.capture_exception(e)
                 return []
-        
+
         return all_issues
 
     def get_all_tasks_data(self) -> List[Dict] | None:
@@ -263,6 +264,8 @@ class JiraService:
             return tipos_issue or []
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Erro ao buscar tipos de issue para o projeto {projeto_id} do Jira: {e}")
+            logger.error(
+                f"Erro ao buscar tipos de issue para o projeto {projeto_id} do Jira: {e}"
+            )
             sentry_sdk.capture_exception(e)
             return None
