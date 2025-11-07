@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
@@ -199,6 +200,53 @@ class JiraServiceTests(SimpleTestCase):
         self.assertEqual(len(result), 2)
         mock_sleep.assert_called_once_with(7)
         self.assertEqual(mock_post.call_count, 3)
+
+    @override_settings(JIRA_USER="user", JIRA_TOKEN="token")
+    @patch("apps.dashboards.services.time.sleep")
+    @patch("apps.dashboards.services.requests.post")
+    @patch("apps.dashboards.services.sentry_sdk")
+    def test_get_issues_aplica_next_page_token_apos_primeira_pagina(
+        self, mock_sentry, mock_post, mock_sleep
+    ):
+        _mock_sentry(mock_sentry)
+
+        class FakeResponse:
+            def __init__(self, status_code, data=None, headers=None):
+                self.status_code = status_code
+                self._data = data or {}
+                self.headers = headers or {}
+
+            def raise_for_status(self):
+                if self.status_code >= 400:
+                    raise requests.exceptions.HTTPError("error")
+
+            def json(self):
+                return self._data
+
+        first_page = FakeResponse(
+            HTTPStatus.OK,
+            {
+                "issues": [{"key": "ISS-10", "fields": {}}],
+                "isLast": False,
+                "nextPageToken": "next-token",
+            },
+        )
+        second_page = FakeResponse(
+            HTTPStatus.OK,
+            {"issues": [{"key": "ISS-20", "fields": {}}], "isLast": True},
+        )
+
+        mock_post.side_effect = [first_page, second_page]
+
+        service = JiraService()
+        issues = service.get_issues("DEF", 1)
+
+        self.assertEqual(len(issues), 2)
+        self.assertEqual(mock_post.call_count, 2)
+        # Quando a segunda chamada ocorre, o nextPageToken precisa estar presente no payload.
+        payload_segunda_chamada = json.loads(mock_post.call_args_list[1].kwargs["data"])
+        self.assertEqual(payload_segunda_chamada.get("nextPageToken"), "next-token")
+        mock_sleep.assert_not_called()
 
     @override_settings(JIRA_USER="user", JIRA_TOKEN="token")
     @patch("apps.dashboards.services.JiraService.get_projects", return_value=None)
