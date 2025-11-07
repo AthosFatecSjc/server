@@ -268,7 +268,10 @@ class ConfigViewsTests(TestCase):
         self.assertEqual(response.url, reverse("login"))
 
     def test_add_session_populates_missing_secret_key(self):
-        original_secret = getattr(settings, "SECRET_KEY", None)
+        try:
+            original_secret = settings.SECRET_KEY
+        except ImproperlyConfigured:
+            original_secret = None
         try:
             settings.SECRET_KEY = ""
             request = self._add_session(self.factory.get("/"))
