@@ -184,3 +184,27 @@ class CronJobsTests(SimpleTestCase):
                 for args, _ in mock_escrever_log.call_args_list
             )
         )
+
+    @patch("apps.utils.cron.call_command", side_effect=Exception("falha"))
+    @patch("apps.utils.cron.escrever_log")
+    def test_sync_tipos_issue_registra_erro(self, mock_escrever_log, mock_call_command):
+        cron.sync_tipos_issue()
+        mock_call_command.assert_called_once_with("sync_jira_tipos_issue")
+        self.assertTrue(
+            any(
+                "ERRO na sincronização de tipos de issue" in args[0]
+                for args, _ in mock_escrever_log.call_args_list
+            )
+        )
+
+    @patch("apps.utils.cron.call_command", side_effect=Exception("falha"))
+    @patch("apps.utils.cron.escrever_log")
+    def test_sync_issues_registra_erro(self, mock_escrever_log, mock_call_command):
+        cron.sync_issues()
+        mock_call_command.assert_called_once_with("sync_jira_issues")
+        self.assertTrue(
+            any(
+                "ERRO na sincronização de issues" in args[0]
+                for args, _ in mock_escrever_log.call_args_list
+            )
+        )

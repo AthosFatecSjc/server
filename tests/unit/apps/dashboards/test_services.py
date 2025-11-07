@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -161,6 +162,45 @@ class JiraServiceTests(SimpleTestCase):
         mock_sentry.capture_exception.assert_called_once()
 
     @override_settings(JIRA_USER="user", JIRA_TOKEN="token")
+    @patch("apps.dashboards.services.time.sleep")
+    @patch("apps.dashboards.services.requests.post")
+    @patch("apps.dashboards.services.sentry_sdk")
+    def test_get_tasks_by_project_respeita_rate_limit_e_paginacao(
+        self, mock_sentry, mock_post, mock_sleep
+    ):
+        _mock_sentry(mock_sentry)
+
+        rate_limited = MagicMock()
+        rate_limited.status_code = HTTPStatus.TOO_MANY_REQUESTS
+        rate_limited.headers = {"Retry-After": "7"}
+
+        first_page = MagicMock()
+        first_page.status_code = HTTPStatus.OK
+        first_page.raise_for_status.return_value = None
+        first_page.json.return_value = {
+            "issues": [{"key": "ISS-1", "fields": {}}],
+            "isLast": False,
+            "nextPageToken": "token-1",
+        }
+
+        second_page = MagicMock()
+        second_page.status_code = HTTPStatus.OK
+        second_page.raise_for_status.return_value = None
+        second_page.json.return_value = {
+            "issues": [{"key": "ISS-2", "fields": {}}],
+            "isLast": True,
+        }
+
+        mock_post.side_effect = [rate_limited, first_page, second_page]
+
+        service = JiraService()
+        result = service.get_tasks_by_project("ABC", 1)
+
+        self.assertEqual(len(result), 2)
+        mock_sleep.assert_called_once_with(7)
+        self.assertEqual(mock_post.call_count, 3)
+
+    @override_settings(JIRA_USER="user", JIRA_TOKEN="token")
     @patch("apps.dashboards.services.JiraService.get_projects", return_value=None)
     def test_get_all_tasks_data_retorna_none_quando_sem_projetos(
         self, mock_get_projects
@@ -206,3 +246,43 @@ class JiraServiceTests(SimpleTestCase):
         self.assertEqual(projeto["total_tasks"], 1)
         self.assertEqual(projeto["tasks"][0]["assignee"], "Alice")
         self.assertEqual(result[1]["tasks"], [])
+
+    @override_settings(JIRA_USER=None, JIRA_TOKEN=None)
+    @patch("apps.dashboards.services.requests.get")
+    def test_get_tipos_issue_sem_credenciais_retorna_none(self, mock_get):
+        service = JiraService()
+        result = service.get_tipos_issue(1)
+        self.assertIsNone(result)
+        mock_get.assert_not_called()
+
+    @override_settings(JIRA_USER="user", JIRA_TOKEN="token")
+    @patch("apps.dashboards.services.requests.get")
+    @patch("apps.dashboards.services.sentry_sdk")
+    def test_get_tipos_issue_retorna_lista_e_avisa_quando_vazia(
+        self, mock_sentry, mock_get
+    ):
+        _mock_sentry(mock_sentry)
+        response = MagicMock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = []
+        mock_get.return_value = response
+
+        service = JiraService()
+        result = service.get_tipos_issue(10)
+
+        self.assertEqual(result, [])
+        mock_get.assert_called_once()
+        mock_sentry.capture_message.assert_called_once()
+
+    @override_settings(JIRA_USER="user", JIRA_TOKEN="token")
+    @patch("apps.dashboards.services.requests.get")
+    @patch("apps.dashboards.services.sentry_sdk")
+    def test_get_tipos_issue_trata_excecao(self, mock_sentry, mock_get):
+        _mock_sentry(mock_sentry)
+        mock_get.side_effect = requests.exceptions.RequestException("err")
+
+        service = JiraService()
+        result = service.get_tipos_issue(5)
+
+        self.assertIsNone(result)
+        mock_sentry.capture_exception.assert_called_once()
