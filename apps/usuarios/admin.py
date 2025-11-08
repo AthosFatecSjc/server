@@ -1,3 +1,3 @@
 """Admin configuration for the usuarios app."""
 
-# Register your models here.
+# Integração com o Django admin será adicionada posteriormente conforme necessário.
