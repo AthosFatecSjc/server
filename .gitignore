@@ -42,3 +42,7 @@ Thumbs.db
 
 .data/
 data/
+
+# Coverage reports
+.coverage
+coverage.xml

@@ -55,7 +55,7 @@ class Projeto(models.Model):
 
     id = models.AutoField(primary_key=True)
     jira_id = models.PositiveIntegerField(null=True)
-    jira_key = models.CharField(max_length=50, null=True)
+    jira_key = models.CharField(max_length=50, blank=True, default="")
     nome = models.CharField(max_length=100)
     data_criacao = models.DateField(auto_now_add=True)
     orcamento_previsto = models.DecimalField(
@@ -195,7 +195,7 @@ class TipoIssue(models.Model):
 
     id = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=255, null=False, blank=False)
-    descricao = models.CharField(max_length=1024, null=True, blank=True)
+    descricao = models.CharField(max_length=1024, blank=True, default="")
     jira_id = models.PositiveIntegerField(null=False, blank=False)
     projeto = models.ForeignKey(
         Projeto, on_delete=models.CASCADE, null=False, blank=False
@@ -236,7 +236,7 @@ class Issue(models.Model):
     tempo_estimado_seconds = models.PositiveIntegerField(default=0, null=True)
     funcionario = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True)
     atualizado_em = models.DateTimeField(null=True)
-    status = models.CharField(max_length=100, null=True)
+    status = models.CharField(max_length=100, blank=True, default="")
 
     class Meta:
         """
