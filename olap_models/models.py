@@ -1,4 +1,5 @@
 from datetime import datetime
+from pprint import pformat
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -23,7 +24,7 @@ class DimProjeto(models.Model):
         db_table = "dim_projeto"
 
     def __str__(self):
-        return str(self.__dict__, indent=4, ensure_ascii=False)
+        return pformat(self.__dict__, indent=4, width=120)
 
 
 class DimCargo(models.Model):
@@ -68,7 +69,7 @@ class DimFuncionario(models.Model):
         db_table = "dim_funcionario"
 
     def __str__(self):
-        return str(self.__dict__, indent=4, ensure_ascii=False)
+        return pformat(self.__dict__, indent=4, width=120)
 
 
 class DimTempo(models.Model):
@@ -147,7 +148,7 @@ class DimTempo(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return str(self.__dict__, indent=4, ensure_ascii=False)
+        return pformat(self.__dict__, indent=4, width=120)
 
 
 class FatoRegistroHoras(models.Model):
@@ -181,4 +182,4 @@ class FatoRegistroHoras(models.Model):
         ]
 
     def __str__(self):
-        return str(self.__dict__, indent=4, ensure_ascii=False)
+        return pformat(self.__dict__, indent=4, width=120)
