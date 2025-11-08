@@ -10,6 +10,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 BASE_DIR = Path(__file__).resolve().parent.parent
 SQLITE_ENGINE = "django.db.backends.sqlite3"
 
+env = environ.Env()
 env_path = BASE_DIR / ".env"
 if not env_path.exists():
     env_path = BASE_DIR.parent / ".env"
