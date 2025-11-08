@@ -4,21 +4,56 @@ from pathlib import Path
 
 import environ
 import sentry_sdk
+from django.core.exceptions import ImproperlyConfigured
 from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+SQLITE_ENGINE = "django.db.backends.sqlite3"
 
-env = environ.Env(DEBUG=(bool, False))
+env_path = BASE_DIR / ".env"
+if not env_path.exists():
+    env_path = BASE_DIR.parent / ".env"
+if env_path.exists():
+    environ.Env.read_env(str(env_path))
 
-env_path = os.path.join(BASE_DIR, ".env")
-if not os.path.exists(env_path):
-    env_path = os.path.join(BASE_DIR, "../.env")
 
-environ.Env.read_env(env_path)
+def get_env(name: str, default=None):
+    return os.getenv(name, default)
 
-DEBUG = env("DEBUG", default=True)
-SECRET_KEY = env("SECRET_KEY")
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
+
+def get_bool_env(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "t", "yes", "on"}
+
+
+def get_list_env(name: str, default=None, separator: str = ",") -> list:
+    value = os.getenv(name)
+    if value is None:
+        return list(default) if isinstance(default, (list, tuple)) else default or []
+    return [item.strip() for item in value.split(separator) if item.strip()]
+
+
+def optional(value):
+    return value if value not in (None, "") else None
+
+
+DEBUG = get_bool_env("DEBUG", True)
+secret_fallback = get_env(
+    "DEFAULT_SECRET_KEY",
+    "django-insecure-default-key-for-tests",
+)
+SECRET_KEY = get_env("SECRET_KEY", secret_fallback)
+if not SECRET_KEY:
+    SECRET_KEY = secret_fallback
+if SECRET_KEY == secret_fallback and not DEBUG:
+    raise ImproperlyConfigured(
+        "SECRET_KEY não configurado. Defina SECRET_KEY no ambiente."
+    )
+
+ALLOWED_HOSTS_DEFAULT = ["*"] if DEBUG else []
+ALLOWED_HOSTS = get_list_env("ALLOWED_HOSTS", ALLOWED_HOSTS_DEFAULT)
 
 # Application definition
 INSTALLED_APPS = [
@@ -82,22 +117,35 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASE_ROUTERS = ["config.routers.OlapRouter"]
 
+default_db_engine = get_env("DB_ENGINE") or get_env("DB_OLTP_ENGINE") or SQLITE_ENGINE
+default_db_name = (
+    get_env("DB_NAME") or get_env("DB_OLTP_NAME") or str(BASE_DIR / "db.sqlite3")
+)
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("DB_OLTP_NAME", default=None),
-        "USER": env("DB_OLTP_USER", default=None),
-        "PASSWORD": env("DB_OLTP_PASSWORD", default=None),
-        "HOST": env("DB_OLTP_HOST", default=None),
-        "PORT": env("DB_OLTP_PORT", default=None),
+        "ENGINE": default_db_engine,
+        "NAME": default_db_name,
+        "USER": optional(get_env("DB_USER") or get_env("DB_OLTP_USER")),
+        "PASSWORD": optional(get_env("DB_PASSWORD") or get_env("DB_OLTP_PASSWORD")),
+        "HOST": optional(get_env("DB_HOST") or get_env("DB_OLTP_HOST")),
+        "PORT": optional(get_env("DB_PORT") or get_env("DB_OLTP_PORT")),
     },
     "olap": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("DB_OLAP_NAME", default=None),
-        "USER": env("DB_OLAP_USER", default=None),
-        "PASSWORD": env("DB_OLAP_PASSWORD", default=None),
-        "HOST": env("DB_OLAP_HOST", default=None),
-        "PORT": env("DB_OLAP_PORT", default=None),
+        "ENGINE": (
+            get_env("DB_ENGINE_OLAP") or get_env("DB_OLAP_ENGINE") or default_db_engine
+        ),
+        "NAME": (
+            get_env("DB_NAME_OLAP")
+            or get_env("DB_OLAP_NAME")
+            or str(BASE_DIR / "db_olap.sqlite3")
+        ),
+        "USER": optional(get_env("DB_USER_OLAP") or get_env("DB_OLAP_USER")),
+        "PASSWORD": optional(
+            get_env("DB_PASSWORD_OLAP") or get_env("DB_OLAP_PASSWORD")
+        ),
+        "HOST": optional(get_env("DB_HOST_OLAP") or get_env("DB_OLAP_HOST")),
+        "PORT": optional(get_env("DB_PORT_OLAP") or get_env("DB_OLAP_PORT")),
     },
 }
 
@@ -107,24 +155,27 @@ AUTH_USER_MODEL = "usuarios.Usuario"
 
 if not DATABASES["default"]["NAME"]:
     DATABASES["default"] = {
-        "ENGINE": "django.db.backends.sqlite3",
+        "ENGINE": SQLITE_ENGINE,
         "NAME": str(BASE_DIR / "db.sqlite3"),
     }
 if not DATABASES["olap"]["NAME"]:
     DATABASES["olap"] = {
-        "ENGINE": "django.db.backends.sqlite3",
+        "ENGINE": SQLITE_ENGINE,
         "NAME": str(BASE_DIR / "db_olap.sqlite3"),
     }
 
-if os.environ.get("TEST_DB_ENGINE"):
+if get_env("TEST_DB_ENGINE"):
     DATABASES["default"] = {
-        "ENGINE": os.environ["TEST_DB_ENGINE"],
-        "NAME": os.environ.get("TEST_DB_NAME", ":memory:"),
+        "ENGINE": get_env("TEST_DB_ENGINE"),
+        "NAME": get_env("TEST_DB_NAME", ":memory:"),
     }
 
-JIRA_BASE_URL = env("JIRA_BASE_URL", default="http://localhost")
-JIRA_USER = env("JIRA_USER", default="user")
-JIRA_TOKEN = env("JIRA_TOKEN", default="token")
+JIRA_BASE_URL = get_env("JIRA_BASE_URL") or get_env(
+    "JIRA_URL",
+    "https://dummy.atlassian.net",
+)
+JIRA_USER = get_env("JIRA_USER", "dummy@ci")
+JIRA_TOKEN = get_env("JIRA_TOKEN", "token123")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -180,17 +231,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CRONJOBS = [
     # Executa a cada minuto - sincronização rápida
     (
-        env("CRON_BUSCAR_DADOS", default="0 19 * * *"),
+        get_env("CRON_BUSCAR_DADOS", "0 19 * * *"),
         "apps.utils.cron.buscar_dados_api",
     ),
     # Executa a cada minuto - ETL mais pesado
     (
-        env("CRON_ETL", default="*/1 * * * *"),
+        get_env("CRON_ETL", "*/1 * * * *"),
         "apps.utils.cron.buscar_dados_com_etl",
     ),
     # Executa a cada hora - processo completo (Jira sync + ETL)
     # (
-    #     env("CRON_COMPLETO", default="0 */1 * * *"),  # A cada hora
+    #     get_env("CRON_COMPLETO", "0 */1 * * *"),  # A cada hora
     #     "apps.utils.cron.buscar_dados_com_etl",
     # ),
 ]
@@ -208,7 +259,7 @@ SESSION_SAVE_EVERY_REQUEST = True  # refresh expiry on activity
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Sentry Configuration
-SENTRY_DSN = env("SENTRY_DSN", default="")
+SENTRY_DSN = get_env("SENTRY_DSN", "")
 
 if SENTRY_DSN:
     sentry_sdk.init(
