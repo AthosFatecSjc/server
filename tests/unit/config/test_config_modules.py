@@ -269,8 +269,6 @@ class ConfigViewsTests(TestCase):
     def _add_session(self, request):
         from django.contrib.sessions.middleware import SessionMiddleware
 
-        middleware = SessionMiddleware(lambda req: HttpResponse())
-        middleware.process_request(request)
         try:
             secret_key = settings.SECRET_KEY
         except ImproperlyConfigured:
@@ -278,6 +276,8 @@ class ConfigViewsTests(TestCase):
         else:
             if not secret_key:
                 settings.SECRET_KEY = "test-secret"
+        middleware = SessionMiddleware(lambda req: HttpResponse())
+        middleware.process_request(request)
         request.session.save()
         return request
 
@@ -321,6 +321,22 @@ class ConfigViewsTests(TestCase):
         response = index(request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("login"))
+
+    def test_add_session_populates_missing_secret_key(self):
+        try:
+            original_secret = settings.SECRET_KEY
+        except ImproperlyConfigured:
+            original_secret = None
+        try:
+            settings.SECRET_KEY = ""
+            request = self._add_session(self.factory.get("/"))
+            self.assertEqual(settings.SECRET_KEY, "test-secret")
+        finally:
+            if original_secret is None:
+                if hasattr(settings, "SECRET_KEY"):
+                    delattr(settings, "SECRET_KEY")
+            else:
+                settings.SECRET_KEY = original_secret
 
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_index_renders_when_authenticated(self, mock_render):
@@ -481,11 +497,11 @@ class OlapModelsSmokeTests(TestCase):
             custo=Decimal("320.00"),
         )
 
-        with self.assertRaises(TypeError):
-            str(projeto)
-        with self.assertRaises(TypeError):
-            str(funcionario)
+        projeto_str = str(projeto)
+        self.assertIn("Projeto Demo", projeto_str)
+        funcionario_str = str(funcionario)
+        self.assertIn("Alice", funcionario_str)
         self.assertIn("Maio", tempo.mes_nome)
-        with self.assertRaises(TypeError):
-            str(fato)
+        fato_str = str(fato)
+        self.assertIn("320.00", fato_str)
         self.assertEqual(funcionario.nome_gerente, "Alice")
