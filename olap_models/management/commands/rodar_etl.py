@@ -1,11 +1,11 @@
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 # Modelos OLTP
-from apps.relatorios.models import TempoGastoEquipe  # usado para granularidade diária
-from apps.relatorios.models import Cargo, ControleHorasEquipe, Funcionario, Projeto
+from apps.relatorios.models import Cargo, Funcionario, Issue, Projeto
 
 # Modelos OLAP
 from olap_models.models import (
@@ -166,11 +166,12 @@ class Command(BaseCommand):
 
     def popular_fato_registro_horas(self):
         """
-        Popula FatoRegistroHoras com granularidade diária.
-        Agora inclui o projeto por lookup em ControleHorasEquipe.
+        Popula FatoRegistroHoras a partir das issues sincronizadas com o Jira.
+        Cada issue contribui com suas horas trabalhadas no dia do último update
+        (fallback para data de criação), agregando por funcionário + projeto + dia.
         """
         self.stdout.write(
-            " Populando FatoRegistroHoras (granularidade diária + projeto)..."
+            " Populando FatoRegistroHoras (baseado em issues sincronizadas)..."
         )
 
         registros_criados = 0
@@ -180,41 +181,54 @@ class Command(BaseCommand):
         projetos_dim = {p.id: p for p in DimProjeto.objects.using("olap").all()}
         tempos_dim = {t.data_completa: t for t in DimTempo.objects.using("olap").all()}
 
-        controle_por_func_mes = {
-            (c.funcionario_id, c.mes): c.projeto_id
-            for c in ControleHorasEquipe.objects.all()
-        }
+        agregados: dict[tuple[int, int, int], dict[str, object]] = {}
 
-        for registro in TempoGastoEquipe.objects.select_related(
-            "funcionario"
-        ).iterator():
-            try:
-                data_completa = registro.mes.replace(day=registro.dia_mes)
-            except ValueError:
+        for issue in Issue.objects.select_related("funcionario", "projeto").iterator():
+            if not issue.funcionario_id:
                 registros_ignorados += 1
                 continue
 
-            func_dim = funcionarios_dim.get(registro.funcionario_id)
+            data_base = issue.atualizado_em or issue.criado_em
+            if not data_base:
+                registros_ignorados += 1
+                continue
+
+            data_completa = data_base.date()
+            horas_decimais = Decimal(issue.tempo_gasto_seconds or 0) / Decimal("3600")
+            if horas_decimais <= 0:
+                registros_ignorados += 1
+                continue
+
+            func_dim = funcionarios_dim.get(issue.funcionario_id)
+            projeto_dim = projetos_dim.get(issue.projeto_id)
             data_dim = tempos_dim.get(data_completa)
 
-            projeto_id = controle_por_func_mes.get(
-                (registro.funcionario_id, registro.mes)
-            )
-            projeto_dim = projetos_dim.get(projeto_id) if projeto_id else None
-
-            if not (func_dim and data_dim and projeto_dim):
+            if not (func_dim and projeto_dim and data_dim):
                 registros_ignorados += 1
                 continue
 
-            custo_dia = float(registro.tempo_gasto) * float(func_dim.valor_hora)
+            chave = (func_dim.id, projeto_dim.id, data_dim.id)
+            agregado = agregados.setdefault(
+                chave,
+                {
+                    "funcionario": func_dim,
+                    "projeto": projeto_dim,
+                    "data": data_dim,
+                    "horas": Decimal("0"),
+                    "custo": Decimal("0"),
+                },
+            )
+            agregado["horas"] += horas_decimais
+            agregado["custo"] += horas_decimais * func_dim.valor_hora
 
+        for agregado in agregados.values():
             FatoRegistroHoras.objects.using("olap").update_or_create(
-                funcionario=func_dim,
-                projeto=projeto_dim,
-                data=data_dim,
+                funcionario=agregado["funcionario"],
+                projeto=agregado["projeto"],
+                data=agregado["data"],
                 defaults={
-                    "horas_trabalhadas": registro.tempo_gasto,
-                    "custo": custo_dia,
+                    "horas_trabalhadas": agregado["horas"],
+                    "custo": agregado["custo"],
                 },
             )
             registros_criados += 1

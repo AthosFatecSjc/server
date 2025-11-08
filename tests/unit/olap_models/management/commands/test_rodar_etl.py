@@ -5,14 +5,9 @@ from unittest.mock import patch
 
 from django.core.management import call_command
 from django.test import TestCase
+from django.utils import timezone
 
-from apps.relatorios.models import (
-    Cargo,
-    ControleHorasEquipe,
-    Funcionario,
-    Projeto,
-    TempoGastoEquipe,
-)
+from apps.relatorios.models import Cargo, Funcionario, Issue, Projeto, TipoIssue
 from olap_models.management.commands.rodar_etl import Command
 from olap_models.models import (
     DimCargo,
@@ -39,27 +34,37 @@ class RodarEtlCommandTests(TestCase):
             valor_hora=Decimal("80.00"),
         )
         self.projeto = Projeto.objects.create(nome="Projeto XPTO")
-
-        self.controle = ControleHorasEquipe.objects.create(
-            mes=date(2024, 1, 1),
+        self.tipo_issue = TipoIssue.objects.create(
+            nome="História",
+            descricao="Nova feature",
+            jira_id=1001,
             projeto=self.projeto,
-            funcionario=self.funcionario,
-            horas=Decimal("10.00"),
         )
 
-        TempoGastoEquipe.objects.create(
-            dia_mes=1,
-            mes=date(2024, 1, 1),
+        self.issue = Issue.objects.create(
+            jira_id=500,
+            jira_key="PRJ-500",
+            projeto=self.projeto,
+            titulo="Implementar dashboard",
+            tipo_issue=self.tipo_issue,
+            criado_em=timezone.make_aware(datetime(2024, 1, 1, 9, 0, 0)),
+            atualizado_em=timezone.make_aware(datetime(2024, 1, 1, 18, 0, 0)),
+            tempo_gasto_seconds=8 * 3600,
+            tempo_estimado_seconds=9 * 3600,
             funcionario=self.funcionario,
-            tempo_gasto=Decimal("8.0"),
+            status="DONE",
         )
 
-        # Registro inválido para exercitar o tratamento de ValueError
-        TempoGastoEquipe.objects.create(
-            dia_mes=31,
-            mes=date(2024, 2, 1),
-            funcionario=self.funcionario,
-            tempo_gasto=Decimal("5.0"),
+        # Registro inválido para exercitar o descarte durante o ETL
+        Issue.objects.create(
+            jira_id=501,
+            jira_key="PRJ-501",
+            projeto=self.projeto,
+            titulo="Issue sem responsável",
+            tipo_issue=self.tipo_issue,
+            tempo_gasto_seconds=0,
+            funcionario=None,
+            status="TODO",
         )
 
     def test_handle_executa_etapas_na_ordem(self):

@@ -37,7 +37,7 @@ class UsuarioViewsTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.membro = Usuario.objects.create_user(
-            username="membro",
+            username="membro-view",
             nome_completo="Membro Ativo",
             email="membro@example.com",
             contrato=ContratoChoices.CLT,

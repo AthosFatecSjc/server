@@ -4,6 +4,7 @@ import io
 from datetime import datetime
 
 from django.db.models import Sum
+from django.db.models.functions import Coalesce, ExtractMonth
 from django.http import HttpResponse
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
@@ -20,13 +21,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from apps.relatorios.models import (
-    ControleHorasEquipe,
-    MetaTempoControle,
-    Projeto,
-    TempoControleValores,
-    TempoGastoEquipe,
-)
+from apps.relatorios.models import Issue, MetaTempoControle, Projeto
 
 
 class ComparacaoService:
@@ -55,68 +50,75 @@ class ComparacaoService:
             soma_horas_por_dev_mes (dict): Soma de horas por mês do dev no projet/ ano.
         """
 
-        queryset = ControleHorasEquipe.objects.filter(mes__year=ano)
-
-        if nome_projeto:
-            projeto_id = ComparacaoService._get_projeto_id(nome_projeto)
-            if projeto_id:
-                queryset = queryset.filter(projeto_id=projeto_id)
-
-        queryset = (
-            queryset.values("funcionario__nome", "mes__month")
-            .annotate(total_horas=Sum("horas"))
-            .order_by("funcionario__nome", "mes__month")
+        linhas = ComparacaoService._agrupar_issues_por_mes(
+            ano, nome_projeto, campo_segundos="tempo_gasto_seconds"
         )
 
         return ComparacaoService._processar_queryset_horas(
-            queryset,
-            {"dev": "funcionario__nome", "mes": "mes__month", "horas": "total_horas"},
+            linhas,
+            {"dev": "funcionario__nome", "mes": "mes", "horas": "total_horas"},
         )
 
     @staticmethod
     def soma_horas_previstas_por_dev_mes(
-        ano, nome_projeto=None, *, source="tempo_controle_valores", field_name=None
+        ano, nome_projeto=None, *, source="issues", field_name=None
     ):
-        """soma as horas previstas do mês de cada dev naquele projeto"""
-        campos_map = {
-            "tempo_controle_valores": {
-                "model": TempoControleValores,
-                "filtro": "controle_tempo_equipe__mes__year",
-                "dev": "controle_tempo_equipe__funcionario__nome",
-                "mes": "controle_tempo_equipe__mes__month",
-                "campo_sum": field_name or "total_meta",
-            },
-            "tempo_gasto": {
-                "model": TempoGastoEquipe,
-                "filtro": "mes__year",
-                "dev": "funcionario__nome",
-                "mes": "mes__month",
-                "campo_sum": field_name or "tempo_gasto",
-            },
-        }
+        """Soma as horas previstas por dev/mês usando tempo estimado das issues."""
+        if source not in {"issues", "tempo_controle_valores", "tempo_gasto"}:
+            raise RuntimeError("Fonte inválida. Use 'issues'.")
 
-        if source not in campos_map:
-            raise RuntimeError(
-                "Fonte inválida. Use 'tempo_controle_valores' ou 'tempo_gasto'."
-            )
+        campo_default = (
+            "tempo_gasto_seconds"
+            if source == "tempo_gasto"
+            else "tempo_estimado_seconds"
+        )
 
-        config = campos_map[source]
-        qs = config["model"].objects.filter(**{config["filtro"]: ano})
-
-        if nome_projeto and hasattr(config["model"], "projeto"):
-            projeto_id = ComparacaoService._get_projeto_id(nome_projeto)
-            if projeto_id:
-                qs = qs.filter(projeto_id=projeto_id)
-
-        qs = (
-            qs.values(config["dev"], config["mes"])
-            .annotate(total_previstas=Sum(config["campo_sum"]))
-            .order_by(config["dev"], config["mes"])
+        linhas = ComparacaoService._agrupar_issues_por_mes(
+            ano, nome_projeto, campo_segundos=field_name or campo_default
         )
 
         return ComparacaoService._processar_queryset_horas(
-            qs, {"dev": config["dev"], "mes": config["mes"], "horas": "total_previstas"}
+            linhas,
+            {"dev": "funcionario__nome", "mes": "mes", "horas": "total_horas"},
         )
+
+    @staticmethod
+    def _agrupar_issues_por_mes(ano, nome_projeto, *, campo_segundos: str):
+        """
+        Retorna lista de dicionários contendo horas (em horas) por dev/mês.
+        campo_segundos define qual métrica será utilizada (realizado/previsto).
+        """
+
+        queryset = (
+            Issue.objects.filter(funcionario__isnull=False)
+            .annotate(referencia=Coalesce("atualizado_em", "criado_em"))
+            .filter(referencia__isnull=False, referencia__year=ano)
+        )
+
+        if nome_projeto:
+            queryset = queryset.filter(projeto__nome=nome_projeto)
+
+        queryset = (
+            queryset.annotate(mes=ExtractMonth("referencia"))
+            .values("funcionario__nome", "mes")
+            .annotate(total_segundos=Sum(campo_segundos))
+            .order_by("funcionario__nome", "mes")
+        )
+
+        linhas = []
+        for item in queryset:
+            total_segundos = item.get("total_segundos") or 0
+            horas = total_segundos / 3600.0
+            if horas <= 0:
+                continue
+            linhas.append(
+                {
+                    "funcionario__nome": item["funcionario__nome"],
+                    "mes": item["mes"],
+                    "total_horas": horas,
+                }
+            )
+        return linhas
 
     @staticmethod
     def _calcular_soma_valores(dicionario):

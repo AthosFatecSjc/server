@@ -1,18 +1,12 @@
 """Testes do relatório de comparação anual."""
 
-from datetime import date
+from datetime import datetime
 
 from django.test import TestCase
+from django.utils import timezone
 
 from apps.relatorios.comparacao.services import ComparacaoService
-from apps.relatorios.models import (
-    Cargo,
-    ControleHorasEquipe,
-    Funcionario,
-    Projeto,
-    TempoControleValores,
-    TempoGastoEquipe,
-)
+from apps.relatorios.models import Cargo, Funcionario, Issue, Projeto
 
 
 class SomaHorasTest(TestCase):
@@ -25,54 +19,44 @@ class SomaHorasTest(TestCase):
         self.func2 = Funcionario.objects.create(nome="Maria", cargo=self.cargo)
         self.projeto = Projeto.objects.create(nome="Projeto X")
 
-        # realizado: Renato mês 1 = 10, somar mais 5 -> total 15
-        ControleHorasEquipe.objects.create(
-            mes=date(2025, 1, 1), projeto=self.projeto, funcionario=self.func1, horas=10
-        )
-        obj = ControleHorasEquipe.objects.get(
-            mes=date(2025, 1, 1), projeto=self.projeto, funcionario=self.func1
-        )
-        obj.horas = obj.horas + 5
-        obj.save()
+        referencia_jan = timezone.make_aware(datetime(2025, 1, 10, 12, 0))
+        referencia_fev = timezone.make_aware(datetime(2025, 2, 10, 12, 0))
 
-        # realizado: Maria mês 2 = 8
-        ControleHorasEquipe.objects.create(
-            mes=date(2025, 2, 1), projeto=self.projeto, funcionario=self.func2, horas=8
-        )
-
-        # previstas: usaremos TempoGastoEquipe + TempoControleValores.total_meta
-        # Renato mês 1 previsto 20
-        tge1 = TempoGastoEquipe.objects.create(
-            dia_semana="Seg",
-            dia_mes=1,
-            mes=date(2025, 1, 1),
+        # Renato: 15h realizadas (10 + 5), 20h estimadas (12 + 8) em janeiro
+        Issue.objects.create(
+            jira_id=1,
+            jira_key="PRJ-1",
+            projeto=self.projeto,
+            titulo="Renato - Implementação",
             funcionario=self.func1,
-            tempo_gasto=15,  # campo opcional para fonte alternativa
-            meta=None,
+            tempo_gasto_seconds=10 * 3600,
+            tempo_estimado_seconds=12 * 3600,
+            criado_em=referencia_jan,
+            atualizado_em=referencia_jan,
         )
-        TempoControleValores.objects.create(
-            controle_tempo_equipe=tge1,
-            realizado_equipe=15,
-            total_real=15,
-            total_meta=20,
-            aproveitamento=75,
+        Issue.objects.create(
+            jira_id=2,
+            jira_key="PRJ-2",
+            projeto=self.projeto,
+            titulo="Renato - Ajustes",
+            funcionario=self.func1,
+            tempo_gasto_seconds=5 * 3600,
+            tempo_estimado_seconds=8 * 3600,
+            criado_em=referencia_jan,
+            atualizado_em=referencia_jan,
         )
 
-        # Maria mês 2 previsto 8
-        tge2 = TempoGastoEquipe.objects.create(
-            dia_semana="Ter",
-            dia_mes=1,
-            mes=date(2025, 2, 1),
+        # Maria: 8h realizadas/estimadas em fevereiro
+        Issue.objects.create(
+            jira_id=3,
+            jira_key="PRJ-3",
+            projeto=self.projeto,
+            titulo="Maria - Correções",
             funcionario=self.func2,
-            tempo_gasto=8,
-            meta=None,
-        )
-        TempoControleValores.objects.create(
-            controle_tempo_equipe=tge2,
-            realizado_equipe=8,
-            total_real=8,
-            total_meta=8,
-            aproveitamento=100,
+            tempo_gasto_seconds=8 * 3600,
+            tempo_estimado_seconds=8 * 3600,
+            criado_em=referencia_fev,
+            atualizado_em=referencia_fev,
         )
 
     def test_soma_horas_realizadas(self):

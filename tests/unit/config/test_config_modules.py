@@ -72,6 +72,10 @@ class ConfigSettingsTests(SimpleTestCase):
             "config.settings_sqlite",
             {
                 "SECRET_KEY": "test-secret",
+                "DB_ENGINE": None,
+                "DB_OLTP_ENGINE": None,
+                "DB_ENGINE_OLAP": None,
+                "DB_OLAP_ENGINE": None,
                 "DB_OLTP_NAME": "",
                 "DB_OLTP_USER": "",
                 "DB_OLTP_PASSWORD": "",
@@ -100,6 +104,10 @@ class ConfigSettingsTests(SimpleTestCase):
             "config.settings_testdb",
             {
                 "SECRET_KEY": "test-secret",
+                "DB_ENGINE": None,
+                "DB_OLTP_ENGINE": None,
+                "DB_ENGINE_OLAP": None,
+                "DB_OLAP_ENGINE": None,
                 "DB_OLTP_NAME": "",
                 "DB_OLTP_USER": "",
                 "DB_OLTP_PASSWORD": "",
@@ -249,7 +257,7 @@ class ConfigViewsTests(TestCase):
         self.factory = RequestFactory()
         self.user_model = get_user_model()
         self.user = self.user_model.objects.create_user(
-            username="gerente",
+            username="gerente-config",
             password="senha123",
             email="gerente@example.com",
             nome_completo="Gerente Teste",

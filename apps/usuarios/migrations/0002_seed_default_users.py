@@ -75,7 +75,7 @@ def remove_default_users(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("usuarios", "0001_initial"),
+        ("usuarios", "0002_create_default_users"),
     ]
 
     operations = [
