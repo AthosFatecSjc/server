@@ -1,6 +1,7 @@
 <section class="mt-6 mb-10">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="relative bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
+        <button type="button"
+             class="relative w-full text-left bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
              onclick="toggleIssuesBugsFilter('issues')">
             <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-blue-500 pointer-events-none"></span>
             <div class="flex justify-between items-start">
@@ -14,9 +15,10 @@
                 <i class="fa fa-circle text-blue-400 mr-1"></i>
                 <span id="issuesAbertasValue">-- abertas</span>
             </div>
-        </div>
+        </button>
 
-        <div class="relative bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
+        <button type="button"
+             class="relative w-full text-left bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
              onclick="toggleIssuesBugsFilter('bugs')">
             <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-red-500 pointer-events-none"></span>
             <div class="flex justify-between items-start">
@@ -30,9 +32,10 @@
                 <i class="fa fa-circle text-red-400 mr-1"></i>
                 <span id="bugsAtivosValue">-- ativos</span>
             </div>
-        </div>
+        </button>
 
-        <div class="relative bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
+        <button type="button"
+             class="relative w-full text-left bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
              onclick="toggleIssuesBugsFilter('all')">
             <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-green-500 pointer-events-none"></span>
             <div class="flex justify-between items-start">
@@ -46,7 +49,7 @@
                 <i class="fa fa-dollar-sign text-green-400 mr-1"></i>
                 <span id="tipoFiltroValue">Todos os itens</span>
             </div>
-        </div>
+        </button>
     </div>
 </section>
 
@@ -144,34 +147,87 @@
 const IssuesBugsDashboard = {
     currentFilter: 'all',
     pizzaChart: null,
+    itens: [],
+    cardsFromServer: null,
+    chartFromServer: null,
+    initialized: false,
 
-    dadosIssues: [
-        { id: "ISSUE-001", tipo: "issue", developer: "João Silva", status: "Concluído", horas: 30, custo: 1500 },
-        { id: "ISSUE-002", tipo: "issue", developer: "Maria Santos", status: "Em progresso", horas: 24, custo: 1200 },
-        { id: "ISSUE-003", tipo: "issue", developer: "Pedro Oliveira", status: "MR", horas: 36, custo: 1800 },
-        { id: "ISSUE-004", tipo: "issue", developer: "Ana Costa", status: "Não iniciado", horas: 18, custo: 900 },
-        { id: "ISSUE-005", tipo: "issue", developer: "Carlos Lima", status: "Concluído", horas: 27, custo: 1350 },
-        { id: "ISSUE-006", tipo: "issue", developer: "Fernanda Souza", status: "Em progresso", horas: 21, custo: 1050 },
-        { id: "ISSUE-007", tipo: "issue", developer: "Rafael Mendes", status: "Não iniciado", horas: 15, custo: 750 },
-        { id: "ISSUE-008", tipo: "issue", developer: "Juliana Rocha", status: "MR", horas: 12, custo: 600 },
-        { id: "ISSUE-009", tipo: "issue", developer: "Bruno Almeida", status: "Concluído", horas: 25, custo: 1250 },
-        { id: "ISSUE-010", tipo: "issue", developer: "Camila Ferreira", status: "Em progresso", horas: 19, custo: 950 }
-    ],
+    init: function(initialData) {
+        const data =
+            initialData ||
+            (globalThis.selectedProjectData
+                ? globalThis.selectedProjectData.issuesDashboard
+                : null);
 
-    dadosBugs: [
-        { id: "BUG-001", tipo: "bug", developer: "João Silva", status: "Concluído", horas: 20, custo: 800 },
-        { id: "BUG-002", tipo: "bug", developer: "Maria Santos", status: "Em progresso", horas: 16, custo: 640 },
-        { id: "BUG-003", tipo: "bug", developer: "Pedro Oliveira", status: "Não iniciado", horas: 30, custo: 1200 },
-        { id: "BUG-004", tipo: "bug", developer: "Ana Costa", status: "MR", horas: 12, custo: 480 },
-        { id: "BUG-005", tipo: "bug", developer: "Carlos Lima", status: "Concluído", horas: 24, custo: 960 },
-        { id: "BUG-006", tipo: "bug", developer: "Fernanda Souza", status: "Em progresso", horas: 18, custo: 720 },
-        { id: "BUG-007", tipo: "bug", developer: "Rafael Mendes", status: "Não iniciado", horas: 14, custo: 560 },
-        { id: "BUG-008", tipo: "bug", developer: "Juliana Rocha", status: "Concluído", horas: 10, custo: 400 }
-    ],
+        if (data) {
+            this.setDados(data);
+        } else if (!this.initialized) {
+            this.atualizarCardsComTotais();
+            this.atualizarDashboard();
+        } else {
+            this.atualizarDashboard();
+        }
 
-    init: function() {
+        this.initialized = true;
+    },
+
+    setDados: function(dados) {
+        const itensBackend = dados && Array.isArray(dados.itens) ? dados.itens : [];
+        this.itens = itensBackend.map((item) => ({
+            id: item.id || '-',
+            tipo: item.tipo === 'bug' ? 'bug' : 'issue',
+            developer: item.developer || 'Não atribuído',
+            status: item.status || 'Sem status',
+            horas: Number.parseFloat(item.horas) || 0,
+            custo: Number.parseFloat(item.custo) || 0,
+        }));
+
+        this.cardsFromServer = dados && dados.cards ? this._normalizarCards(dados.cards) : null;
+        this.chartFromServer = dados && dados.chart ? this._normalizarChart(dados.chart) : null;
+        this.currentFilter = 'all';
+
         this.atualizarCardsComTotais();
         this.atualizarDashboard();
+    },
+
+    _normalizarCards: function(cards) {
+        const pickValue = (primary, secondary) => {
+            if (primary !== undefined && primary !== null) {
+                return primary;
+            }
+            if (secondary !== undefined && secondary !== null) {
+                return secondary;
+            }
+            return 0;
+        };
+        const toNumber = (value) => {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
+        return {
+            totalIssues: toNumber(pickValue(cards.total_issues, cards.totalIssues)),
+            issuesAbertas: toNumber(pickValue(cards.issues_abertas, cards.issuesAbertas)),
+            totalBugs: toNumber(pickValue(cards.total_bugs, cards.totalBugs)),
+            bugsAtivos: toNumber(pickValue(cards.bugs_ativos, cards.bugsAtivos)),
+            valorTotal: toNumber(pickValue(cards.valor_total, cards.valorTotal)),
+        };
+    },
+
+    _normalizarChart: function(chart) {
+        const safeArray = (value) => (Array.isArray(value) ? value : []);
+        const valores = safeArray(chart.values || chart.valores);
+        return {
+            labels: safeArray(chart.labels),
+            valores,
+            cores: safeArray(chart.colors || chart.cores),
+        };
+    },
+
+    formatCurrency: function(value) {
+        const numeric = Number(value);
+        return Number.isFinite(numeric)
+            ? numeric.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : '0,00';
     },
 
     toggleFilter: function(tipo) {
@@ -180,21 +236,23 @@ const IssuesBugsDashboard = {
     },
 
     atualizarDashboard: function() {
-        this.atualizarGraficoPizza();
+        const chartData = this.currentFilter === 'all' ? this.chartFromServer : null;
+        this.atualizarGraficoPizza(chartData);
         this.atualizarTabela();
         this.atualizarBotoesAtivos();
     },
 
     atualizarCardsComTotais: function() {
-        const statsTotais = this.calcularEstatisticas([...this.dadosIssues, ...this.dadosBugs]);
+        const statsTotais = this.cardsFromServer || this.calcularEstatisticas(this.itens);
 
-        document.getElementById('totalIssuesValue').textContent = statsTotais.totalIssues;
-        document.getElementById('issuesAbertasValue').textContent = `${statsTotais.issuesAbertas} abertas`;
+        document.getElementById('totalIssuesValue').textContent = statsTotais.totalIssues || 0;
+        document.getElementById('issuesAbertasValue').textContent = `${statsTotais.issuesAbertas || 0} abertas`;
 
-        document.getElementById('totalBugsValue').textContent = statsTotais.totalBugs;
-        document.getElementById('bugsAtivosValue').textContent = `${statsTotais.bugsAtivos} ativos`;
+        document.getElementById('totalBugsValue').textContent = statsTotais.totalBugs || 0;
+        document.getElementById('bugsAtivosValue').textContent = `${statsTotais.bugsAtivos || 0} ativos`;
 
-        document.getElementById('valorTotalValue').textContent = `R$ ${statsTotais.valorTotal.toLocaleString('pt-BR')}`;
+        const valorTotal = Number.isFinite(statsTotais.valorTotal) ? statsTotais.valorTotal : 0;
+        document.getElementById('valorTotalValue').textContent = `R$ ${this.formatCurrency(valorTotal)}`;
     },
 
     atualizarCardsComFiltro: function() {
@@ -202,26 +260,30 @@ const IssuesBugsDashboard = {
         const stats = this.calcularEstatisticas(dadosFiltrados);
 
         const tipoFiltroElement = document.getElementById('tipoFiltroValue');
-        switch(this.currentFilter) {
+        switch (this.currentFilter) {
             case 'issues':
                 tipoFiltroElement.textContent = 'Apenas issues';
-                document.getElementById('valorTotalValue').textContent = `R$ ${stats.valorTotal.toLocaleString('pt-BR')}`;
                 break;
             case 'bugs':
                 tipoFiltroElement.textContent = 'Apenas bugs';
-                document.getElementById('valorTotalValue').textContent = `R$ ${stats.valorTotal.toLocaleString('pt-BR')}`;
                 break;
             default:
                 tipoFiltroElement.textContent = 'Todos os itens';
-                document.getElementById('valorTotalValue').textContent = `R$ ${stats.valorTotal.toLocaleString('pt-BR')}`;
         }
+
+        document.getElementById('valorTotalValue').textContent = `R$ ${this.formatCurrency(stats.valorTotal)}`;
     },
 
-    atualizarGraficoPizza: function() {
+    atualizarGraficoPizza: function(chartData) {
         const dadosFiltrados = this.obterDadosFiltrados();
-        const dadosGrafico = this.agruparPorStatus(dadosFiltrados);
+        const dadosGrafico = chartData || this.agruparPorStatus(dadosFiltrados);
 
-        const ctx = document.getElementById('graficoPizzaIssuesBugs').getContext('2d');
+        const canvas = document.getElementById('graficoPizzaIssuesBugs');
+        if (!canvas) {
+            return;
+        }
+
+        const ctx = canvas.getContext('2d');
 
         if (this.pizzaChart) {
             this.pizzaChart.destroy();
@@ -251,11 +313,11 @@ const IssuesBugsDashboard = {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 const label = context.label || '';
                                 const value = context.raw || 0;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((value / total) * 100);
+                                const percentage = total ? Math.round((value / total) * 100) : 0;
                                 return `${label}: ${value} (${percentage}%)`;
                             }
                         }
@@ -275,6 +337,10 @@ const IssuesBugsDashboard = {
         const dadosFiltrados = this.obterDadosFiltrados();
         const tbody = document.getElementById('tabelaItens');
 
+        if (!tbody) {
+            return;
+        }
+
         tbody.innerHTML = '';
 
         dadosFiltrados.forEach(item => {
@@ -284,6 +350,8 @@ const IssuesBugsDashboard = {
             const badgeClass = item.tipo === 'issue'
                 ? 'bg-blue-100 text-blue-800'
                 : 'bg-red-100 text-red-800';
+
+            const custoFormatado = this.formatCurrency(item.custo);
 
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -298,10 +366,10 @@ const IssuesBugsDashboard = {
                     ${item.developer}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    ${item.horas}h
+                    ${item.horas.toFixed(2)}h
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                    R$ ${item.custo.toLocaleString('pt-BR')}
+                    R$ ${custoFormatado}
                 </td>
             `;
 
@@ -324,7 +392,6 @@ const IssuesBugsDashboard = {
     },
 
     atualizarBotoesAtivos: function() {
-
         document.querySelectorAll('[id^="btn"], [id^="tab"]').forEach(btn => {
             btn.classList.remove('bg-blue-500', 'text-white', 'bg-red-500', 'bg-gray-200', 'text-gray-900');
         });
@@ -336,31 +403,43 @@ const IssuesBugsDashboard = {
         const btnActive = document.getElementById(`btn${this.currentFilter.charAt(0).toUpperCase() + this.currentFilter.slice(1)}`);
         const tabActive = document.getElementById(`tab${this.currentFilter.charAt(0).toUpperCase() + this.currentFilter.slice(1)}`);
 
-        if (btnActive) btnActive.className = `px-3 py-1 text-xs font-medium rounded-full border transition-colors ${activeClass}`;
-        if (tabActive) tabActive.className = `px-3 py-1 text-sm font-medium rounded-md transition-colors ${activeClass}`;
+        if (btnActive) {
+            btnActive.className = `px-3 py-1 text-xs font-medium rounded-full border transition-colors ${activeClass}`;
+        }
+        if (tabActive) {
+            tabActive.className = `px-3 py-1 text-sm font-medium rounded-md transition-colors ${activeClass}`;
+        }
     },
 
     obterDadosFiltrados: function() {
-        switch(this.currentFilter) {
+        switch (this.currentFilter) {
             case 'issues':
-                return this.dadosIssues;
+                return this.itens.filter(item => item.tipo === 'issue');
             case 'bugs':
-                return this.dadosBugs;
+                return this.itens.filter(item => item.tipo === 'bug');
             default:
-                return [...this.dadosIssues, ...this.dadosBugs];
+                return this.itens;
         }
     },
 
     calcularEstatisticas: function(dados) {
-        const issues = dados.filter(item => item.tipo === 'issue');
-        const bugs = dados.filter(item => item.tipo === 'bug');
+        const registros = Array.isArray(dados) ? dados : [];
+        const estaConcluido = (status) => {
+            if (!status) {
+                return false;
+            }
+            const normalized = status.toString().trim().toLowerCase();
+            return ['concluído', 'concluido', 'done', 'finalizado'].includes(normalized);
+        };
+        const issues = registros.filter(item => item.tipo === 'issue');
+        const bugs = registros.filter(item => item.tipo === 'bug');
 
         return {
             totalIssues: issues.length,
-            issuesAbertas: issues.filter(i => i.status !== 'Concluído').length,
+            issuesAbertas: issues.filter(i => !estaConcluido(i.status)).length,
             totalBugs: bugs.length,
-            bugsAtivos: bugs.filter(b => b.status !== 'Concluído').length,
-            valorTotal: dados.reduce((sum, item) => sum + item.custo, 0)
+            bugsAtivos: bugs.filter(b => !estaConcluido(b.status)).length,
+            valorTotal: registros.reduce((sum, item) => sum + (item.custo || 0), 0)
         };
     },
 
@@ -385,6 +464,11 @@ const IssuesBugsDashboard = {
         };
     }
 };
+
+document.addEventListener('projectSelected', function(event) {
+    const dashboardData = event.detail ? event.detail.issuesDashboard : null;
+    IssuesBugsDashboard.setDados(dashboardData || null);
+});
 
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('graficoPizzaIssuesBugs')) {
