@@ -6,42 +6,78 @@ class DesenvolvedoresService:
     @staticmethod
     def get_desenvolvedores_olap():
         """
-        Busca dados de desenvolvedores do banco OLAP para visualização
+        Busca dados de desenvolvedores para visualização
         """
         try:
-            with connections["olap"].cursor() as cursor:
+            with connections["default"].cursor() as cursor:
                 query = """
-                SELECT
-                    id,
-                    nome,
-                    COALESCE(valor_hora, 40.00) as valor_hora
-                FROM dim_funcionario
-                ORDER BY nome
+                    SELECT
+                        id,
+                        nome,
+                        COALESCE(valor_hora, 40.00) AS valor_hora,
+                        COALESCE(contrato, 'CLT') AS contrato
+                    FROM funcionario
+                    ORDER BY nome
                 """
-
                 cursor.execute(query)
                 resultados = cursor.fetchall()
 
                 desenvolvedores = []
                 for row in resultados:
-                    dev_id, nome, valor_hora = row
+                    dev_id, nome, valor_hora, contrato = row
+                    contrato = (contrato or "CLT").upper()
+                    contrato_label = "Estagiário" if contrato == "ESTAGIARIO" else "CLT"
 
                     desenvolvedores.append(
                         {
                             "id": dev_id,
                             "nome": nome,
                             "valor_hora": float(valor_hora),
+                            "contrato": contrato,
+                            "contrato_label": contrato_label,
                             "iniciais": DesenvolvedoresService._gerar_iniciais(nome),
                         }
                     )
 
+                if not desenvolvedores:
+                    return DesenvolvedoresService._fallback_desenvolvedores_olap()
+
                 print(
-                    f"DEBUG Service: Encontrados {len(desenvolvedores)} desenvolvedores no OLAP"
+                    f"DEBUG Service: Encontrados {len(desenvolvedores)} desenvolvedores no OLTP"
                 )
                 return desenvolvedores
 
         except Exception as e:
             print(f"Erro ao buscar dados OLAP: {e}")
+            return DesenvolvedoresService._fallback_desenvolvedores_olap()
+
+    @staticmethod
+    def _fallback_desenvolvedores_olap():
+        try:
+            with connections["olap"].cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, nome, COALESCE(valor_hora, 40.00) as valor_hora
+                    FROM dim_funcionario
+                    ORDER BY nome
+                    """
+                )
+                resultados = cursor.fetchall()
+                desenvolvedores = []
+                for dev_id, nome, valor_hora in resultados:
+                    desenvolvedores.append(
+                        {
+                            "id": dev_id,
+                            "nome": nome,
+                            "valor_hora": float(valor_hora),
+                            "contrato": "CLT",
+                            "contrato_label": "CLT",
+                            "iniciais": DesenvolvedoresService._gerar_iniciais(nome),
+                        }
+                    )
+                return desenvolvedores
+        except Exception as exc:
+            print(f"Erro fallback OLAP: {exc}")
             return []
 
     @staticmethod
@@ -83,25 +119,34 @@ class DesenvolvedoresService:
         return estatisticas
 
     @staticmethod
-    def atualizar_valor_hora_oltp(desenvolvedor_id, nome, novo_valor_hora):
+    def atualizar_valor_hora_oltp(desenvolvedor_id, nome, novo_valor_hora, contrato):
         """
         Atualiza valor/hora no banco OLTP
         """
         try:
+            contrato_normalizado = (contrato or "CLT").upper()
+            if contrato_normalizado not in {"CLT", "ESTAGIARIO"}:
+                contrato_normalizado = "CLT"
             with connections["default"].cursor() as cursor:
                 query = """
                 UPDATE funcionario
-                SET valor_hora = %s
+                SET valor_hora = %s,
+                    contrato = %s
                 WHERE nome = %s OR id = %s
                 """
-                cursor.execute(query, [novo_valor_hora, nome, desenvolvedor_id])
+                cursor.execute(
+                    query,
+                    [novo_valor_hora, contrato_normalizado, nome, desenvolvedor_id],
+                )
 
                 if cursor.rowcount == 0:
                     insert_query = """
-                    INSERT INTO funcionario (nome, valor_hora, data_criacao)
-                    VALUES (%s, %s, NOW())
+                    INSERT INTO funcionario (nome, valor_hora, contrato, data_criacao)
+                    VALUES (%s, %s, %s, NOW())
                     """
-                    cursor.execute(insert_query, [nome, novo_valor_hora])
+                    cursor.execute(
+                        insert_query, [nome, novo_valor_hora, contrato_normalizado]
+                    )
                     print(f"DEBUG Service: Inserido novo funcionário {nome} no OLTP")
                 else:
                     print(f"DEBUG Service: Atualizado funcionário {nome} no OLTP")

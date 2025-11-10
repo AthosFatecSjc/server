@@ -1,424 +1,265 @@
 {% extends "base.html" %}
-
-{% block content %}
-
 {% load static %}
 {% load dict_filters %}
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão à Vista - Operacional</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <style>
-        .bg-primary { background-color: #3b82f6; }
-        .text-primary { color: #3b82f6; }
-        .border-primary { border-color: #3b82f6; }
-        .bg-green-100 { background-color: #dcfce7; }
-        .text-green-800 { color: #166534; }
-        .bg-yellow-100 { background-color: #fef9c3; }
-        .text-yellow-800 { color: #854d0e; }
-        .bg-red-100 { background-color: #fee2e2; }
-        .text-red-800 { color: #991b1b; }
-        .bg-gray-100 { background-color: #f3f4f6; }
-        .text-gray-400 { color: #9ca3af; }
-        .bg-gray-200 { background-color: #e5e7eb; }
-        .text-gray-600 { color: #4b5563; }
-        .text-muted-foreground { color: #6b7280; }
-        .bg-purple-50 { background-color: #faf5ff; }
 
-        .progress-bar {
-            width: 100%;
-            height: 0.5rem;
-            background-color: #e5e7eb;
-            border-radius: 0.25rem;
-            overflow: hidden;
-        }
+{% block title %}Gestão à Vista - Operacional{% endblock %}
 
-        .progress-fill {
-            height: 100%;
-            border-radius: 0.25rem;
-        }
+{% block extra_css %}
+<style>
+    .bg-primary { background-color: #3b82f6; }
+    .text-primary { color: #3b82f6; }
+    .text-muted-foreground { color: #6b7280; }
+    .btn-legenda {
+        position: sticky;
+        top: 10px;
+        background-color: #3b82f6;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 0.375rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        z-index: 40;
+        display: none;
+        margin-bottom: 10px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    .btn-legenda.show { display: inline-flex; align-items: center; gap: 8px; }
+    .btn-legenda:disabled { background-color: #9ca3af; cursor: not-allowed; }
+    .cell-selectable {
+        cursor: pointer;
+        transition: all 0.15s ease;
+        position: relative;
+    }
+    .cell-selectable.cell-selected {
+        background-color: #dbeafe !important;
+        box-shadow: inset 0 0 0 2px #2563eb;
+        border-color: #1d4ed8 !important;
+    }
+    .cell-selectable.cell-selected span {
+        color: #1d4ed8 !important;
+        font-weight: 600;
+    }
+    .progress-bar {
+        width: 100%;
+        height: 0.5rem;
+        background-color: #e5e7eb;
+        border-radius: 0.25rem;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        border-radius: 0.25rem;
+    }
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 50;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active { display: flex; opacity: 1; }
+    .modal-content {
+        background-color: white;
+        border-radius: 0.5rem;
+        width: 90%;
+        max-width: 420px;
+        padding: 1.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        transform: translateY(-20px);
+        transition: transform 0.3s ease;
+    }
+    .modal-overlay.active .modal-content { transform: translateY(0); }
+    .selection-info {
+        background-color: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 0.375rem;
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        display: none;
+    }
+    .selection-info.show { display: block; }
+</style>
+{% endblock %}
 
-        .select-container {
-            position: relative;
-        }
+{% block content %}
+{% include "dashboards/_header.html" with header=header_context show_export=True %}
 
-        .select-trigger {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            background-color: white;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-        }
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 
-        .select-content {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            width: 100%;
-            background-color: white;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .select-item {
-            padding: 0.5rem 0.75rem;
-            cursor: pointer;
-        }
-
-        .select-item:hover {
-            background-color: #f3f4f6;
-        }
-
-        .select-content.show {
-            display: block;
-        }
-
-        .icon {
-            width: 1.75rem;
-            height: 1.75rem;
-            stroke: currentColor;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            fill: none;
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 50;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-            opacity: 1;
-        }
-
-        .modal-content {
-            background-color: white;
-            border-radius: 0.5rem;
-            width: 90%;
-            max-width: 400px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            transform: translateY(-20px);
-            transition: transform 0.3s ease;
-        }
-
-        .modal-overlay.active .modal-content {
-            transform: translateY(0);
-        }
-
-        .cell-selectable {
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .cell-selectable:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 0 2px #40b114d3;
-        }
-
-        .cell-selected {
-            background-color: #bbfdb3 !important;
-            box-shadow: 0 0 0 2px #5cf32eab;
-        }
-
-        .legenda-option {
-            padding: 0.5rem;
-            margin: 0.25rem 0;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .legenda-option:hover {
-            background-color: #f3f4f6;
-        }
-
-        .meta-option {
-            padding: 0.5rem;
-            cursor: pointer;
-        }
-
-        .meta-option:hover {
-            background-color: #f3f4f6;
-        }
-
-        .btn-legenda {
-            position: sticky;
-            top: 10px;
-            background-color: #3b82f6;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 0.375rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            z-index: 40;
-            display: none;
-            margin-bottom: 10px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
-        }
-
-        .btn-legenda.show {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-legenda:hover {
-            background-color: #2563eb;
-            transform: translateY(-2px);
-        }
-
-        .btn-legenda:disabled {
-            background-color: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .selection-info {
-            background-color: #f0f9ff;
-            border: 1px solid #bae6fd;
-            border-radius: 0.375rem;
-            padding: 10px 15px;
-            margin-bottom: 10px;
-            display: none;
-        }
-
-        .selection-info.show {
-            display: block;
-        }
-    </style>
-</head>
-<body class="bg-gray-50 p-4 md:p-6">
-    {% csrf_token %}
-    <div id="pdfModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="mb-4">
-                <h3 class="text-lg font-semibold text-primary">Confirmar Exportação</h3>
-                <p class="text-muted-foreground mt-1">Deseja exportar o relatório de produtividade para PDF?</p>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button id="cancelExport" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
-                    Cancelar
-                </button>
-                <button id="confirmExport" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
-                    Confirmar
-                </button>
-            </div>
+<div id="pdfModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-primary">Confirmar Exportação</h3>
+            <p class="text-muted-foreground mt-1">Deseja exportar o relatório para PDF?</p>
         </div>
-    </div>
-
-    <div id="legendaModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="mb-4">
-                <h3 class="text-lg font-semibold text-primary">Registrar Ausência</h3>
-                <p class="text-muted-foreground mt-1" id="legendaInfo">Selecione o tipo de ausência para os dias selecionados</p>
-            </div>
-            <div class="space-y-2 mb-4">
-                <div class="legenda-option" data-value="FE">
-                    <span class="font-medium">FE - FÉRIAS</span>
-                </div>
-                <div class="legenda-option" data-value="AT">
-                    <span class="font-medium">AT - ATESTADO</span>
-                </div>
-                <div class="legenda-option" data-value="FO">
-                    <span class="font-medium">FO - FOLGA</span>
-                </div>
-                <div class="legenda-option" data-value="FA">
-                    <span class="font-medium">FA - FALTA</span>
-                </div>
-                <div class="legenda-option" data-value="LI">
-                    <span class="font-medium">LI - LICENÇA</span>
-                </div>
-                <div class="legenda-option" data-value="CO">
-                    <span class="font-medium">CO - COMPENSAR</span>
-                </div>
-                <div class="legenda-option" data-value="NONE">
-                    <span class="font-medium text-gray-500">REMOVER REGISTRO</span>
-                </div>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button id="cancelLegenda" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
-                    Cancelar
-                </button>
-                <button id="confirmLegenda" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
-                    Confirmar
-                </button>
-            </div>
-        </div>
-    </div>
-
-   <div id="metaModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="mb-4">
-                <h3 class="text-lg font-semibold text-primary">Alterar Meta</h3>
-                <p class="text-muted-foreground mt-1" id="metaInfo">Selecione a nova meta de horas</p>
-            </div>
-            <div class="space-y-2 mb-4">
-                <div class="meta-option" data-value="154">
-                    <span class="font-medium">154 horas (Padrão)</span>
-                </div>
-                <div class="meta-option" data-value="132">
-                    <span class="font-medium">132 horas</span>
-                </div>
-                <div class="meta-option custom-meta" data-value="custom">
-                    <span class="font-medium">Personalizada</span>
-                </div>
-            </div>
-
-            <div id="customMetaInput" class="mb-4 hidden">
-                <label class="block text-sm font-medium mb-2">Digite a meta personalizada:</label>
-                <input type="number" id="customMetaValue"
-                    class="w-full p-2 border border-gray-300 rounded"
-                    placeholder="Ex: 120, 140, 160..."
-                    min="1" max="300" step="0.1">
-            </div>
-
-            <div class="flex justify-end gap-3">
-                <button id="cancelMeta" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
-                    Cancelar
-                </button>
-                <button id="confirmMeta" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
-                    Confirmar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="confirmModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="mb-4">
-                <h3 class="text-lg font-semibold text-primary">Confirmar Alterações</h3>
-                <p class="text-muted-foreground mt-1" id="confirmMessage"></p>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button id="cancelConfirm" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
-                    Cancelar
-                </button>
-                <button id="finalConfirm" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
-                    Confirmar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="space-y-6">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h2 class="text-2xl font-semibold text-primary">Gestão à Vista - Operacional</h2>
-                <p class="text-muted-foreground">Relatório de Produtividade Diária/Mensal</p>
-            </div>
-            <button id="exportPdfButton" class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center">
-                <svg class="icon w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Exportar PDF
+        <div class="flex justify-end gap-3">
+            <button id="cancelExport" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+                Cancelar
+            </button>
+            <button id="confirmExport" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">
+                Confirmar
             </button>
         </div>
-        <div class="bg-white rounded-lg shadow p-4 md:p-6">
-            <div class="flex items-center gap-2 mb-4">
-                <svg class="icon w-5 h-5 text-primary">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                </svg>
-                <h3 class="text-lg font-semibold">Filtros</h3>
+    </div>
+</div>
+
+<div id="legendaModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-primary">Registrar Ausência</h3>
+            <p class="text-muted-foreground mt-1" id="legendaInfo"></p>
+        </div>
+        <div class="space-y-2 mb-4">
+            <div class="legenda-option" data-value="FE"><span class="font-medium">FE - Férias</span></div>
+            <div class="legenda-option" data-value="AT"><span class="font-medium">AT - Atestado</span></div>
+            <div class="legenda-option" data-value="FO"><span class="font-medium">FO - Folga</span></div>
+            <div class="legenda-option" data-value="FA"><span class="font-medium">FA - Falta</span></div>
+            <div class="legenda-option" data-value="LI"><span class="font-medium">LI - Licença</span></div>
+            <div class="legenda-option" data-value="CO"><span class="font-medium">CO - Compensar</span></div>
+            <div class="legenda-option" data-value="NONE"><span class="font-medium text-gray-500">Remover registro</span></div>
+        </div>
+        <div class="flex justify-end gap-3">
+            <button id="cancelLegenda" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">Cancelar</button>
+            <button id="confirmLegenda" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<div id="metaModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-primary">Alterar Meta</h3>
+            <p class="text-muted-foreground mt-1" id="metaInfo"></p>
+        </div>
+        <div class="space-y-2 mb-4">
+            <div class="meta-option" data-value="154"><span class="font-medium">154 horas (Padrão)</span></div>
+            <div class="meta-option" data-value="132"><span class="font-medium">132 horas</span></div>
+            <div class="meta-option custom-meta" data-value="custom"><span class="font-medium">Personalizada</span></div>
+        </div>
+        <div id="customMetaInput" class="mb-4 hidden">
+            <label class="block text-sm font-medium mb-2">Meta personalizada</label>
+            <input type="number" id="customMetaValue" class="w-full p-2 border border-gray-300 rounded"
+                   placeholder="Ex: 120, 140, 160..." min="1" max="300" step="0.1">
+        </div>
+        <div class="flex justify-end gap-3">
+            <button id="cancelMeta" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">Cancelar</button>
+            <button id="confirmMeta" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-primary">Confirmar Alterações</h3>
+            <p class="text-muted-foreground mt-1" id="confirmMessage"></p>
+        </div>
+        <div class="flex justify-end gap-3">
+            <button id="cancelConfirm" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">Cancelar</button>
+            <button id="finalConfirm" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded font-medium">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<div class="space-y-6 mt-6">
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-200 p-5">
+        <div class="flex items-center gap-2 mb-4">
+            <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+            </svg>
+            <h3 class="text-lg font-semibold">Filtros</h3>
+        </div>
+        <form id="filtersForm" method="get" class="grid gap-4 md:grid-cols-2">
+            <div>
+                <label for="mesAnoSelect" class="block text-sm font-medium text-gray-600 mb-1">Mês/Ano</label>
+                <select
+                    id="mesAnoSelect"
+                    name="mes_ano"
+                    class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 filter-select"
+                >
+                    {% for mes_option in meses_disponiveis %}
+                    <option value="{{ mes_option.mes }}-{{ mes_option.ano }}"
+                        {% if mes_option.mes == mes and mes_option.ano == ano %}selected{% endif %}>
+                        {{ mes_option.mes_nome }} / {{ mes_option.ano }}
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
-            <div class="flex flex-col md:flex-row gap-4">
-                <div class="flex-1">
-                    <label class="block text-sm font-medium mb-2">Mês/Ano</label>
-                    <div class="select-container">
-                        <div class="select-trigger" id="monthTrigger">
-                            <div class="flex items-center">
-                                <svg class="icon w-4 h-4 mr-2">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                <span id="monthValue">{{ mes }}/{{ ano }}</span>
-                            </div>
-                            <svg class="icon w-4 h-4">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </div>
-                        <div class="select-content" id="monthSelect">
-                            {% for mes_option in meses_disponiveis %}
-                            <div class="select-item" data-value="{{ mes_option.mes }}-{{ mes_option.ano }}">
-                                {{ mes_option.mes_nome }} {{ mes_option.ano }}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
+            <div>
+                <label for="teamSelect" class="block text-sm font-medium text-gray-600 mb-1">Equipe</label>
+                <select
+                    id="teamSelect"
+                    name="equipe"
+                    class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 filter-select"
+                >
+                    <option value="" {% if not equipe_selecionada %}selected{% endif %}>Todas as equipes</option>
+                    {% for equipe in equipes %}
+                    <option value="{{ equipe }}" {% if equipe == equipe_selecionada %}selected{% endif %}>
+                        {{ equipe }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="p-4 md:p-6 border-b">
+            <div class="flex flex-col md:flex-row justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold">Tabela de Produtividade</h3>
+                    <p class="text-muted-foreground">
+                        Horas lançadas por desenvolvedor e marcações de ausência. Clique nos dias para registrar códigos.
+                    </p>
+                </div>
+                <button id="btnAbrirLegenda" class="btn-legenda">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 6v12m6-6H6" />
+                    </svg>
+                    Registrar ausência
+                </button>
+            </div>
+            <div id="selectionInfo" class="selection-info mt-4">
+                <div class="flex items-center gap-2 text-sm">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span id="selectionText"></span>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <div class="p-4 md:p-6 border-b">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h3 class="text-lg font-semibold">Tabela de Produtividade - {{ mes }}/{{ ano }}</h3>
-                        <p class="text-muted-foreground">Horas lançadas por desenvolvedor por día do mês</p>
-                    </div>
-                    <button id="btnAbrirLegenda" class="btn-legenda" title="Registrar ausência para dias selecionados">
-                        <svg class="icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        Registrar Ausência
-                    </button>
-                </div>
-
-                <div id="selectionInfo" class="selection-info">
-                    <div class="flex items-center gap-2 text-sm">
-                        <svg class="icon w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span id="selectionText"></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full border-collapse">
-                    <thead>
-                        <tr class="bg-primary text-white">
-                            <th class="border border-gray-300 p-2 text-left font-medium">Desenvolvedor</th>
-                            {% for dia in dias %}
-                            <th class="border border-gray-300 p-2 text-center font-medium min-w-[40px]">{{ dia }}</th>
-                            {% endfor %}
-                            <th class="border border-gray-300 p-2 text-center font-medium">Total</th>
-                            <th class="border border-gray-300 p-2 text-center font-medium">Meta</th>
-                            <th class="border border-gray-300 p-2 text-center font-medium">%</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-sm">
+                <thead>
+                    <tr class="bg-primary text-white">
+                        <th class="border border-gray-200 p-2 text-left font-medium">Desenvolvedor</th>
+                        {% for dia in dias %}
+                        <th class="border border-gray-200 p-2 text-center font-medium min-w-[40px]">{{ dia }}</th>
+                        {% endfor %}
+                        <th class="border border-gray-200 p-2 text-center font-medium">Total</th>
+                        <th class="border border-gray-200 p-2 text-center font-medium">Meta</th>
+                        <th class="border border-gray-200 p-2 text-center font-medium">%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if resultados %}
                         {% for r in resultados %}
-                        <tr class="{% if r.funcionario == 'REALIZADO' %}font-bold{% endif %}" data-funcionario-id="{{ r.funcionario_id }}">
-                            <td class="border border-gray-300 p-2 font-medium {% if r.funcionario == 'REALIZADO' %}bg-purple-50{% endif %}">
+                        <tr class="{% if r.funcionario == 'REALIZADO' %}font-bold{% endif %}"
+                            data-funcionario-id="{{ r.funcionario_id }}">
+                            <td class="border border-gray-200 p-2 {% if r.funcionario == 'REALIZADO' %}bg-purple-50{% endif %}">
                                 {% if r.funcionario != 'REALIZADO' %}
                                 <span class="funcionario-name" data-funcionario-id="{{ r.funcionario_id }}">{{ r.funcionario }}</span>
                                 {% else %}
@@ -426,59 +267,32 @@
                                 {% endif %}
                             </td>
                             {% for dia in dias %}
-                            {% with dia_data=r.dias|get_item:dia %}
-                            <td class="border border-gray-300 p-1 text-center text-sm cell-selectable
-                                {% if r.funcionario == 'REALIZADO' %}bg-purple-50 font-medium
-                                {% elif dia_data.type == 'leave' %}bg-gray-200 text-gray-600 font-medium
-                                {% elif dia_data >= 8 %}bg-green-100 text-green-800
-                                {% elif dia_data >= 6 %}bg-yellow-100 text-yellow-800
-                                {% elif dia_data > 0 %}bg-red-100 text-red-800
-                                {% endif %}"
-                                data-dia="{{ dia }}"
-                                data-funcionario-id="{{ r.funcionario_id }}"
-                                data-funcionario="{{ r.funcionario }}">
-
-                                {% if dia_data.type == 'leave' %}
-                                    {{ dia_data.value|default:"-" }}
-                                {% else %}
-                                    {% if dia_data < 0 %}
-                                        {% if dia_data == -1 %}FE
-                                        {% elif dia_data == -2 %}AT
-                                        {% elif dia_data == -3 %}FO
-                                        {% elif dia_data == -4 %}FA
-                                        {% elif dia_data == -5 %}LI
-                                        {% elif dia_data == -6 %}CO
-                                        {% else %}-{% endif %}
-                                    {% elif dia_data == 0 or dia_data == 0.0 %}
-                                        -
+                                {% with dia_data=r.dias|get_item:dia %}
+                                <td class="border border-gray-200 p-1 text-center cell-selectable
+                                    {% if r.funcionario == 'REALIZADO' %}bg-purple-50{% endif %}"
+                                    data-dia="{{ dia }}"
+                                    data-funcionario-id="{{ r.funcionario_id }}"
+                                    data-funcionario="{{ r.funcionario }}">
+                                    {% if dia_data.type == 'leave' %}
+                                        <span class="text-xs font-semibold text-gray-600">{{ dia_data.value }}</span>
                                     {% else %}
-                                        {% if dia_data|floatformat:0 == dia_data|floatformat:1 %}
-                                            {{ dia_data|floatformat:0 }}
-                                        {% else %}
-                                            {{ dia_data|floatformat:1 }}
-                                        {% endif %}
+                                        <span class="{% if dia_data >= 8 %}text-green-700{% elif dia_data >= 6 %}text-yellow-700{% else %}text-red-600{% endif %}">
+                                            {% if dia_data %}{{ dia_data }}{% else %}-{% endif %}
+                                        </span>
                                     {% endif %}
-                                {% endif %}
-                            </td>
-                            {% endwith %}
+                                </td>
+                                {% endwith %}
                             {% endfor %}
-                            <td class="border border-gray-300 p-2 text-center font-medium {% if r.funcionario == 'REALIZADO' %}{% endif %}">
-                                {{ r.real }}h
+                            <td class="border border-gray-200 p-2 text-center font-semibold">{{ r.real }}</td>
+                            <td class="border border-gray-200 p-2 text-center font-semibold meta-cell"
+                                data-funcionario-id="{{ r.funcionario_id }}" data-funcionario="{{ r.funcionario }}">
+                                {{ r.meta }}
                             </td>
-                            <td class="border border-gray-300 p-2 text-center {% if r.funcionario == 'REALIZADO' %}{% endif %} meta-cell
-                                {% if r.funcionario != 'REALIZADO' %}cursor-pointer hover:bg-gray-100{% endif %}"
-                                {% if r.funcionario != 'REALIZADO' %}data-funcionario-id="{{ r.funcionario_id }}" data-funcionario="{{ r.funcionario }}"{% endif %}>
-                                {{ r.meta }}h
-                            </td>
-                            <td class="border border-gray-300 p-2 text-center">
+                            <td class="border border-gray-200 p-2 text-center">
                                 <div class="flex items-center gap-2">
                                     <div class="progress-bar">
-                                        <div class="progress-fill
-                                            {% if r.percentual >= 90 %}bg-green-500
-                                            {% elif r.percentual >= 75 %}bg-yellow-500
-                                            {% else %}bg-red-500{% endif %}"
-                                            style="width: {% if r.percentual > 100 %}100{% else %}{{ r.percentual }}{% endif %}%">
-                                        </div>
+                                        <div class="progress-fill {% if r.percentual >= 90 %}bg-green-500{% elif r.percentual >= 75 %}bg-yellow-500{% else %}bg-red-500{% endif %}"
+                                             style="width: {% if r.percentual > 100 %}100{% else %}{{ r.percentual }}{% endif %}%"></div>
                                     </div>
                                     <span class="text-sm font-medium
                                         {% if r.percentual >= 90 %}text-green-600
@@ -490,490 +304,345 @@
                             </td>
                         </tr>
                         {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow p-4 md:p-6">
-            <h3 class="text-lg font-semibold mb-4">Legenda</h3>
-            <div class="flex flex-col md:flex-row flex-wrap gap-4">
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-green-100 border border-green-200 rounded flex items-center justify-center">
-                        <span class="text-xs text-green-800">8</span>
-                    </div>
-                    <span class="text-sm">8+ horas (Meta atingida)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-yellow-100 border border-yellow-200 rounded flex items-center justify-center">
-                        <span class="text-xs text-yellow-800">6</span>
-                    </div>
-                    <span class="text-sm">6-7 horas (Abaixo da meta)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-red-100 border border-red-200 rounded flex items-center justify-center">
-                        <span class="text-xs text-red-800">4</span>
-                    </div>
-                    <span class="text-sm">Menos de 6 horas</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
-                        <span class="text-xs text-gray-600">FE</span>
-                    </div>
-                    <span class="text-sm">FE (Férias)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
-                        <span class="text-xs text-gray-600">AT</span>
-                    </div>
-                    <span class="text-sm">AT (Atestado)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
-                        <span class="text-xs text-gray-600">FO</span>
-                    </div>
-                    <span class="text-sm">FO (Folga)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
-                        <span class="text-xs text-gray-600">FA</span>
-                    </div>
-                    <span class="text-sm">FA (Falta)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
-                        <span class="text-xs text-gray-600">LI</span>
-                    </div>
-                    <span class="text-sm">LI (Licença)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
-                        <span class="text-xs text-gray-600">CO</span>
-                    </div>
-                    <span class="text-sm">CO (Compensar)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-purple-50 border border-gray-300 rounded flex items-center justify-center">
-                        <span class="text-xs">R</span>
-                    </div>
-                    <span class="text-sm">REALIZADO - soma diária dos funcionários</span>
-                </div>
-            </div>
+                    {% else %}
+                        <tr>
+                            <td colspan="{{ dias|length|add:3 }}" class="p-4 text-center text-muted-foreground">
+                                Nenhum dado encontrado para os filtros selecionados.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <script>
-        let selectedCells = [];
-        let currentFuncionarioId = null;
-        let currentFuncionarioName = null;
-        let currentAction = null;
-        let legendaSelecionada = null;
+    <div class="bg-white rounded-lg shadow p-4 md:p-6">
+        <h3 class="text-lg font-semibold mb-4">Legenda</h3>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-green-100 border border-green-200 rounded flex items-center justify-center">
+                    <span class="text-xs text-green-800">8</span>
+                </div>
+                <span>8+ horas (meta atingida)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-yellow-100 border border-yellow-200 rounded flex items-center justify-center">
+                    <span class="text-xs text-yellow-800">6</span>
+                </div>
+                <span>6-7 horas (abaixo da meta)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-red-100 border border-red-200 rounded flex items-center justify-center">
+                    <span class="text-xs text-red-800">4</span>
+                </div>
+                <span>Menos de 6 horas</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
+                    <span class="text-xs text-gray-700">0</span>
+                </div>
+                <span>Sem lançamento</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-blue-100 border border-blue-200 rounded flex items-center justify-center">
+                    <span class="text-xs text-blue-700">FE</span>
+                </div>
+                <span>Códigos de ausência: FE, AT, FO, FA, LI, CO</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-        const pdfModal = document.getElementById('pdfModal');
-        const legendaModal = document.getElementById('legendaModal');
-        const metaModal = document.getElementById('metaModal');
-        const confirmModal = document.getElementById('confirmModal');
-        const btnAbrirLegenda = document.getElementById('btnAbrirLegenda');
-        const selectionInfo = document.getElementById('selectionInfo');
-        const selectionText = document.getElementById('selectionText');
+{% block extra_js %}
+<script>
+    const pdfModal = document.getElementById('pdfModal');
+    const legendaModal = document.getElementById('legendaModal');
+    const metaModal = document.getElementById('metaModal');
+    const confirmModal = document.getElementById('confirmModal');
+    const btnAbrirLegenda = document.getElementById('btnAbrirLegenda');
+    const selectionInfo = document.getElementById('selectionInfo');
+    const selectionText = document.getElementById('selectionText');
 
-        function openModal(modal) {
-            modal.classList.add('active');
-        }
+    let selectedCells = [];
+    let currentFuncionarioId = null;
+    let currentFuncionarioName = null;
+    let legendaSelecionada = null;
+    let metaSelecionada = null;
+    let isCustomMeta = false;
 
-        function closeModal(modal) {
-            modal.classList.remove('active');
-        }
+    function openModal(modal) { modal.classList.add('active'); }
+    function closeModal(modal) { modal.classList.remove('active'); }
 
-        function atualizarInterfaceSelecao() {
-            if (selectedCells.length > 0) {
-                btnAbrirLegenda.classList.add('show');
-                selectionInfo.classList.add('show');
+    function getCSRFToken() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        return csrfToken ? csrfToken.value : '';
+    }
 
-                const funcionariosUnicos = [...new Set(selectedCells.map(cell => cell.funcionarioId))];
-                const diasSelecionados = selectedCells.length;
+    function atualizarInterfaceSelecao() {
+        if (!btnAbrirLegenda) return;
+        if (selectedCells.length > 0) {
+            btnAbrirLegenda.classList.add('show');
+            selectionInfo.classList.add('show');
 
-                if (funcionariosUnicos.length === 1) {
-                    selectionText.textContent = `${diasSelecionados} dia(s) selecionado(s) para ${currentFuncionarioName}`;
-                    btnAbrirLegenda.disabled = false;
-                    btnAbrirLegenda.style.opacity = '1';
-                    btnAbrirLegenda.style.cursor = 'pointer';
-                } else {
-                    selectionText.textContent = `${diasSelecionados} dia(s) selecionado(s) em ${funcionariosUnicos.length} funcionário(s) - Selecione apenas um funcionário por vez`;
-                    btnAbrirLegenda.disabled = true;
-                    btnAbrirLegenda.style.opacity = '0.6';
-                    btnAbrirLegenda.style.cursor = 'not-allowed';
-                }
-            } else {
-                btnAbrirLegenda.classList.remove('show');
-                selectionInfo.classList.remove('show');
+            const funcionariosUnicos = [...new Set(selectedCells.map(cell => cell.funcionarioId))];
+            const diasSelecionados = selectedCells.length;
+
+            if (funcionariosUnicos.length === 1) {
+                selectionText.textContent = `${diasSelecionados} dia(s) selecionado(s) para ${currentFuncionarioName}`;
                 btnAbrirLegenda.disabled = false;
-                btnAbrirLegenda.style.opacity = '1';
-                btnAbrirLegenda.style.cursor = 'pointer';
+            } else {
+                selectionText.textContent = `${diasSelecionados} dia(s) selecionado(s) em ${funcionariosUnicos.length} funcionário(s)`;
+                btnAbrirLegenda.disabled = true;
             }
+        } else {
+            btnAbrirLegenda.classList.remove('show');
+            selectionInfo.classList.remove('show');
+            btnAbrirLegenda.disabled = false;
         }
+    }
 
-        function limparSelecaoDeOutrosFuncionarios(funcionarioIdAtual) {
-            const outrasCelulasSelecionadas = document.querySelectorAll(
-                `.cell-selectable.cell-selected[data-funcionario-id!="${funcionarioIdAtual}"]`
-            );
-
-            outrasCelulasSelecionadas.forEach(cell => {
+    function limparSelecaoDeOutrosFuncionarios(funcionarioIdAtual) {
+        document.querySelectorAll(`.cell-selectable.cell-selected[data-funcionario-id!="${funcionarioIdAtual}"]`)
+            .forEach(cell => {
                 const funcionarioId = cell.dataset.funcionarioId;
-                const dia = parseInt(cell.dataset.dia);
-
+                const dia = parseInt(cell.dataset.dia, 10);
                 cell.classList.remove('cell-selected');
-
                 selectedCells = selectedCells.filter(cellInfo =>
                     !(cellInfo.funcionarioId === funcionarioId && cellInfo.dia === dia)
                 );
             });
-        }
+    }
 
-        document.querySelectorAll('.cell-selectable').forEach(cell => {
-            cell.addEventListener('click', function(event) {
-                event.stopPropagation();
+    document.querySelectorAll('.cell-selectable').forEach(cell => {
+        cell.addEventListener('click', function(event) {
+            const funcionarioId = this.dataset.funcionarioId;
+            if (!funcionarioId || !this.closest('tr').querySelector('.funcionario-name')) {
+                return;
+            }
+            event.stopPropagation();
+            const dia = parseInt(this.dataset.dia, 10);
 
-                const funcionarioId = this.dataset.funcionarioId;
-                const dia = parseInt(this.dataset.dia);
+            if (selectedCells.length > 0 && selectedCells[0].funcionarioId !== funcionarioId) {
+                limparSelecaoDeOutrosFuncionarios(funcionarioId);
+            }
 
-                if (!funcionarioId || !this.closest('tr').querySelector('.funcionario-name')) {
-                    return;
-                }
+            if (this.classList.contains('cell-selected')) {
+                this.classList.remove('cell-selected');
+                selectedCells = selectedCells.filter(cellInfo =>
+                    !(cellInfo.funcionarioId === funcionarioId && cellInfo.dia === dia)
+                );
+            } else {
+                this.classList.add('cell-selected');
+                selectedCells.push({
+                    dia,
+                    funcionarioId,
+                    element: this,
+                    funcionarioName: this.dataset.funcionario
+                });
+            }
 
-                if (selectedCells.length > 0 && selectedCells[0].funcionarioId !== funcionarioId) {
-                    limparSelecaoDeOutrosFuncionarios(funcionarioId);
-                }
-
-                const estaSelecionada = this.classList.contains('cell-selected');
-
-                if (estaSelecionada) {
-                    this.classList.remove('cell-selected');
-                    selectedCells = selectedCells.filter(cellInfo =>
-                        !(cellInfo.funcionarioId === funcionarioId && cellInfo.dia === dia)
-                    );
-                } else {
-
-                    this.classList.add('cell-selected');
-
-                    const jaExiste = selectedCells.some(cellInfo =>
-                        cellInfo.funcionarioId === funcionarioId && cellInfo.dia === dia
-                    );
-
-                    if (!jaExiste) {
-                        selectedCells.push({
-                            dia: dia,
-                            funcionarioId: funcionarioId,
-                            element: this,
-                            funcionarioName: this.dataset.funcionario
-                        });
-                    }
-                }
-
-                if (selectedCells.length > 0) {
-                    currentFuncionarioId = selectedCells[0].funcionarioId;
-                    currentFuncionarioName = selectedCells[0].funcionarioName;
-                } else {
-                    currentFuncionarioId = null;
-                    currentFuncionarioName = null;
-                }
-
-                atualizarInterfaceSelecao();
-            });
+            if (selectedCells.length > 0) {
+                currentFuncionarioId = selectedCells[0].funcionarioId;
+                currentFuncionarioName = selectedCells[0].funcionarioName;
+            } else {
+                currentFuncionarioId = null;
+                currentFuncionarioName = null;
+            }
+            atualizarInterfaceSelecao();
         });
+    });
 
+    if (btnAbrirLegenda) {
         btnAbrirLegenda.addEventListener('click', function() {
             if (selectedCells.length > 0 && !this.disabled) {
-                currentAction = 'legenda';
                 document.getElementById('legendaInfo').textContent =
-                    `Selecionar tipo de ausência para ${selectedCells.length} dias de ${currentFuncionarioName}`;
-
+                    `Selecionar ausência para ${selectedCells.length} dia(s) de ${currentFuncionarioName}`;
                 legendaSelecionada = null;
-                document.querySelectorAll('.legenda-option').forEach(opt =>
-                    opt.style.backgroundColor = ''
-                );
-
+                document.querySelectorAll('.legenda-option').forEach(opt => opt.style.backgroundColor = '');
                 openModal(legendaModal);
             }
         });
+    }
 
-        document.querySelectorAll('.meta-cell').forEach(cell => {
-            if (cell.dataset.funcionarioId) {
-                cell.addEventListener('click', function() {
-                    currentFuncionarioId = this.dataset.funcionarioId;
-                    currentFuncionarioName = this.dataset.funcionario;
-                    currentAction = 'meta';
+    document.querySelectorAll('.meta-cell').forEach(cell => {
+        if (cell.dataset.funcionarioId) {
+            cell.addEventListener('click', function() {
+                currentFuncionarioId = this.dataset.funcionarioId;
+                currentFuncionarioName = this.dataset.funcionario;
+                document.getElementById('metaInfo').textContent =
+                    `Alterar meta para ${currentFuncionarioName}`;
+                openModal(metaModal);
+            });
+        }
+    });
 
-                    document.getElementById('metaInfo').textContent =
-                        `Alterar meta para ${currentFuncionarioName}`;
-                    openModal(metaModal);
-                });
+    document.querySelectorAll('.legenda-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.legenda-option').forEach(opt => opt.style.backgroundColor = '');
+            this.style.backgroundColor = '#e5e7eb';
+            legendaSelecionada = this.dataset.value;
+        });
+    });
+
+    document.getElementById('confirmLegenda').addEventListener('click', function() {
+        if (legendaSelecionada && selectedCells.length > 0) {
+            closeModal(legendaModal);
+            document.getElementById('confirmMessage').textContent =
+                `Deseja registrar ${legendaSelecionada} para ${selectedCells.length} dia(s) de ${currentFuncionarioName}?`;
+            document.getElementById('finalConfirm').onclick = function() {
+                aplicarLegenda(legendaSelecionada);
+                closeModal(confirmModal);
+            };
+            openModal(confirmModal);
+        } else {
+            alert('Selecione um tipo de ausência e ao menos um dia.');
+        }
+    });
+
+    document.querySelectorAll('.meta-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.meta-option').forEach(opt => opt.style.backgroundColor = '');
+            this.style.backgroundColor = '#e5e7eb';
+            const value = this.dataset.value;
+            if (value === 'custom') {
+                document.getElementById('customMetaInput').classList.remove('hidden');
+                metaSelecionada = null;
+                isCustomMeta = true;
+            } else {
+                document.getElementById('customMetaInput').classList.add('hidden');
+                metaSelecionada = value;
+                isCustomMeta = false;
             }
         });
+    });
 
-        document.querySelectorAll('.legenda-option').forEach(option => {
-            option.addEventListener('click', function() {
-                document.querySelectorAll('.legenda-option').forEach(opt =>
-                    opt.style.backgroundColor = '');
-                this.style.backgroundColor = '#e5e7eb';
-                legendaSelecionada = this.dataset.value;
-            });
-        });
-
-        document.getElementById('confirmLegenda').addEventListener('click', function() {
-            if (legendaSelecionada && selectedCells.length > 0) {
-                closeModal(legendaModal);
-
-                document.getElementById('confirmMessage').textContent =
-                    `Deseja registrar ${getLegendaName(legendaSelecionada)} para ${selectedCells.length} dias de ${currentFuncionarioName}?`;
-
-                document.getElementById('finalConfirm').onclick = function() {
-                    aplicarLegenda(legendaSelecionada);
-                    closeModal(confirmModal);
-                };
-
-                openModal(confirmModal);
-            } else {
-                alert('Por favor, selecione um tipo de ausência e pelo menos um dia.');
-            }
-        });
-
-        let metaSelecionada = null;
-        let isCustomMeta = false;
-
-        document.querySelectorAll('.meta-option').forEach(option => {
-            option.addEventListener('click', function() {
-                document.querySelectorAll('.meta-option').forEach(opt =>
-                    opt.style.backgroundColor = '');
-                this.style.backgroundColor = '#e5e7eb';
-
-                const value = this.dataset.value;
-
-                if (value === 'custom') {
-                    document.getElementById('customMetaInput').classList.remove('hidden');
-                    document.getElementById('customMetaInput').classList.add('block');
-                    isCustomMeta = true;
-                    metaSelecionada = null;
-                } else {
-                    document.getElementById('customMetaInput').classList.remove('block');
-                    document.getElementById('customMetaInput').classList.add('hidden');
-                    isCustomMeta = false;
-                    metaSelecionada = value;
-                }
-            });
-        });
-
-        document.getElementById('confirmMeta').addEventListener('click', function() {
-            let metaValue = null;
-
-            if (isCustomMeta) {
-                const customValue = document.getElementById('customMetaValue').value;
-                if (!customValue || customValue <= 0) {
-                    alert('Por favor, digite um valor válido para a meta personalizada.');
-                    return;
-                }
-                metaValue = parseFloat(customValue);
-            } else if (metaSelecionada) {
-                metaValue = parseFloat(metaSelecionada);
-            } else {
-                alert('Por favor, selecione uma opção de meta.');
+    document.getElementById('confirmMeta').addEventListener('click', function() {
+        let metaValue = null;
+        if (isCustomMeta) {
+            const customValue = document.getElementById('customMetaValue').value;
+            if (!customValue || customValue <= 0) {
+                alert('Informe uma meta válida.');
                 return;
             }
+            metaValue = parseFloat(customValue);
+        } else if (metaSelecionada) {
+            metaValue = parseFloat(metaSelecionada);
+        } else {
+            alert('Selecione uma opção de meta.');
+            return;
+        }
+        closeModal(metaModal);
+        document.getElementById('confirmMessage').textContent =
+            `Deseja alterar a meta de ${currentFuncionarioName} para ${metaValue} horas?`;
+        document.getElementById('finalConfirm').onclick = function() {
+            aplicarMeta(metaValue);
+            closeModal(confirmModal);
+        };
+        openModal(confirmModal);
+    });
 
-            if (metaValue) {
-                closeModal(metaModal);
-
-                document.getElementById('confirmMessage').textContent =
-                    `Deseja alterar a meta de ${currentFuncionarioName} para ${metaValue} horas?`;
-
-                document.getElementById('finalConfirm').onclick = function() {
-                    aplicarMeta(metaValue);
-                    closeModal(confirmModal);
-                };
-
-                openModal(confirmModal);
-            }
-        });
-
-
-        function aplicarLegenda(legendaValue) {
-            const dias = selectedCells.map(cell => cell.dia);
-
-            console.log("Enviando dados:", {
+    function aplicarLegenda(legendaValue) {
+        const dias = selectedCells.map(cell => cell.dia);
+        fetch('{% url "atualizar_legenda" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
                 funcionario_id: currentFuncionarioId,
                 mes: {{ mes }},
                 ano: {{ ano }},
                 dias: dias,
                 codigo: legendaValue
-            });
-
-            fetch('{% url "atualizar_legenda" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: JSON.stringify({
-                    funcionario_id: currentFuncionarioId,
-                    mes: {{ mes }},
-                    ano: {{ ano }},
-                    dias: dias,
-                    codigo: legendaValue
-                })
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Erro na resposta do servidor');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Resposta do servidor:", data);
-                if (data.success) {
-                    window.location.reload();
-                } else {
-                    alert('Erro ao registrar ausência: ' + (data.error || 'Erro desconhecido'));
-                }
-            })
-            .catch(error => {
-                console.error("Erro na requisição:", error);
-                alert('Erro ao registrar ausência: ' + error.message);
-            });
-        }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Não foi possível registrar ausência.');
+            }
+        })
+        .catch(error => alert(error));
+    }
 
-        function aplicarMeta(metaValue) {
-            fetch('{% url "atualizar_meta" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: JSON.stringify({
-                    funcionario_id: currentFuncionarioId,
-                    mes: {{ mes }},
-                    ano: {{ ano }},
-                    meta: parseFloat(metaValue)
-                })
+    function aplicarMeta(metaValue) {
+        fetch('{% url "atualizar_meta" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                funcionario_id: currentFuncionarioId,
+                mes: {{ mes }},
+                ano: {{ ano }},
+                meta: metaValue
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.reload();
-                } else {
-                    alert('Erro ao alterar meta: ' + (data.error || 'Erro desconhecido'));
-                }
-            })
-            .catch(error => {
-                alert('Erro ao alterar meta: ' + error);
-            });
-        }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Erro ao alterar meta.');
+            }
+        })
+        .catch(error => alert(error));
+    }
 
-        function getLegendaName(value) {
-            const legendas = {
-                'FE': 'FÉRIAS', 'AT': 'ATESTADO', 'FO': 'FOLGA',
-                'FA': 'FALTA', 'LI': 'LICENÇA', 'CO': 'COMPENSAR',
-                'NONE': 'REMOVER REGISTRO'
-            };
-            return legendas[value] || value;
-        }
+    document.getElementById('cancelLegenda').addEventListener('click', () => closeModal(legendaModal));
+    document.getElementById('cancelMeta').addEventListener('click', () => {
+        closeModal(metaModal);
+        document.querySelectorAll('.meta-option').forEach(opt => opt.style.backgroundColor = '');
+        document.getElementById('customMetaInput').classList.add('hidden');
+        document.getElementById('customMetaValue').value = '';
+        metaSelecionada = null;
+        isCustomMeta = false;
+    });
+    document.getElementById('cancelConfirm').addEventListener('click', () => closeModal(confirmModal));
 
-        function getCSRFToken() {
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-            return csrfToken ? csrfToken.value : '';
-        }
+    const openExportButton = document.getElementById('openExportPdfButton');
+    const confirmButton = document.getElementById('confirmExport');
+    const cancelButton = document.getElementById('cancelExport');
 
-        document.getElementById('cancelLegenda').addEventListener('click', () => {
+    if (openExportButton) {
+        openExportButton.addEventListener('click', () => openModal(pdfModal));
+    }
+    cancelButton.addEventListener('click', () => closeModal(pdfModal));
+    confirmButton.addEventListener('click', () => {
+        closeModal(pdfModal);
+        const params = new URLSearchParams(window.location.search);
+        const query = params.toString();
+        const baseUrl = "{% url 'exportar_produtividade_pdf' %}";
+        window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
+    });
+    pdfModal.addEventListener('click', e => { if (e.target === pdfModal) closeModal(pdfModal); });
+
+    const filtersForm = document.getElementById('filtersForm');
+    if (filtersForm) {
+        document.querySelectorAll('.filter-select').forEach(select => {
+            select.addEventListener('change', () => filtersForm.submit());
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal(pdfModal);
             closeModal(legendaModal);
-            legendaSelecionada = null;
-            document.querySelectorAll('.legenda-option').forEach(opt =>
-                opt.style.backgroundColor = '');
-        });
-
-        document.getElementById('cancelMeta').addEventListener('click', () => {
             closeModal(metaModal);
-            document.querySelectorAll('.meta-option').forEach(opt =>
-                opt.style.backgroundColor = '');
-            document.getElementById('customMetaInput').classList.add('hidden');
-            document.getElementById('customMetaValue').value = '';
-            metaSelecionada = null;
-            isCustomMeta = false;
-        });
-        document.getElementById('cancelConfirm').addEventListener('click', () => closeModal(confirmModal));
-
-        const exportButton = document.getElementById('exportPdfButton');
-        const confirmButton = document.getElementById('confirmExport');
-        const cancelButton = document.getElementById('cancelExport');
-
-        function closePdfModal() {
-            pdfModal.classList.remove('active');
+            closeModal(confirmModal);
         }
-
-        exportButton.addEventListener('click', function() {
-            openModal(pdfModal);
-        });
-
-        cancelButton.addEventListener('click', closePdfModal);
-
-        confirmButton.addEventListener('click', function() {
-            closePdfModal();
-            window.location.href = "{% url 'exportar_produtividade_pdf' %}?mes={{ mes }}&ano={{ ano }}";
-        });
-
-        pdfModal.addEventListener('click', function(e) {
-            if (e.target === pdfModal) {
-                closePdfModal();
-            }
-        });
-
-        document.querySelectorAll('.select-trigger').forEach(trigger => {
-            trigger.addEventListener('click', function() {
-                const selectId = this.id.replace('Trigger', 'Select');
-                const selectContent = document.getElementById(selectId);
-                selectContent.classList.toggle('show');
-            });
-        });
-
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.select-container')) {
-                document.querySelectorAll('.select-content').forEach(select => {
-                    select.classList.remove('show');
-                });
-            }
-        });
-
-        document.querySelectorAll('.select-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const selectId = this.parentElement.id;
-                const valueId = selectId.replace('Select', 'Value');
-
-                document.getElementById(valueId).textContent = this.textContent;
-                document.getElementById(selectId).classList.remove('show');
-
-                const mesAno = this.dataset.value;
-                const [mes, ano] = mesAno.split('-');
-                window.location.href = `?mes=${mes}&ano=${ano}`;
-            });
-        });
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal(pdfModal);
-                closeModal(legendaModal);
-                closeModal(metaModal);
-                closeModal(confirmModal);
-            }
-        });
-
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.cell-selectable') && !e.target.closest('#btnAbrirLegenda') && !e.target.closest('.modal-overlay')) {
-                document.querySelectorAll('.cell-selectable').forEach(cell => {
-                    cell.classList.remove('cell-selected');
-                });
-                selectedCells = [];
-                atualizarInterfaceSelecao();
-            }
-        });
-    </script>
-</body>
-</html>
+    });
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.cell-selectable') && !e.target.closest('#btnAbrirLegenda') && !e.target.closest('.modal-overlay')) {
+            document.querySelectorAll('.cell-selectable').forEach(cell => cell.classList.remove('cell-selected'));
+            selectedCells = [];
+            atualizarInterfaceSelecao();
+        }
+    });
+</script>
 {% endblock %}
