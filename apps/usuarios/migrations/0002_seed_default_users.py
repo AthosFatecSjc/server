@@ -1,7 +1,7 @@
 import os
 
 from django.contrib.auth.hashers import make_password
-from django.db import migrations
+from django.db import IntegrityError, migrations
 
 PADRAO_LABEL = "Padrão"
 DEFAULT_PASSWORD = os.getenv("DEFAULT_SEED_USER_PASSWORD", "athos123")
@@ -49,22 +49,26 @@ def seed_default_users(apps, schema_editor):
     ]
 
     for dados in usuarios:
-        usuario_model.objects.update_or_create(
-            username=dados["username"],
-            defaults={
-                "nome_completo": dados["nome_completo"],
-                "first_name": dados["first_name"],
-                "last_name": dados["last_name"],
-                "email": dados["email"],
-                "cargo": dados["cargo"],
-                "perfil_acesso": dados["perfil_acesso"],
-                "contrato": "CLT",
-                "ativo": True,
-                "is_staff": dados["is_staff"],
-                "is_superuser": dados["is_superuser"],
-                "password": make_password(dados["password"]),
-            },
-        )
+        defaults = {
+            "nome_completo": dados["nome_completo"],
+            "first_name": dados["first_name"],
+            "last_name": dados["last_name"],
+            "email": dados["email"],
+            "cargo": dados["cargo"],
+            "perfil_acesso": dados["perfil_acesso"],
+            "contrato": "CLT",
+            "ativo": True,
+            "is_staff": dados["is_staff"],
+            "is_superuser": dados["is_superuser"],
+            "password": make_password(dados["password"]),
+        }
+        try:
+            usuario_model.objects.update_or_create(
+                username=dados["username"],
+                defaults=defaults,
+            )
+        except IntegrityError:
+            usuario_model.objects.filter(username=dados["username"]).update(**defaults)
 
 
 def remove_default_users(apps, schema_editor):
