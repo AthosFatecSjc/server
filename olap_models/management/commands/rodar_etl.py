@@ -242,7 +242,7 @@ class Command(BaseCommand):
     def popular_dim_issue(self):
         """
         Popula DimIssue a partir do modelo Issue no banco OLTP.
-        Armazena a chave da issue, tipo, sumário e data de criação.
+        Armazena a chave da issue, tipo, título e data de criação.
         """
         self.stdout.write(" Populando Dimensão Issue...")
 
