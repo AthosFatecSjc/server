@@ -6,13 +6,7 @@ from unittest.mock import patch
 from django.core.management import call_command
 from django.test import TestCase
 
-from apps.relatorios.models import (
-    Cargo,
-    ControleHorasEquipe,
-    Funcionario,
-    Projeto,
-    TempoGastoEquipe,
-)
+from apps.relatorios.models import Cargo, Funcionario, Issue, Projeto
 from olap_models.management.commands.rodar_etl import Command
 from olap_models.models import (
     DimCargo,
@@ -40,26 +34,25 @@ class RodarEtlCommandTests(TestCase):
         )
         self.projeto = Projeto.objects.create(nome="Projeto XPTO")
 
-        self.controle = ControleHorasEquipe.objects.create(
-            mes=date(2024, 1, 1),
+        Issue.objects.create(
+            jira_id=101,
+            jira_key="XPTO-101",
+            titulo="Implementar dashboard",
             projeto=self.projeto,
             funcionario=self.funcionario,
-            horas=Decimal("10.00"),
+            criado_em=datetime(2024, 1, 5, 12, 0, 0),
+            tempo_gasto_seconds=8 * 3600,
+            tempo_estimado_seconds=10 * 3600,
         )
-
-        TempoGastoEquipe.objects.create(
-            dia_mes=1,
-            mes=date(2024, 1, 1),
+        Issue.objects.create(
+            jira_id=102,
+            jira_key="XPTO-102",
+            titulo="Ticket sem data",
+            projeto=self.projeto,
             funcionario=self.funcionario,
-            tempo_gasto=Decimal("8.0"),
-        )
-
-        # Registro inválido para exercitar o tratamento de ValueError
-        TempoGastoEquipe.objects.create(
-            dia_mes=31,
-            mes=date(2024, 2, 1),
-            funcionario=self.funcionario,
-            tempo_gasto=Decimal("5.0"),
+            criado_em=None,
+            tempo_gasto_seconds=5 * 3600,
+            tempo_estimado_seconds=4 * 3600,
         )
 
     def test_handle_executa_etapas_na_ordem(self):
@@ -72,6 +65,7 @@ class RodarEtlCommandTests(TestCase):
             patch.object(command, "popular_dim_tempo") as tempo,
             patch.object(command, "popular_dimensoes_simples") as dims,
             patch.object(command, "popular_dim_funcionario") as dim_func,
+            patch.object(command, "popular_dim_issue") as dim_issue,
             patch.object(command, "popular_fato_registro_horas") as fato,
             patch(
                 "olap_models.management.commands.rodar_etl.datetime"
@@ -86,6 +80,7 @@ class RodarEtlCommandTests(TestCase):
         tempo.assert_called_once()
         dims.assert_called_once()
         dim_func.assert_called_once()
+        dim_issue.assert_called_once()
         fato.assert_called_once()
 
     def test_limpar_tabelas_olap_remove_dados(self):
@@ -149,6 +144,7 @@ class RodarEtlCommandTests(TestCase):
         self.command.popular_dim_tempo()
         self.command.popular_dimensoes_simples()
         self.command.popular_dim_funcionario()
+        self.command.popular_dim_issue()
 
         self.command.popular_fato_registro_horas()
 
@@ -163,6 +159,7 @@ class RodarEtlCommandTests(TestCase):
         self.command.popular_dim_tempo()
         self.command.popular_dimensoes_simples()
         self.command.popular_dim_funcionario()
+        self.command.popular_dim_issue()
 
         # Remove o vínculo do controle no mapa utilizado pelo ETL para simular registro incompleto
         with patch(
@@ -178,9 +175,10 @@ class RodarEtlCommandTests(TestCase):
         with (
             patch.object(Command, "limpar_tabelas_olap") as limpar,
             patch.object(Command, "popular_dim_tempo") as tempo,
-            patch.object(Command, "popular_dimensoes_simples"),
-            patch.object(Command, "popular_dim_funcionario"),
-            patch.object(Command, "popular_fato_registro_horas"),
+            patch.object(Command, "popular_dimensoes_simples") as dims,
+            patch.object(Command, "popular_dim_funcionario") as dim_func,
+            patch.object(Command, "popular_dim_issue") as dim_issue,
+            patch.object(Command, "popular_fato_registro_horas") as fato,
             patch(
                 "olap_models.management.commands.rodar_etl.datetime"
             ) as mock_datetime,
@@ -192,3 +190,7 @@ class RodarEtlCommandTests(TestCase):
 
         limpar.assert_called_once()
         tempo.assert_called_once()
+        dims.assert_called_once()
+        dim_func.assert_called_once()
+        dim_issue.assert_called_once()
+        fato.assert_called_once()
