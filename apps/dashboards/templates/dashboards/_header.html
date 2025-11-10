@@ -1,23 +1,25 @@
 {# COMPONENTE: Header Padronizado (COM SUPORTE A AÇÕES EXTRAS COMO EXPORTAR PDF) #}
 
-<section class="relative bg-white border-b border-gray-200 shadow-sm rounded-lg">
-  <div class="mx-auto px-6 py-6 flex flex-col gap-4">
+<section class="relative bg-white border border-gray-200 shadow-sm rounded-3xl">
+  <div class="mx-auto px-6 py-6 flex flex-col gap-6">
 
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="flex items-center text-sm text-gray-500 space-x-2">
-      <a href="/" class="flex items-center hover:text-gray-700 transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <rect x="3" y="3" width="7" height="7" rx="2" stroke-width="2" />
-          <rect x="14" y="3" width="7" height="7" rx="2" stroke-width="2" />
-          <rect x="14" y="14" width="7" height="7" rx="2" stroke-width="2" />
-          <rect x="3" y="14" width="7" height="7" rx="2" stroke-width="2" />
-        </svg>
-        ATHOS INSIGHT
+      <a href="/" class="flex items-center gap-2 hover:text-gray-700 transition-colors">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-500 shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <rect x="3" y="3" width="7" height="7" rx="2" stroke-width="2" />
+            <rect x="14" y="3" width="7" height="7" rx="2" stroke-width="2" />
+            <rect x="14" y="14" width="7" height="7" rx="2" stroke-width="2" />
+            <rect x="3" y="14" width="7" height="7" rx="2" stroke-width="2" />
+          </svg>
+        </span>
+        <span class="font-medium tracking-wide">ATHOS INSIGHT</span>
       </a>
-      <span class="text-gray-400">&gt;</span>
+      <span class="text-gray-300">›</span>
       <a href="{% url 'dashboards_index' %}" class="hover:text-gray-700 transition-colors">Dashboards</a>
-      <span class="text-gray-400">&gt;</span>
-      <span class="font-medium text-gray-900">{{ header_breadcrumb|default:header.breadcrumb|default:"Saúde do Projeto" }}</span>
+      <span class="text-gray-300">›</span>
+      <span class="font-semibold text-gray-800">{{ header_breadcrumb|default:header.breadcrumb|default:"Saúde do Projeto" }}</span>
     </nav>
 
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -25,7 +27,7 @@
       <div class="flex items-start md:items-center gap-4">
         <button
           onclick="window.history.back()"
-          class="bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md px-4 py-2 text-gray-700 font-medium transition-colors">
+          class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50">
           ← Voltar
         </button>
         <div>

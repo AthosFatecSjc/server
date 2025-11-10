@@ -1,0 +1,110 @@
+<script>
+    (() => {
+        if (window.__statusModalInitialized) {
+            return;
+        }
+        window.__statusModalInitialized = true;
+
+        const toggleButtonsSelector = "[data-status-modal]";
+
+        const baseConfirmClasses =
+            "inline-flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-white shadow transition focus:outline-none focus:ring-2 focus:ring-offset-1";
+
+        const modal = document.getElementById("statusModal");
+        if (!modal) {
+            return;
+        }
+        const form = document.getElementById("statusModalForm");
+        const actionInput = document.getElementById("statusModalAction");
+        const nextInput = document.getElementById("statusModalNext");
+        const titleEl = document.getElementById("statusModalTitle");
+        const messageEl = document.getElementById("statusModalMessage");
+        const confirmBtn = document.getElementById("statusModalConfirm");
+        const confirmText = document.getElementById("statusModalConfirmText");
+        const iconWrapper = document.getElementById("statusModalIcon");
+        const container = modal.querySelector("[data-status-modal-container]");
+
+        const closeElements = modal.querySelectorAll("[data-status-modal-close]");
+        let lastTrigger = null;
+
+        function openModal() {
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+            document.body.classList.add("overflow-hidden");
+            modal.setAttribute("aria-hidden", "false");
+            window.setTimeout(() => {
+                if (confirmBtn) {
+                    confirmBtn.focus();
+                }
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.remove("flex");
+            modal.classList.add("hidden");
+            document.body.classList.remove("overflow-hidden");
+            modal.setAttribute("aria-hidden", "true");
+            if (lastTrigger) {
+                lastTrigger.focus();
+            }
+        }
+
+        closeElements.forEach((el) => {
+            el.addEventListener("click", closeModal);
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && !modal.classList.contains("hidden")) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener("click", (event) => {
+            const trigger = event.target.closest(toggleButtonsSelector);
+            if (!trigger) {
+                return;
+            }
+
+            event.preventDefault();
+
+            lastTrigger = trigger;
+
+            const url = trigger.getAttribute("data-url");
+            const acao = trigger.getAttribute("data-acao") || "";
+            const nome = trigger.getAttribute("data-nome") || "";
+            const next = trigger.getAttribute("data-next") || "";
+
+            form.setAttribute("action", url);
+            actionInput.value = acao;
+            nextInput.value = next;
+
+            const isDesativar = acao === "desativar";
+            titleEl.textContent = isDesativar ? "Desativar usuário" : "Ativar usuário";
+            messageEl.textContent = isDesativar
+                ? `Tem certeza de que deseja desativar ${nome}?`
+                : `Tem certeza de que deseja reativar ${nome}?`;
+            confirmText.textContent = isDesativar ? "Desativar" : "Ativar";
+
+            confirmBtn.className = `${baseConfirmClasses} ${
+                isDesativar
+                    ? "bg-red-500 hover:bg-red-600 focus:ring-red-200"
+                    : "bg-green-500 hover:bg-green-600 focus:ring-green-200"
+            }`;
+
+            iconWrapper.className = `inline-flex h-12 w-12 items-center justify-center rounded-full ${
+                isDesativar ? "bg-red-100 text-red-500" : "bg-green-100 text-green-600"
+            }`;
+            iconWrapper.innerHTML = `<i class="fas ${
+                isDesativar ? "fa-user-slash" : "fa-user-check"
+            } text-lg"></i>`;
+
+            openModal();
+        });
+
+        if (container) {
+            container.addEventListener("click", (event) => {
+                event.stopPropagation();
+            });
+        }
+    })();
+</script>
