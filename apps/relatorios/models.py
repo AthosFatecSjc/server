@@ -176,3 +176,24 @@ class Issue(models.Model):
 
     def __str__(self):
         return pformat(self.__dict__, indent=4, width=120)
+
+
+class PlanejamentoProjeto(models.Model):
+    """
+    Guarda as horas previstas por projeto e ano após a normalização do OLTP.
+    Substitui o antigo MetaTempoControle, removido do schema.
+    """
+
+    projeto = models.ForeignKey(
+        Projeto, on_delete=models.CASCADE, related_name="planejamentos"
+    )
+    ano = models.PositiveIntegerField()
+    horas_previstas = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        db_table = "planejamento_projeto"
+        unique_together = ("projeto", "ano")
+        ordering = ("projeto_id", "ano")
+
+    def __str__(self):
+        return f"{self.projeto.nome} ({self.ano}) - {self.horas_previstas}h"
