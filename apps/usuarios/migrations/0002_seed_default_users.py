@@ -48,6 +48,12 @@ def seed_default_users(apps, schema_editor):
         },
     ]
 
+    def _buscar_usuario_existente(username: str, email: str):
+        usuario = usuario_model.objects.filter(username=username).first()
+        if usuario:
+            return usuario
+        return usuario_model.objects.filter(email__iexact=email).first()
+
     for dados in usuarios:
         defaults = {
             "nome_completo": dados["nome_completo"],
@@ -62,11 +68,16 @@ def seed_default_users(apps, schema_editor):
             "is_superuser": dados["is_superuser"],
             "password": make_password(dados["password"]),
         }
+        usuario_existente = _buscar_usuario_existente(dados["username"], dados["email"])
+        if usuario_existente:
+            for campo, valor in defaults.items():
+                setattr(usuario_existente, campo, valor)
+            usuario_existente.username = dados["username"]
+            usuario_existente.save()
+            continue
+
         try:
-            usuario_model.objects.update_or_create(
-                username=dados["username"],
-                defaults=defaults,
-            )
+            usuario_model.objects.create(username=dados["username"], **defaults)
         except IntegrityError:
             usuario_model.objects.filter(username=dados["username"]).update(**defaults)
 

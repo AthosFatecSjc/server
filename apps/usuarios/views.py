@@ -165,3 +165,26 @@ class UsuarioStatusToggleView(View):
         default_redirect = reverse(LISTA_URL_NAME)
         redirect_url = _resolve_redirect_url(request, default_redirect)
         return redirect(redirect_url)
+
+
+class UsuarioDeleteView(View):
+    """Exclui um usuário do sistema."""
+
+    http_method_names = ["post"]
+
+    def post(self, request: HttpRequest, pk: int) -> HttpResponse:
+        usuario = get_object_or_404(Usuario, pk=pk)
+        default_redirect = reverse(LISTA_URL_NAME)
+        redirect_url = _resolve_redirect_url(request, default_redirect)
+
+        if request.user.is_authenticated and request.user.pk == usuario.pk:
+            messages.error(
+                request,
+                "Você não pode excluir o próprio usuário. Solicite a outro administrador.",
+            )
+            return redirect(redirect_url)
+
+        nome = usuario.nome_completo
+        usuario.delete()
+        messages.success(request, f"Usuário {nome} removido com sucesso.")
+        return redirect(redirect_url)
