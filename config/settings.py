@@ -231,7 +231,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CRONJOBS = [
     # Executa a cada minuto - sincronização rápida
     (
-        get_env("CRON_BUSCAR_DADOS", "0 19 * * *"),
+        get_env("CRON_BUSCAR_DADOS", "*/1 * * * *"),
         "apps.utils.cron.buscar_dados_api",
     ),
     # Executa a cada minuto - ETL mais pesado

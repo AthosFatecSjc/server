@@ -144,34 +144,46 @@
 const IssuesBugsDashboard = {
     currentFilter: 'all',
     pizzaChart: null,
-
-    dadosIssues: [
-        { id: "ISSUE-001", tipo: "issue", developer: "João Silva", status: "Concluído", horas: 30, custo: 1500 },
-        { id: "ISSUE-002", tipo: "issue", developer: "Maria Santos", status: "Em progresso", horas: 24, custo: 1200 },
-        { id: "ISSUE-003", tipo: "issue", developer: "Pedro Oliveira", status: "MR", horas: 36, custo: 1800 },
-        { id: "ISSUE-004", tipo: "issue", developer: "Ana Costa", status: "Não iniciado", horas: 18, custo: 900 },
-        { id: "ISSUE-005", tipo: "issue", developer: "Carlos Lima", status: "Concluído", horas: 27, custo: 1350 },
-        { id: "ISSUE-006", tipo: "issue", developer: "Fernanda Souza", status: "Em progresso", horas: 21, custo: 1050 },
-        { id: "ISSUE-007", tipo: "issue", developer: "Rafael Mendes", status: "Não iniciado", horas: 15, custo: 750 },
-        { id: "ISSUE-008", tipo: "issue", developer: "Juliana Rocha", status: "MR", horas: 12, custo: 600 },
-        { id: "ISSUE-009", tipo: "issue", developer: "Bruno Almeida", status: "Concluído", horas: 25, custo: 1250 },
-        { id: "ISSUE-010", tipo: "issue", developer: "Camila Ferreira", status: "Em progresso", horas: 19, custo: 950 }
-    ],
-
-    dadosBugs: [
-        { id: "BUG-001", tipo: "bug", developer: "João Silva", status: "Concluído", horas: 20, custo: 800 },
-        { id: "BUG-002", tipo: "bug", developer: "Maria Santos", status: "Em progresso", horas: 16, custo: 640 },
-        { id: "BUG-003", tipo: "bug", developer: "Pedro Oliveira", status: "Não iniciado", horas: 30, custo: 1200 },
-        { id: "BUG-004", tipo: "bug", developer: "Ana Costa", status: "MR", horas: 12, custo: 480 },
-        { id: "BUG-005", tipo: "bug", developer: "Carlos Lima", status: "Concluído", horas: 24, custo: 960 },
-        { id: "BUG-006", tipo: "bug", developer: "Fernanda Souza", status: "Em progresso", horas: 18, custo: 720 },
-        { id: "BUG-007", tipo: "bug", developer: "Rafael Mendes", status: "Não iniciado", horas: 14, custo: 560 },
-        { id: "BUG-008", tipo: "bug", developer: "Juliana Rocha", status: "Concluído", horas: 10, custo: 400 }
-    ],
+    dadosIssues: [],
+    dadosBugs: [],
 
     init: function() {
-        this.atualizarCardsComTotais();
-        this.atualizarDashboard();
+        this.carregarDados();
+    },
+
+    carregarDados: function() {
+        const projetoId = this.obterProjetoId();
+        const url = projetoId 
+            ? `/dashboards/projeto/api/issues-bugs/?projeto_id=${projetoId}`
+            : '/dashboards/projeto/api/issues-bugs/';
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar dados');
+                }
+                return response.json();
+            })
+            .then(data => {
+                this.dadosIssues = data.issues || [];
+                this.dadosBugs = data.bugs || [];
+                this.atualizarCardsComTotais();
+                this.atualizarDashboard();
+            })
+            .catch(error => {
+                console.error('Erro ao carregar dados:', error);
+                this.exibirErro();
+            });
+    },
+
+    obterProjetoId: function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('projeto_id');
+    },
+
+    exibirErro: function() {
+        const tbody = document.getElementById('tabelaItens');
+        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Erro ao carregar dados. Tente novamente.</td></tr>';
     },
 
     toggleFilter: function(tipo) {

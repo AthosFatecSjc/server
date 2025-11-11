@@ -7,6 +7,7 @@ from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 
+from .issues_bugs_service import IssuesBugsService
 from .services import (
     DashboardProjetoError,
     DashboardProjetoPdfService,
@@ -111,3 +112,34 @@ def exportar_relatorio_pdf(request):
     response = HttpResponse(conteudo_pdf, content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
+
+
+@require_http_methods(["GET"])
+def issues_bugs_dashboard_data(request):
+    """
+    Retorna dados do dashboard de Issues e Bugs em formato JSON.
+
+    Args:
+        request: Requisição HTTP contendo opcionalmente projeto_id como query param.
+
+    Returns:
+        JsonResponse: Dicionário com listas 'issues' e 'bugs' contendo dados agregados.
+    """
+    projeto_param = request.GET.get("projeto_id")
+
+    try:
+        projeto_id = int(projeto_param) if projeto_param else None
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {"error": "ID do projeto inválido."},
+            status=400
+        )
+
+    try:
+        dados = IssuesBugsService.obter_dados_dashboard(projeto_id)
+        return JsonResponse(dados)
+    except Exception as exc:  # pylint: disable=broad-except
+        return JsonResponse(
+            {"error": f"Erro ao buscar dados: {str(exc)}"},
+            status=500
+        )

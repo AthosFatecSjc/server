@@ -14,4 +14,9 @@ urlpatterns = [
         views.exportar_relatorio_pdf,
         name="projetos_exportar_pdf",
     ),
+    path(
+        "api/issues-bugs/",
+        views.issues_bugs_dashboard_data,
+        name="issues_bugs_dashboard_data",
+    ),
 ]
