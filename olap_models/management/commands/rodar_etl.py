@@ -1,20 +1,25 @@
 from datetime import date, datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 
-from django.core.management.base import BaseCommand
-from django.db import transaction
+from django.core.management.base import BaseCommand, CommandError
+from django.db import connections, transaction
+from django.db.utils import OperationalError, ProgrammingError
 
 # Modelos OLTP
-from apps.relatorios.models import TempoGastoEquipe  # usado para granularidade diária
-from apps.relatorios.models import Cargo, ControleHorasEquipe, Funcionario, Projeto
+# usado para granularidade diária
+from apps.relatorios.models import Cargo, Funcionario, Issue, Projeto
 
 # Modelos OLAP
 from olap_models.models import (
     DimCargo,
     DimFuncionario,
+    DimIssue,
     DimProjeto,
     DimTempo,
     FatoRegistroHoras,
 )
+
+PLACEHOLDER_FUNCIONARIO_ID = 0
 
 
 class Command(BaseCommand):
@@ -35,10 +40,12 @@ class Command(BaseCommand):
             self.style.WARNING(" Iniciando o processo de ETL para o Data Warehouse...")
         )
 
+        self.garantir_esquema_olap()
         self.limpar_tabelas_olap()
         self.popular_dim_tempo()
         self.popular_dimensoes_simples()
         self.popular_dim_funcionario()
+        self.popular_dim_issue()
         self.popular_fato_registro_horas()
 
         fim = datetime.now()
@@ -57,6 +64,61 @@ class Command(BaseCommand):
         DimCargo.objects.using("olap").all().delete()
         DimProjeto.objects.using("olap").all().delete()
         DimTempo.objects.using("olap").all().delete()
+
+    def garantir_esquema_olap(self):
+        """
+        Garante que o esquema mínimo do banco OLAP exista antes do ETL.
+        Cria a tabela DimIssue e a FK em FatoRegistroHoras quando necessário.
+        """
+        connection = connections["olap"]
+        try:
+            existing_tables = set(connection.introspection.table_names())
+        except (ProgrammingError, OperationalError) as exc:
+            raise CommandError(
+                f"Não foi possível inspecionar as tabelas do banco OLAP: {exc}"
+            ) from exc
+
+        if DimIssue._meta.db_table not in existing_tables:
+            self._criar_tabela_dim_issue(connection)
+
+        if not self._tabela_possui_coluna(
+            connection, FatoRegistroHoras._meta.db_table, "issue_id"
+        ):
+            self._adicionar_fk_issue_em_fato(connection)
+
+    def _criar_tabela_dim_issue(self, connection):
+        self.stdout.write(" Criando tabela DimIssue no banco OLAP...")
+        try:
+            with connection.schema_editor() as schema_editor:
+                schema_editor.create_model(DimIssue)
+        except Exception as exc:
+            raise CommandError(
+                f"Falha ao criar a tabela {DimIssue._meta.db_table}: {exc}"
+            ) from exc
+
+    def _adicionar_fk_issue_em_fato(self, connection):
+        self.stdout.write(
+            " Adicionando coluna de relacionamento Issue em FatoRegistroHoras..."
+        )
+        issue_field = FatoRegistroHoras._meta.get_field("issue")
+        try:
+            with connection.schema_editor() as schema_editor:
+                schema_editor.add_field(FatoRegistroHoras, issue_field)
+        except Exception as exc:
+            raise CommandError(
+                f"Falha ao adicionar a coluna issue_id em {FatoRegistroHoras._meta.db_table}: {exc}"
+            ) from exc
+
+    def _tabela_possui_coluna(self, connection, table_name, column_name):
+        try:
+            with connection.cursor() as cursor:
+                description = connection.introspection.get_table_description(
+                    cursor, table_name
+                )
+        except (ProgrammingError, OperationalError):
+            return False
+
+        return any(column.name == column_name for column in description)
 
     def popular_dim_tempo(self):
         """
@@ -160,61 +222,124 @@ class Command(BaseCommand):
             )
             count += 1
 
+        # garante uma linha curinga para issues sem responsável
+        DimFuncionario.objects.using("olap").update_or_create(
+            id=PLACEHOLDER_FUNCIONARIO_ID,
+            defaults={
+                "nome": "Não atribuído",
+                "time": "N/A",
+                "data_contratacao": date(1900, 1, 1),
+                "cargo": "Não definido",
+                "nome_gerente": "",
+                "valor_hora": 0,
+            },
+        )
+
         self.stdout.write(
             self.style.SUCCESS(f" DimFuncionario populada com {count} registros.")
         )
 
+    def popular_dim_issue(self):
+        """
+        Popula DimIssue a partir do modelo Issue no banco OLTP.
+        Armazena a chave da issue, tipo, título e data de criação.
+        """
+        self.stdout.write(" Populando Dimensão Issue...")
+
+        count = 0
+        for issue in Issue.objects.select_related("tipo_issue").all():
+            # prefira a jira_key (ex: PROJ-123) como identificador legível
+            issue_key = issue.jira_key if issue.jira_key else str(issue.jira_id)
+            created_date = issue.criado_em.date() if issue.criado_em else None
+            issue_type = issue.tipo_issue.nome if issue.tipo_issue else None
+
+            DimIssue.objects.using("olap").update_or_create(
+                issue_id=issue_key,
+                defaults={
+                    "issue_type": issue_type,
+                    "issue_title": issue.titulo,
+                    "created_date": created_date,
+                },
+            )
+            count += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(f" DimIssue populada com {count} registros.")
+        )
+
     def popular_fato_registro_horas(self):
         """
-        Popula FatoRegistroHoras com granularidade diária.
-        Agora inclui o projeto por lookup em ControleHorasEquipe.
+        Popula FatoRegistroHoras com granularidade diária a partir das Issues.
+        Usa a data de criação da issue como chave temporal.
         """
         self.stdout.write(
-            " Populando FatoRegistroHoras (granularidade diária + projeto)..."
+            " Populando FatoRegistroHoras (granularidade diária a partir de issues)..."
         )
 
         registros_criados = 0
         registros_ignorados = 0
+        duas_casas = Decimal("0.01")
 
         funcionarios_dim = {f.id: f for f in DimFuncionario.objects.using("olap").all()}
         projetos_dim = {p.id: p for p in DimProjeto.objects.using("olap").all()}
         tempos_dim = {t.data_completa: t for t in DimTempo.objects.using("olap").all()}
-
-        controle_por_func_mes = {
-            (c.funcionario_id, c.mes): c.projeto_id
-            for c in ControleHorasEquipe.objects.all()
+        issues_dim = {
+            issue.issue_id: issue for issue in DimIssue.objects.using("olap").all()
         }
 
-        for registro in TempoGastoEquipe.objects.select_related(
-            "funcionario"
-        ).iterator():
-            try:
-                data_completa = registro.mes.replace(day=registro.dia_mes)
-            except ValueError:
+        acumulado = {}
+
+        for issue in (
+            Issue.objects.select_related("funcionario", "projeto")
+            .exclude(criado_em__isnull=True)
+            .iterator()
+        ):
+            if not issue.projeto_id:
                 registros_ignorados += 1
                 continue
 
-            func_dim = funcionarios_dim.get(registro.funcionario_id)
+            data_completa = issue.criado_em.date()
+            funcionario_id = issue.funcionario_id or PLACEHOLDER_FUNCIONARIO_ID
+            func_dim = funcionarios_dim.get(funcionario_id)
+            projeto_dim = projetos_dim.get(issue.projeto_id)
             data_dim = tempos_dim.get(data_completa)
-
-            projeto_id = controle_por_func_mes.get(
-                (registro.funcionario_id, registro.mes)
-            )
-            projeto_dim = projetos_dim.get(projeto_id) if projeto_id else None
-
-            if not (func_dim and data_dim and projeto_dim):
+            if not (func_dim and projeto_dim and data_dim):
                 registros_ignorados += 1
                 continue
 
-            custo_dia = float(registro.tempo_gasto) * float(func_dim.valor_hora)
+            horas_issue = Decimal(issue.tempo_gasto_seconds or 0) / Decimal("3600")
+            key = (funcionario_id, issue.projeto_id, data_completa)
 
+            entry = acumulado.setdefault(
+                key,
+                {
+                    "func": func_dim,
+                    "proj": projeto_dim,
+                    "data": data_dim,
+                    "horas": Decimal("0"),
+                    "custo": Decimal("0"),
+                    "issue": None,
+                },
+            )
+
+            entry["horas"] += horas_issue
+            entry["custo"] += horas_issue * func_dim.valor_hora
+            if not entry["issue"]:
+                entry["issue"] = issues_dim.get(issue.jira_key)
+
+        for entry in acumulado.values():
             FatoRegistroHoras.objects.using("olap").update_or_create(
-                funcionario=func_dim,
-                projeto=projeto_dim,
-                data=data_dim,
+                funcionario=entry["func"],
+                projeto=entry["proj"],
+                data=entry["data"],
                 defaults={
-                    "horas_trabalhadas": registro.tempo_gasto,
-                    "custo": custo_dia,
+                    "horas_trabalhadas": entry["horas"].quantize(
+                        duas_casas, rounding=ROUND_HALF_UP
+                    ),
+                    "custo": entry["custo"].quantize(
+                        duas_casas, rounding=ROUND_HALF_UP
+                    ),
+                    "issue": entry["issue"],
                 },
             )
             registros_criados += 1
