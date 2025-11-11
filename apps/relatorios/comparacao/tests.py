@@ -19,44 +19,38 @@ class SomaHorasTest(TestCase):
         self.func2 = Funcionario.objects.create(nome="Maria", cargo=self.cargo)
         self.projeto = Projeto.objects.create(nome="Projeto X")
 
-        referencia_jan = timezone.make_aware(datetime(2025, 1, 10, 12, 0))
-        referencia_fev = timezone.make_aware(datetime(2025, 2, 10, 12, 0))
-
-        # Renato: 15h realizadas (10 + 5), 20h estimadas (12 + 8) em janeiro
+        # Issues de janeiro para Renato: 10h + 5h realizados, 20h estimados
         Issue.objects.create(
             jira_id=1,
             jira_key="PRJ-1",
+            titulo="Planejar sprint",
             projeto=self.projeto,
-            titulo="Renato - Implementação",
             funcionario=self.func1,
+            criado_em=datetime(2025, 1, 10, 10, 0, 0),
             tempo_gasto_seconds=10 * 3600,
-            tempo_estimado_seconds=12 * 3600,
-            criado_em=referencia_jan,
-            atualizado_em=referencia_jan,
+            tempo_estimado_seconds=20 * 3600,
         )
         Issue.objects.create(
             jira_id=2,
             jira_key="PRJ-2",
+            titulo="Revisar arquitetura",
             projeto=self.projeto,
-            titulo="Renato - Ajustes",
             funcionario=self.func1,
+            criado_em=datetime(2025, 1, 20, 9, 0, 0),
             tempo_gasto_seconds=5 * 3600,
-            tempo_estimado_seconds=8 * 3600,
-            criado_em=referencia_jan,
-            atualizado_em=referencia_jan,
+            tempo_estimado_seconds=0,
         )
 
-        # Maria: 8h realizadas/estimadas em fevereiro
+        # Issue de fevereiro para Maria: 8h realizados/estimados
         Issue.objects.create(
             jira_id=3,
             jira_key="PRJ-3",
+            titulo="Configurar pipelines",
             projeto=self.projeto,
-            titulo="Maria - Correções",
             funcionario=self.func2,
+            criado_em=datetime(2025, 2, 5, 14, 0, 0),
             tempo_gasto_seconds=8 * 3600,
             tempo_estimado_seconds=8 * 3600,
-            criado_em=referencia_fev,
-            atualizado_em=referencia_fev,
         )
 
     def test_soma_horas_realizadas(self):
@@ -69,9 +63,7 @@ class SomaHorasTest(TestCase):
 
     def test_soma_horas_previstas(self):
         """Testa a soma das horas previstas por desenvolvedor e mês."""
-        previsto = ComparacaoService.soma_horas_previstas_por_dev_mes(
-            2025
-        )  # usa TempoControleValores por padrão
+        previsto = ComparacaoService.soma_horas_previstas_por_dev_mes(2025)
         self.assertIn("Renato", previsto)
         self.assertIn("Maria", previsto)
         self.assertEqual(previsto["Renato"][1], 20.0)

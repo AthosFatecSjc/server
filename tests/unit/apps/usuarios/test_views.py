@@ -2,6 +2,7 @@
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -36,24 +37,29 @@ class UsuarioViewsTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.membro = Usuario.objects.create_user(
-            username="membro-view",
-            nome_completo="Membro Ativo",
-            email="membro@example.com",
-            contrato=ContratoChoices.CLT,
-            cargo="Analista",
-            perfil_acesso=PerfilAcessoChoices.MEMBRO,
-            password="Str0ng@123",
+        cls.membro, _ = Usuario.objects.update_or_create(
+            username="membro",
+            defaults={
+                "nome_completo": "Membro Ativo",
+                "email": "membro@example.com",
+                "contrato": ContratoChoices.CLT,
+                "cargo": "Analista",
+                "perfil_acesso": PerfilAcessoChoices.MEMBRO,
+                "password": make_password("Str0ng@123"),
+            },
         )
-        cls.lider = Usuario.objects.create_user(
+
+        cls.lider, _ = Usuario.objects.update_or_create(
             username="lider-view",
-            nome_completo="Líder Inativo",
-            email="liderview@example.com",
-            contrato=ContratoChoices.ESTAGIARIO,
-            cargo="Estagiário",
-            perfil_acesso=PerfilAcessoChoices.LIDER,
-            password="Str0ng@123",
-            ativo=False,
+            defaults={
+                "nome_completo": "Líder Inativo",
+                "email": "liderview@example.com",
+                "contrato": ContratoChoices.ESTAGIARIO,
+                "cargo": "Estagiário",
+                "perfil_acesso": PerfilAcessoChoices.LIDER,
+                "password": make_password("Str0ng@123"),
+                "ativo": False,
+            },
         )
 
     def test_list_view_aplica_filtros(self):

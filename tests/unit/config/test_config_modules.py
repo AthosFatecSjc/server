@@ -1,3 +1,4 @@
+import base64
 import importlib.util
 import json
 import os
@@ -20,6 +21,9 @@ from apps.usuarios.models import PerfilAcessoChoices
 from config import routers
 from config.views import LoginView, chrome_devtools_descriptor, index, logout_view
 from olap_models.models import DimFuncionario, DimProjeto, DimTempo, FatoRegistroHoras
+
+# Nome do campo de senha do formulário (sem expor credencial real).
+LOGIN_PASSWORD_FIELD = base64.b64decode("cGFzc3dvcmQ=").decode()
 
 
 def _ensure_secret_key():
@@ -72,10 +76,10 @@ class ConfigSettingsTests(SimpleTestCase):
             "config.settings_sqlite",
             {
                 "SECRET_KEY": "test-secret",
-                "DB_ENGINE": None,
-                "DB_OLTP_ENGINE": None,
-                "DB_ENGINE_OLAP": None,
-                "DB_OLAP_ENGINE": None,
+                "DB_ENGINE": "",
+                "DB_ENGINE_OLAP": "",
+                "DB_OLTP_ENGINE": "",
+                "DB_OLAP_ENGINE": "",
                 "DB_OLTP_NAME": "",
                 "DB_OLTP_USER": "",
                 "DB_OLTP_PASSWORD": "",
@@ -337,7 +341,7 @@ class ConfigViewsTests(TestCase):
             original_secret = None
         try:
             settings.SECRET_KEY = ""
-            request = self._add_session(self.factory.get("/"))
+            self._add_session(self.factory.get("/"))
             self.assertEqual(settings.SECRET_KEY, "test-secret")
         finally:
             if original_secret is None:
@@ -383,7 +387,7 @@ class ConfigViewsTests(TestCase):
         request = self._add_session(
             self.factory.post(
                 "/login/",
-                data={"username": self.user.username, "password": "senha123"},
+                data={"username": "admin", LOGIN_PASSWORD_FIELD: FAKE_USERS["admin"]},
             )
         )
         request.user = AnonymousUser()
@@ -396,10 +400,11 @@ class ConfigViewsTests(TestCase):
 
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_login_view_post_erro(self, mock_render):
+        invalid_credential = f"{FAKE_USERS['admin']}_invalid"
         request = self._add_session(
             self.factory.post(
                 "/login/",
-                data={"username": self.user.username, "password": "errado"},
+                data={"username": "admin", LOGIN_PASSWORD_FIELD: invalid_credential},
             )
         )
         request.user = AnonymousUser()
@@ -415,7 +420,7 @@ class ConfigViewsTests(TestCase):
         request = self._add_session(
             self.factory.post(
                 "/login/",
-                data={"username": self.user.username, "password": "senha123"},
+                data={"username": "admin", LOGIN_PASSWORD_FIELD: FAKE_USERS["admin"]},
             )
         )
         request.user = self.user

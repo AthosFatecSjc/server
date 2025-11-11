@@ -4,7 +4,7 @@ import io
 from datetime import datetime
 
 from django.db.models import Sum
-from django.db.models.functions import Coalesce, ExtractMonth
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
@@ -21,20 +21,23 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from apps.relatorios.models import Issue, MetaTempoControle, Projeto
+from apps.relatorios.models import Issue, PlanejamentoProjeto, Projeto
 
 
 class ComparacaoService:
     """Serviços para geração de relatórios de comparação."""
 
     @staticmethod
-    def _processar_queryset_horas(queryset, campos):
+    def _processar_queryset_horas(queryset, campos, *, divisor: float | None = None):
         resultado = {}
         for item in queryset:
             dev = item[campos["dev"]]
             mes = item[campos["mes"]]
             horas = item[campos["horas"]] or 0
-            resultado.setdefault(dev, {})[mes] = float(horas)
+            valor = float(horas)
+            if divisor:
+                valor /= divisor
+            resultado.setdefault(dev, {})[mes] = valor
         return resultado
 
     @staticmethod
@@ -50,36 +53,56 @@ class ComparacaoService:
             soma_horas_por_dev_mes (dict): Soma de horas por mês do dev no projet/ ano.
         """
 
-        linhas = ComparacaoService._agrupar_issues_por_mes(
-            ano, nome_projeto, campo_segundos="tempo_gasto_seconds"
+        queryset = Issue.objects.filter(
+            criado_em__year=ano, criado_em__isnull=False
+        ).exclude(funcionario__isnull=True)
+
+        if nome_projeto:
+            queryset = queryset.filter(projeto__nome=nome_projeto)
+
+        queryset = (
+            queryset.values("funcionario__nome", "criado_em__month")
+            .annotate(total_segundos=Sum(Coalesce("tempo_gasto_seconds", 0)))
+            .order_by("funcionario__nome", "criado_em__month")
         )
 
         return ComparacaoService._processar_queryset_horas(
-            linhas,
-            {"dev": "funcionario__nome", "mes": "mes", "horas": "total_horas"},
+            queryset,
+            {
+                "dev": "funcionario__nome",
+                "mes": "criado_em__month",
+                "horas": "total_segundos",
+            },
+            divisor=3600,
         )
 
     @staticmethod
-    def soma_horas_previstas_por_dev_mes(
-        ano, nome_projeto=None, *, source="issues", field_name=None
-    ):
-        """Soma as horas previstas por dev/mês usando tempo estimado das issues."""
-        if source not in {"issues", "tempo_controle_valores", "tempo_gasto"}:
-            raise RuntimeError("Fonte inválida. Use 'issues'.")
+    def soma_horas_previstas_por_dev_mes(ano: int, nome_projeto: str | None = None):
+        """
+        Soma as horas estimadas das issues por desenvolvedor e mês.
+        Usa a estimativa registrada na issue (tempo_estimado_seconds).
+        """
+        queryset = Issue.objects.filter(
+            criado_em__year=ano, criado_em__isnull=False
+        ).exclude(funcionario__isnull=True)
 
-        campo_default = (
-            "tempo_gasto_seconds"
-            if source == "tempo_gasto"
-            else "tempo_estimado_seconds"
-        )
+        if nome_projeto:
+            queryset = queryset.filter(projeto__nome=nome_projeto)
 
-        linhas = ComparacaoService._agrupar_issues_por_mes(
-            ano, nome_projeto, campo_segundos=field_name or campo_default
+        queryset = (
+            queryset.values("funcionario__nome", "criado_em__month")
+            .annotate(total_segundos=Sum(Coalesce("tempo_estimado_seconds", 0)))
+            .order_by("funcionario__nome", "criado_em__month")
         )
 
         return ComparacaoService._processar_queryset_horas(
-            linhas,
-            {"dev": "funcionario__nome", "mes": "mes", "horas": "total_horas"},
+            queryset,
+            {
+                "dev": "funcionario__nome",
+                "mes": "criado_em__month",
+                "horas": "total_segundos",
+            },
+            divisor=3600,
         )
 
     @staticmethod
@@ -770,53 +793,24 @@ class ComparacaoService:
             return None
 
     @staticmethod
-    def _get_projeto_id(nome_projeto: str) -> int:
-        """
-        Busca projeto_id
-
-        Args:
-            nome_projeto (str): Nome do projeto.
-
-        Returns:
-            projeto_id (int): Identificado único do projeto.
-        """
-
-        try:
-            projeto_id = Projeto.objects.filter(nome=nome_projeto).values("id")
-
-        except Exception as e:
-            print(f"Id do projeto não encontrado: {e}")
-            return 0
-
-        return projeto_id[0]["id"]
+    def _get_projeto(nome_projeto: str) -> Projeto | None:
+        """Recupera uma instância de Projeto a partir do nome informado."""
+        if not nome_projeto:
+            return None
+        return Projeto.objects.filter(nome=nome_projeto).first()
 
     @staticmethod
     def get_horas_previstas_projeto(ano: int, nome_projeto: str) -> float:
         """
-        Lê registro de horas previstas para o projeto especificado
-
-        Args:
-            ano (int): Ano para geração do relatório.
-            nome_projeto (str): Nome do projeto.
-
-        Returns:
-            horas_previstas (float): Quantidade de horas previstas para o relatório no ano.
+        Lê registro de horas previstas para o projeto especificado.
+        Os valores agora são persistidos em PlanejamentoProjeto.
         """
+        projeto = ComparacaoService._get_projeto(nome_projeto)
+        if not projeto:
+            return 0.0
 
-        try:
-            # pylint:no-object-exception
-            meta_individual = MetaTempoControle.objects.get(
-                objetivo_clt=(
-                    f"META_{ComparacaoService._get_projeto_id(nome_projeto)}_{ano}"
-                )
-            )
-            meta_valor = meta_individual.objetivo_estagiario
-            if meta_valor and meta_valor.strip():
-                return float(meta_valor)
-            return 0.0
-        except Exception as e:
-            print(f"Meta individual não encontrada: {e}")
-            return 0.0
+        registro = PlanejamentoProjeto.objects.filter(projeto=projeto, ano=ano).first()
+        return float(registro.horas_previstas) if registro else 0.0
 
     @staticmethod
     def set_horas_previstas_projeto(
@@ -834,24 +828,16 @@ class ComparacaoService:
             Status_da_escrita (HttpResponse | Exception): Falha ou sucesso ao escreve no banco.
         """
 
-        LOG_PREFIX = "set_horas_previstas_projeto: %s"
-
         try:
-            print(LOG_PREFIX, 1)
+            projeto = ComparacaoService._get_projeto(nome_projeto)
+            if not projeto:
+                raise ValueError("Projeto não encontrado para salvar horas previstas.")
 
-            horas_previstas_obj, created = MetaTempoControle.objects.get_or_create(
-                objetivo_clt=f"""META_{
-                    ComparacaoService._get_projeto_id(nome_projeto)}_{ano}""",
-                defaults={"objetivo_estagiario": str(horas_previstas)},
+            PlanejamentoProjeto.objects.update_or_create(
+                projeto=projeto,
+                ano=ano,
+                defaults={"horas_previstas": horas_previstas},
             )
-            print(f"set_horas_previstas_projeto: {2}")
-
-            if not created:
-                horas_previstas_obj.objetivo_estagiario = str(horas_previstas)
-                horas_previstas_obj.save()
-
-            print(LOG_PREFIX, str(horas_previstas))
-
             return HttpResponse()
 
         except Exception as e:
