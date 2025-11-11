@@ -149,13 +149,30 @@
                     e garantir que o perfil esteja alinhado com as responsabilidades do cargo.
                 </p>
             </div>
+            <div class="rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
+                <h2 class="mb-2 text-lg font-semibold text-slate-800">Excluir usuário</h2>
+                <p class="text-sm text-gray-600 mb-4">
+                    Esta ação remove definitivamente o usuário do sistema. Ela não pode ser desfeita.
+                </p>
+                <button type="button"
+                        class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:border-red-300 hover:bg-red-100"
+                        data-delete-modal
+                        data-url="{% url 'usuarios:excluir' usuario.pk %}"
+                        data-nome="{{ usuario.nome_completo|escape }}"
+                        data-next="{% url 'usuarios:lista' %}">
+                    <i class="fas fa-trash-alt"></i>
+                    Excluir usuário
+                </button>
+            </div>
         </div>
     </div>
 </div>
+{% include "usuarios/componentes/modal_confirmacao_exclusao.html" %}
 {% include "usuarios/componentes/modal_confirmacao_status.html" %}
 {% endblock %}
 
 {% block extra_js %}
     {{ block.super }}
+    {% include "usuarios/componentes/modal_confirmacao_exclusao_script.html" %}
     {% include "usuarios/componentes/modal_confirmacao_status_script.html" %}
 {% endblock %}

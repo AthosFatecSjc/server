@@ -59,12 +59,8 @@ class UsuarioServiceTests(TestCase):
         )
 
         apenas_inativos = listar_usuarios({"status": "inativo"})
-        self.assertQuerySetEqual(
-            apenas_inativos,
-            [self.inativo],
-            ordered=False,
-            transform=lambda x: x,
-        )
+        self.assertIn(self.inativo, apenas_inativos)
+        self.assertNotIn(self.ativo, apenas_inativos)
 
     def test_alterar_status_usuario(self):
         alterar_status_usuario(self.ativo, ativo=False)

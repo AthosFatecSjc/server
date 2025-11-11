@@ -3,6 +3,7 @@
 from datetime import datetime
 
 from django.test import TestCase
+from django.utils import timezone
 
 from apps.relatorios.comparacao.services import ComparacaoService
 from apps.relatorios.models import Cargo, Funcionario, Issue, Projeto
