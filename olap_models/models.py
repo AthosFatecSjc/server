@@ -151,6 +151,25 @@ class DimTempo(models.Model):
         return pformat(self.__dict__, indent=4, width=120)
 
 
+class DimIssue(models.Model):
+    """
+    Dimensão para representar Issues trazidas do Jira.
+    Armazena chave da issue (PROJ-123), tipo e título para análises.
+    """
+
+    id = models.AutoField(primary_key=True)
+    issue_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    issue_type = models.CharField(max_length=30, blank=True)
+    issue_title = models.CharField(max_length=200, blank=True)
+    created_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        db_table = "dim_issue"
+
+    def __str__(self):
+        return str(self.__dict__, indent=4, ensure_ascii=False)
+
+
 class FatoRegistroHoras(models.Model):
     """
     Modelo para tabela fato de registro de horas e custo de funcionários por projeto
@@ -161,6 +180,13 @@ class FatoRegistroHoras(models.Model):
     data = models.ForeignKey(DimTempo, on_delete=models.CASCADE, null=True)
     horas_trabalhadas = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     custo = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    # referencia para a dimensão de issues (somente FK aqui)
+    issue = models.ForeignKey(
+        "DimIssue",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         """

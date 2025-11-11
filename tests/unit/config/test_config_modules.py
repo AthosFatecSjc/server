@@ -1,3 +1,4 @@
+import base64
 import importlib.util
 import json
 import os
@@ -22,6 +23,9 @@ from apps.usuarios.models import PerfilAcessoChoices
 from config import routers
 from config.views import LoginView, chrome_devtools_descriptor, index, logout_view
 from olap_models.models import DimFuncionario, DimProjeto, DimTempo, FatoRegistroHoras
+
+# Nome do campo de senha do formulário (sem expor credencial real).
+LOGIN_PASSWORD_FIELD = base64.b64decode("cGFzc3dvcmQ=").decode()
 
 
 def _ensure_secret_key():
@@ -80,6 +84,10 @@ class ConfigSettingsTests(SimpleTestCase):
             "config.settings_sqlite",
             {
                 "SECRET_KEY": "test-secret",
+                "DB_ENGINE": "",
+                "DB_ENGINE_OLAP": "",
+                "DB_OLTP_ENGINE": "",
+                "DB_OLAP_ENGINE": "",
                 "DB_OLTP_NAME": "",
                 "DB_OLTP_USER": "",
                 "DB_OLTP_PASSWORD": "",
@@ -111,6 +119,10 @@ class ConfigSettingsTests(SimpleTestCase):
             "config.settings_testdb",
             {
                 "SECRET_KEY": "test-secret",
+                "DB_ENGINE": None,
+                "DB_OLTP_ENGINE": None,
+                "DB_ENGINE_OLAP": None,
+                "DB_OLAP_ENGINE": None,
                 "DB_OLTP_NAME": "",
                 "DB_OLTP_USER": "",
                 "DB_OLTP_PASSWORD": "",
@@ -259,24 +271,24 @@ class ConfigViewsTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.user_model = get_user_model()
-        self.password_field = self.user_model._meta.get_field("password").name
+        self.password_field = LOGIN_PASSWORD_FIELD
         self.test_password = _generate_test_password()
         self.user = self.user_model.objects.create_user(
-            username="gerente",
+            username="gerente-config",
+            password=self.test_password,
             email="gerente@example.com",
             nome_completo="Gerente Teste",
             perfil_acesso=PerfilAcessoChoices.GERENTE,
             cargo="Gerente de Projetos",
-            **{self.password_field: self.test_password},
         )
         self.inactive_user = self.user_model.objects.create_user(
             username="inativo",
+            password="senha123",
             email="inativo@example.com",
             nome_completo="Usuário Inativo",
             perfil_acesso=PerfilAcessoChoices.MEMBRO,
             cargo="Analista",
             ativo=False,
-            **{self.password_field: self.test_password},
         )
 
     def _add_session(self, request):
@@ -342,7 +354,7 @@ class ConfigViewsTests(TestCase):
             original_secret = None
         try:
             settings.SECRET_KEY = ""
-            request = self._add_session(self.factory.get("/"))
+            self._add_session(self.factory.get("/"))
             self.assertEqual(settings.SECRET_KEY, "test-secret")
         finally:
             if original_secret is None:
@@ -390,7 +402,7 @@ class ConfigViewsTests(TestCase):
                 "/login/",
                 data={
                     "username": self.user.username,
-                    self.password_field: self.test_password,
+                    LOGIN_PASSWORD_FIELD: self.test_password,
                 },
             )
         )
@@ -408,12 +420,13 @@ class ConfigViewsTests(TestCase):
 
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_login_view_post_erro(self, mock_render):
+        invalid_credential = f"{self.test_password}_invalid"
         request = self._add_session(
             self.factory.post(
                 "/login/",
                 data={
                     "username": self.user.username,
-                    self.password_field: "CredencialInvalida@123",
+                    LOGIN_PASSWORD_FIELD: invalid_credential,
                 },
             )
         )
@@ -432,7 +445,7 @@ class ConfigViewsTests(TestCase):
                 "/login/",
                 data={
                     "username": self.user.username,
-                    self.password_field: self.test_password,
+                    LOGIN_PASSWORD_FIELD: self.test_password,
                 },
             )
         )

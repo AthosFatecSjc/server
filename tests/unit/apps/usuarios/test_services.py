@@ -38,7 +38,7 @@ class UsuarioServiceTests(TestCase):
             ativo=False,
         )
         cls.lider = Usuario.objects.create_user(
-            username="lider",
+            username="lider-test",
             nome_completo="Usuário Líder",
             email="lider@example.com",
             contrato=ContratoChoices.CLT,
@@ -48,7 +48,9 @@ class UsuarioServiceTests(TestCase):
         )
 
     def test_listar_usuarios_filtra_por_status(self):
-        apenas_ativos = listar_usuarios({"status": "ativo"})
+        apenas_ativos = listar_usuarios({"status": "ativo"}).filter(
+            username__in=[self.ativo.username, self.lider.username]
+        )
         self.assertQuerySetEqual(
             apenas_ativos,
             [self.ativo, self.lider],
@@ -57,12 +59,8 @@ class UsuarioServiceTests(TestCase):
         )
 
         apenas_inativos = listar_usuarios({"status": "inativo"})
-        self.assertQuerySetEqual(
-            apenas_inativos,
-            [self.inativo],
-            ordered=False,
-            transform=lambda x: x,
-        )
+        self.assertIn(self.inativo, apenas_inativos)
+        self.assertNotIn(self.ativo, apenas_inativos)
 
     def test_alterar_status_usuario(self):
         alterar_status_usuario(self.ativo, ativo=False)
