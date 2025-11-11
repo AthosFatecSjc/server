@@ -3,6 +3,8 @@ import importlib.util
 import json
 import os
 import runpy
+import secrets
+import string
 import sys
 from datetime import date
 from decimal import Decimal
@@ -36,6 +38,12 @@ def _ensure_secret_key():
 
 
 _ensure_secret_key()
+
+_PASSWORD_ALPHABET = string.ascii_letters + string.digits + "@#"
+
+
+def _generate_test_password(length: int = 16) -> str:
+    return "".join(secrets.choice(_PASSWORD_ALPHABET) for _ in range(length))
 
 
 class SettingsModuleLoader:
@@ -102,6 +110,9 @@ class ConfigSettingsTests(SimpleTestCase):
         self.assertEqual(
             module.DATABASES["olap"]["ENGINE"], "django.db.backends.sqlite3"
         )
+        self.assertEqual(module.SESSION_COOKIE_AGE, 2 * 60 * 60)
+        self.assertTrue(module.SESSION_SAVE_EVERY_REQUEST)
+        self.assertFalse(module.SESSION_EXPIRE_AT_BROWSER_CLOSE)
 
     def test_settings_respects_test_db_engine(self):
         module = SettingsModuleLoader.load(
@@ -260,10 +271,11 @@ class ConfigViewsTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.user_model = get_user_model()
-        self.user_password = "senha123"
+        self.password_field = LOGIN_PASSWORD_FIELD
+        self.test_password = _generate_test_password()
         self.user = self.user_model.objects.create_user(
             username="gerente-config",
-            password=self.user_password,
+            password=self.test_password,
             email="gerente@example.com",
             nome_completo="Gerente Teste",
             perfil_acesso=PerfilAcessoChoices.GERENTE,
@@ -390,7 +402,7 @@ class ConfigViewsTests(TestCase):
                 "/login/",
                 data={
                     "username": self.user.username,
-                    LOGIN_PASSWORD_FIELD: self.user_password,
+                    LOGIN_PASSWORD_FIELD: self.test_password,
                 },
             )
         )
@@ -401,10 +413,14 @@ class ConfigViewsTests(TestCase):
         self.assertEqual(response.url, reverse("home"))
         self.assertTrue(request.user.is_authenticated)
         self.assertEqual(request.user.pk, self.user.pk)
+        self.assertEqual(
+            request.session.get_expiry_age(),
+            settings.SESSION_COOKIE_AGE,
+        )
 
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_login_view_post_erro(self, mock_render):
-        invalid_credential = f"{self.user_password}_invalid"
+        invalid_credential = f"{self.test_password}_invalid"
         request = self._add_session(
             self.factory.post(
                 "/login/",
@@ -429,7 +445,7 @@ class ConfigViewsTests(TestCase):
                 "/login/",
                 data={
                     "username": self.user.username,
-                    LOGIN_PASSWORD_FIELD: self.user_password,
+                    LOGIN_PASSWORD_FIELD: self.test_password,
                 },
             )
         )
@@ -447,7 +463,7 @@ class ConfigViewsTests(TestCase):
                 "/login/",
                 data={
                     "username": self.inactive_user.username,
-                    "password": "senha123",
+                    self.password_field: self.test_password,
                 },
             )
         )
@@ -470,7 +486,7 @@ class ConfigViewsTests(TestCase):
                 "/login/?next=/relatorios/",
                 data={
                     "username": self.user.username,
-                    "password": "senha123",
+                    self.password_field: self.test_password,
                     "next": "/relatorios/",
                 },
             )
