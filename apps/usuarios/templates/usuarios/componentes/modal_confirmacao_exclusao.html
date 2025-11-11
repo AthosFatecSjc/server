@@ -1,0 +1,45 @@
+<div id="deleteModal"
+     class="fixed inset-0 z-50 hidden items-center justify-center"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="deleteModalTitle"
+     aria-describedby="deleteModalMessage"
+     aria-hidden="true">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" data-delete-modal-close></div>
+    <div class="relative mx-4 w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl"
+         tabindex="-1"
+         data-delete-modal-container>
+        <form method="post" id="deleteModalForm" class="space-y-6">
+            {% csrf_token %}
+            <input type="hidden" name="next" id="deleteModalNext">
+
+            <div class="flex items-start gap-3">
+                <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+                    <i class="fas fa-exclamation-triangle text-lg"></i>
+                </span>
+                <div class="space-y-1">
+                    <p id="deleteModalTitle" class="text-lg font-semibold text-slate-900">
+                        Excluir usuário
+                    </p>
+                    <p id="deleteModalMessage" class="text-sm text-gray-500">
+                        Confirme a exclusão do usuário selecionado.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button"
+                        class="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50"
+                        data-delete-modal-close>
+                    Cancelar
+                </button>
+                <button type="submit"
+                        id="deleteModalConfirm"
+                        class="inline-flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2 text-sm font-semibold text-white shadow transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-200 focus:ring-offset-1">
+                    <i class="fas fa-trash"></i>
+                    Remover usuário
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

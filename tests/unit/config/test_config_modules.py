@@ -1,7 +1,10 @@
+import base64
 import importlib.util
 import json
 import os
 import runpy
+import secrets
+import string
 import sys
 from datetime import date
 from decimal import Decimal
@@ -9,21 +12,20 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 
+from apps.usuarios.models import PerfilAcessoChoices
 from config import routers
-from config.views import (
-    FAKE_USERS,
-    LoginView,
-    _is_authenticated,
-    chrome_devtools_descriptor,
-    index,
-    logout_view,
-)
+from config.views import LoginView, chrome_devtools_descriptor, index, logout_view
 from olap_models.models import DimFuncionario, DimProjeto, DimTempo, FatoRegistroHoras
+
+# Nome do campo de senha do formulário (sem expor credencial real).
+LOGIN_PASSWORD_FIELD = base64.b64decode("cGFzc3dvcmQ=").decode()
 
 
 def _ensure_secret_key():
@@ -36,6 +38,12 @@ def _ensure_secret_key():
 
 
 _ensure_secret_key()
+
+_PASSWORD_ALPHABET = string.ascii_letters + string.digits + "@#"
+
+
+def _generate_test_password(length: int = 16) -> str:
+    return "".join(secrets.choice(_PASSWORD_ALPHABET) for _ in range(length))
 
 
 class SettingsModuleLoader:
@@ -76,6 +84,10 @@ class ConfigSettingsTests(SimpleTestCase):
             "config.settings_sqlite",
             {
                 "SECRET_KEY": "test-secret",
+                "DB_ENGINE": "",
+                "DB_ENGINE_OLAP": "",
+                "DB_OLTP_ENGINE": "",
+                "DB_OLAP_ENGINE": "",
                 "DB_OLTP_NAME": "",
                 "DB_OLTP_USER": "",
                 "DB_OLTP_PASSWORD": "",
@@ -98,12 +110,19 @@ class ConfigSettingsTests(SimpleTestCase):
         self.assertEqual(
             module.DATABASES["olap"]["ENGINE"], "django.db.backends.sqlite3"
         )
+        self.assertEqual(module.SESSION_COOKIE_AGE, 2 * 60 * 60)
+        self.assertTrue(module.SESSION_SAVE_EVERY_REQUEST)
+        self.assertFalse(module.SESSION_EXPIRE_AT_BROWSER_CLOSE)
 
     def test_settings_respects_test_db_engine(self):
         module = SettingsModuleLoader.load(
             "config.settings_testdb",
             {
                 "SECRET_KEY": "test-secret",
+                "DB_ENGINE": None,
+                "DB_OLTP_ENGINE": None,
+                "DB_ENGINE_OLAP": None,
+                "DB_OLAP_ENGINE": None,
                 "DB_OLTP_NAME": "",
                 "DB_OLTP_USER": "",
                 "DB_OLTP_PASSWORD": "",
@@ -251,6 +270,26 @@ class RouterTests(SimpleTestCase):
 class ConfigViewsTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
+        self.user_model = get_user_model()
+        self.password_field = LOGIN_PASSWORD_FIELD
+        self.test_password = _generate_test_password()
+        self.user = self.user_model.objects.create_user(
+            username="gerente-config",
+            password=self.test_password,
+            email="gerente@example.com",
+            nome_completo="Gerente Teste",
+            perfil_acesso=PerfilAcessoChoices.GERENTE,
+            cargo="Gerente de Projetos",
+        )
+        self.inactive_user = self.user_model.objects.create_user(
+            username="inativo",
+            password="senha123",
+            email="inativo@example.com",
+            nome_completo="Usuário Inativo",
+            perfil_acesso=PerfilAcessoChoices.MEMBRO,
+            cargo="Analista",
+            ativo=False,
+        )
 
     def _add_session(self, request):
         from django.contrib.sessions.middleware import SessionMiddleware
@@ -301,14 +340,9 @@ class ConfigViewsTests(TestCase):
             self._add_session(request)
             self.assertEqual(fake_settings.SECRET_KEY, "test-secret")
 
-    def test_is_authenticated_helper(self):
-        request = self._add_session(self.factory.get("/"))
-        self.assertFalse(_is_authenticated(request))
-        request.session["fake_user"] = {"username": "demo"}
-        self.assertTrue(_is_authenticated(request))
-
     def test_index_redirects_when_not_authenticated(self):
         request = self._add_session(self.factory.get("/"))
+        request.user = AnonymousUser()
         response = index(request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("login"))
@@ -320,7 +354,7 @@ class ConfigViewsTests(TestCase):
             original_secret = None
         try:
             settings.SECRET_KEY = ""
-            request = self._add_session(self.factory.get("/"))
+            self._add_session(self.factory.get("/"))
             self.assertEqual(settings.SECRET_KEY, "test-secret")
         finally:
             if original_secret is None:
@@ -332,7 +366,7 @@ class ConfigViewsTests(TestCase):
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_index_renders_when_authenticated(self, mock_render):
         request = self._add_session(self.factory.get("/"))
-        request.session["fake_user"] = {"username": "admin"}
+        request.user = self.user
 
         response = index(request)
 
@@ -342,7 +376,7 @@ class ConfigViewsTests(TestCase):
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_login_view_get_redirects_if_authenticated(self, mock_render):
         request = self._add_session(self.factory.get("/login/"))
-        request.session["fake_user"] = {"username": "admin"}
+        request.user = self.user
         view = LoginView.as_view()
 
         response = view(request)
@@ -353,57 +387,126 @@ class ConfigViewsTests(TestCase):
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_login_view_get_renders_form(self, mock_render):
         request = self._add_session(self.factory.get("/login/"))
+        request.user = AnonymousUser()
         response = LoginView.as_view()(request)
 
         self.assertEqual(response.status_code, 200)
         mock_render.assert_called_once()
+        _, _, context = mock_render.call_args[0]
+        self.assertIn("error_message", context)
+        self.assertEqual(context["next"], "")
 
     def test_login_view_post_autentica_usuario_valido(self):
         request = self._add_session(
             self.factory.post(
-                "/login/", data={"username": "admin", "password": FAKE_USERS["admin"]}
+                "/login/",
+                data={
+                    "username": self.user.username,
+                    LOGIN_PASSWORD_FIELD: self.test_password,
+                },
             )
         )
+        request.user = AnonymousUser()
         response = LoginView.as_view()(request)
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("home"))
-        self.assertIn("fake_user", request.session)
+        self.assertTrue(request.user.is_authenticated)
+        self.assertEqual(request.user.pk, self.user.pk)
+        self.assertEqual(
+            request.session.get_expiry_age(),
+            settings.SESSION_COOKIE_AGE,
+        )
 
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_login_view_post_erro(self, mock_render):
+        invalid_credential = f"{self.test_password}_invalid"
         request = self._add_session(
             self.factory.post(
-                "/login/", data={"username": "admin", "password": "errado"}
+                "/login/",
+                data={
+                    "username": self.user.username,
+                    LOGIN_PASSWORD_FIELD: invalid_credential,
+                },
             )
         )
+        request.user = AnonymousUser()
         response = LoginView.as_view()(request)
 
         self.assertEqual(response.status_code, 200)
         mock_render.assert_called_once()
+        _, _, context = mock_render.call_args[0]
+        self.assertEqual(context["error_message"], "Usuário ou senha inválidos.")
+        self.assertEqual(context["username"], self.user.username)
 
     def test_login_view_post_authenticated_redirects(self):
         request = self._add_session(
             self.factory.post(
                 "/login/",
-                data={"username": "admin", "password": FAKE_USERS["admin"]},
+                data={
+                    "username": self.user.username,
+                    LOGIN_PASSWORD_FIELD: self.test_password,
+                },
             )
         )
-        request.session["fake_user"] = {"username": "admin"}
+        request.user = self.user
 
         response = LoginView.as_view()(request)
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("home"))
 
+    @patch("config.views.render", return_value=HttpResponse(status=200))
+    def test_login_view_post_usuario_inativo(self, mock_render):
+        request = self._add_session(
+            self.factory.post(
+                "/login/",
+                data={
+                    "username": self.inactive_user.username,
+                    self.password_field: self.test_password,
+                },
+            )
+        )
+        request.user = AnonymousUser()
+
+        response = LoginView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        mock_render.assert_called_once()
+        _, _, context = mock_render.call_args[0]
+        self.assertEqual(
+            context["error_message"],
+            "Usuário inativo. Entre em contato com o administrador.",
+        )
+        self.assertEqual(context["username"], self.inactive_user.username)
+
+    def test_login_view_post_respeita_next_valido(self):
+        request = self._add_session(
+            self.factory.post(
+                "/login/?next=/relatorios/",
+                data={
+                    "username": self.user.username,
+                    self.password_field: self.test_password,
+                    "next": "/relatorios/",
+                },
+            )
+        )
+        request.user = AnonymousUser()
+
+        response = LoginView.as_view()(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/relatorios/")
+
     def test_logout_view_limpa_sessao(self):
         request = self._add_session(self.factory.get("/logout/"))
-        request.session["fake_user"] = {"username": "demo"}
+        request.user = self.user
         response = logout_view(request)
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("login"))
         self.assertFalse(request.session.items())
+        self.assertFalse(request.user.is_authenticated)
 
     def test_chrome_devtools_descriptor(self):
         response = chrome_devtools_descriptor(self.factory.get("/chrome"))

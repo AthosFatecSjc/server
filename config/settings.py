@@ -10,6 +10,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 BASE_DIR = Path(__file__).resolve().parent.parent
 SQLITE_ENGINE = "django.db.backends.sqlite3"
 
+env = environ.Env()
 env_path = BASE_DIR / ".env"
 if not env_path.exists():
     env_path = BASE_DIR.parent / ".env"
@@ -252,6 +253,11 @@ CACHE_JIRA = {
     "timestamp": None,
     "validade": datetime.timedelta(minutes=10),
 }
+
+# Session management
+SESSION_COOKIE_AGE = env.int("SESSION_COOKIE_AGE", default=2 * 60 * 60)  # 2 hours
+SESSION_SAVE_EVERY_REQUEST = True  # refresh expiry on activity
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Sentry Configuration
 SENTRY_DSN = get_env("SENTRY_DSN", "")
