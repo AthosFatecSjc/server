@@ -260,9 +260,10 @@ class ConfigViewsTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.user_model = get_user_model()
+        self.user_password = "senha123"
         self.user = self.user_model.objects.create_user(
             username="gerente-config",
-            password="senha123",
+            password=self.user_password,
             email="gerente@example.com",
             nome_completo="Gerente Teste",
             perfil_acesso=PerfilAcessoChoices.GERENTE,
@@ -387,7 +388,10 @@ class ConfigViewsTests(TestCase):
         request = self._add_session(
             self.factory.post(
                 "/login/",
-                data={"username": "admin", LOGIN_PASSWORD_FIELD: FAKE_USERS["admin"]},
+                data={
+                    "username": self.user.username,
+                    LOGIN_PASSWORD_FIELD: self.user_password,
+                },
             )
         )
         request.user = AnonymousUser()
@@ -400,11 +404,14 @@ class ConfigViewsTests(TestCase):
 
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_login_view_post_erro(self, mock_render):
-        invalid_credential = f"{FAKE_USERS['admin']}_invalid"
+        invalid_credential = f"{self.user_password}_invalid"
         request = self._add_session(
             self.factory.post(
                 "/login/",
-                data={"username": "admin", LOGIN_PASSWORD_FIELD: invalid_credential},
+                data={
+                    "username": self.user.username,
+                    LOGIN_PASSWORD_FIELD: invalid_credential,
+                },
             )
         )
         request.user = AnonymousUser()
@@ -420,7 +427,10 @@ class ConfigViewsTests(TestCase):
         request = self._add_session(
             self.factory.post(
                 "/login/",
-                data={"username": "admin", LOGIN_PASSWORD_FIELD: FAKE_USERS["admin"]},
+                data={
+                    "username": self.user.username,
+                    LOGIN_PASSWORD_FIELD: self.user_password,
+                },
             )
         )
         request.user = self.user
