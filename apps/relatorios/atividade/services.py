@@ -18,7 +18,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from apps.relatorios.models import ControleHorasEquipe
+from olap_models.models import DimFuncionario, DimProjeto, FatoRegistroHoras
 
 matplotlib.use("Agg")
 
@@ -54,6 +54,53 @@ class AtividadeService:
         11: "Novembro",
         12: "Dezembro",
     }
+    DEFAULT_DB_ALIAS = "olap"
+    FUNCIONARIO_PADRAO = "Sem Funcionário"
+    PROJETO_PADRAO = "Sem Projeto"
+
+    @staticmethod
+    def _resolve_database_alias(using: str | None = None) -> str:
+        """Retorna o alias do banco a ser usado, padronizando para OLAP."""
+        return using or AtividadeService.DEFAULT_DB_ALIAS
+
+    @staticmethod
+    def _aplicar_filtros_base(
+        queryset, projeto_id: int | None, funcionario_id: int | None
+    ):
+        """Aplica filtros opcionais de projeto e colaborador em um queryset."""
+        if projeto_id:
+            queryset = queryset.filter(projeto_id=projeto_id)
+        if funcionario_id:
+            queryset = queryset.filter(funcionario_id=funcionario_id)
+        return queryset
+
+    @staticmethod
+    def listar_projetos_disponiveis(
+        using: str | None = None,
+    ) -> list[dict[str, int | str]]:
+        """Lista os projetos disponíveis no banco OLAP."""
+        alias = AtividadeService._resolve_database_alias(using)
+        try:
+            return list(
+                DimProjeto.objects.using(alias).order_by("nome").values("id", "nome")
+            )
+        except Exception:
+            return []
+
+    @staticmethod
+    def listar_colaboradores_disponiveis(
+        using: str | None = None,
+    ) -> list[dict[str, int | str]]:
+        """Lista os colaboradores disponíveis no banco OLAP."""
+        alias = AtividadeService._resolve_database_alias(using)
+        try:
+            return list(
+                DimFuncionario.objects.using(alias)
+                .order_by("nome")
+                .values("id", "nome")
+            )
+        except Exception:
+            return []
 
     @staticmethod
     def _criar_estilo_tabela_base():
@@ -143,23 +190,37 @@ class AtividadeService:
         return [Paragraph(texto, subtitle_style), Spacer(1, space_after * inch)]
 
     @staticmethod
-    def _buscar_horas_detalhadas(ano: int, mes: int):
+    def _buscar_horas_detalhadas(
+        ano: int,
+        mes: int,
+        projeto_id: int | None = None,
+        funcionario_id: int | None = None,
+        using: str | None = None,
+    ):
         """Busca horas detalhadas por funcionário e projeto.
 
         Args:
             ano (int): Ano para filtrar os dados.
             mes (int): Mês para filtrar os dados.
+            projeto_id (int | None): Projeto para filtrar (opcional).
+            funcionario_id (int | None): Colaborador para filtrar (opcional).
+            using (str | None): Alias do banco (default: olap).
 
         Returns:
             QuerySet: Dados agregados de horas por funcionário e projeto.
         """
+        alias = AtividadeService._resolve_database_alias(using)
         return (
-            ControleHorasEquipe.objects.filter(  # pylint: disable=no-member
-                mes__year=ano, mes__month=mes
+            AtividadeService._aplicar_filtros_base(
+                FatoRegistroHoras.objects.using(alias).filter(
+                    data__ano=ano, data__mes=mes
+                ),
+                projeto_id,
+                funcionario_id,
             )
-            .values("funcionario_id__nome", "projeto_id__nome")
-            .annotate(total_horas=Sum("horas"))
-            .order_by("funcionario_id__nome", "projeto_id__nome")
+            .values("funcionario__nome", "projeto__nome")
+            .annotate(total_horas=Sum("horas_trabalhadas"))
+            .order_by("funcionario__nome", "projeto__nome")
         )
 
     @staticmethod
@@ -176,9 +237,11 @@ class AtividadeService:
         por_projeto = []
 
         for item in dados:
-            funcionario = item["funcionario_id__nome"]
-            projeto = item["projeto_id__nome"]
-            total_horas = float(item["total_horas"])
+            funcionario = (
+                item.get("funcionario__nome") or AtividadeService.FUNCIONARIO_PADRAO
+            )
+            projeto = item.get("projeto__nome") or AtividadeService.PROJETO_PADRAO
+            total_horas = float(item["total_horas"] or 0)
 
             por_projeto.append(
                 {
@@ -197,7 +260,13 @@ class AtividadeService:
         return por_projeto, total_por_dev
 
     @staticmethod
-    def horas_por_dev_e_projeto_por_mes(ano: int, mes: int) -> dict[list, list]:
+    def horas_por_dev_e_projeto_por_mes(
+        ano: int,
+        mes: int,
+        projeto_id: int | None = None,
+        funcionario_id: int | None = None,
+        using: str | None = None,
+    ) -> dict[list, list]:
         """Lista horas detalhadas por projeto e totais por desenvolvedor.
 
         Coordena a consulta ao banco de dados e o processamento dos dados
@@ -215,7 +284,9 @@ class AtividadeService:
                 'total_por_dev' (list): Uma lista de dicionários, cada um
                     com o total de horas de um desenvolvedor no mês.
         """
-        dados = AtividadeService._buscar_horas_detalhadas(ano, mes)
+        dados = AtividadeService._buscar_horas_detalhadas(
+            ano, mes, projeto_id, funcionario_id, using
+        )
         por_projeto, total_por_dev = AtividadeService._processar_dados_horas_detalhadas(
             dados
         )
@@ -223,43 +294,75 @@ class AtividadeService:
         return {"por_projeto": por_projeto, "total_por_dev": total_por_dev}
 
     @staticmethod
-    def soma_horas_por_dev_por_mes(ano: int, mes: int) -> list[dict[str, float]]:
+    def soma_horas_por_dev_por_mes(
+        ano: int,
+        mes: int,
+        projeto_id: int | None = None,
+        funcionario_id: int | None = None,
+        using: str | None = None,
+    ) -> list[dict[str, float]]:
         """Soma as horas agrupadas por desenvolvedor em um mês.
 
         Args:
             ano (int): Ano para geração do relatório.
             mes (int): Mês para geração do relatório.
+            projeto_id (int | None): Projeto para filtragem opcional.
+            funcionario_id (int | None): Colaborador para filtragem opcional.
+            using (str | None): Alias do banco (default: olap).
 
         Returns:
             list[dict[str, float]]: Lista de dicionários com as chaves
                 'funcionario' e 'total_horas'.
         """
-        return list(
-            ControleHorasEquipe.objects.filter(  # pylint: disable=no-member
-                mes__year=ano, mes__month=mes
-            )
-            .values("funcionario_id__nome")
-            .annotate(total_horas=Sum("horas"))
-            .order_by("funcionario_id__nome")
+        alias = AtividadeService._resolve_database_alias(using)
+        queryset = AtividadeService._aplicar_filtros_base(
+            FatoRegistroHoras.objects.using(alias).filter(data__ano=ano, data__mes=mes),
+            projeto_id,
+            funcionario_id,
         )
+        resultados = (
+            queryset.values("funcionario__nome")
+            .annotate(total_horas=Sum("horas_trabalhadas"))
+            .order_by("funcionario__nome")
+        )
+        return [
+            {
+                "funcionario": item.get("funcionario__nome")
+                or AtividadeService.FUNCIONARIO_PADRAO,
+                "total_horas": float(item["total_horas"] or 0),
+            }
+            for item in resultados
+        ]
 
     @staticmethod
-    def _buscar_dados_base(ano: int, mes: int):
+    def _buscar_dados_base(
+        ano: int,
+        mes: int,
+        projeto_id: int | None = None,
+        funcionario_id: int | None = None,
+        using: str | None = None,
+    ):
         """Busca os dados base do banco de dados para o relatório.
 
         Args:
             ano (int): Ano para geração do relatório.
             mes (int): Mês para geração do relatório.
+            projeto_id (int | None): Filtro opcional por projeto.
+            funcionario_id (int | None): Filtro opcional por colaborador.
+            using (str | None): Alias do banco (default: olap).
 
         Returns:
-            QuerySet: Dados filtrados e otimizados do ControleHorasEquipe.
+            QuerySet: Dados filtrados e otimizados com granularidade diária.
         """
-        return (
-            ControleHorasEquipe.objects.filter(  # pylint: disable=no-member
-                mes__year=ano, mes__month=mes
-            )
-            .select_related("funcionario", "projeto")
-            .order_by("funcionario__nome")
+        alias = AtividadeService._resolve_database_alias(using)
+        queryset = (
+            FatoRegistroHoras.objects.using(alias)
+            .select_related("funcionario", "projeto", "data")
+            .filter(data__ano=ano, data__mes=mes)
+            .order_by("funcionario__nome", "projeto__nome")
+        )
+        return AtividadeService._aplicar_filtros_base(
+            queryset, projeto_id, funcionario_id
         )
 
     @staticmethod
@@ -267,27 +370,38 @@ class AtividadeService:
         """Organiza os dados por colaborador e projeto.
 
         Args:
-            queryset: QuerySet com os dados do ControleHorasEquipe.
+            queryset: QuerySet com os dados consolidados de horas.
 
         Returns:
             tuple: Tupla contendo (dados_por_colaborador, projetos_nomes, dados_tabela).
         """
         dados_por_colaborador = defaultdict(lambda: defaultdict(float))
+        projetos_distintos: set[str] = set()
         for registro in queryset:
-            dados_por_colaborador[registro.funcionario.nome][
-                registro.projeto.nome
-            ] += float(registro.horas)
+            funcionario_nome = (
+                getattr(registro.funcionario, "nome", None)
+                or AtividadeService.FUNCIONARIO_PADRAO
+            )
+            projeto_nome = (
+                getattr(registro.projeto, "nome", None)
+                or AtividadeService.PROJETO_PADRAO
+            )
+            projetos_distintos.add(projeto_nome)
+            horas = float(registro.horas_trabalhadas or 0)
+            dados_por_colaborador[funcionario_nome][projeto_nome] += horas
 
-        projetos_nomes = sorted(set(queryset.values_list("projeto__nome", flat=True)))
+        projetos_nomes = sorted(projetos_distintos)
 
-        dados_tabela = [
-            {
-                "colaborador_nome": colaborador,
-                "horas": [projetos.get(p_nome, 0) for p_nome in projetos_nomes],
-                "total_colaborador": sum(projetos.values()),
-            }
-            for colaborador, projetos in dados_por_colaborador.items()
-        ]
+        dados_tabela = []
+        for colaborador in sorted(dados_por_colaborador.keys()):
+            projetos = dados_por_colaborador[colaborador]
+            dados_tabela.append(
+                {
+                    "colaborador_nome": colaborador,
+                    "horas": [projetos.get(p_nome, 0) for p_nome in projetos_nomes],
+                    "total_colaborador": sum(projetos.values()),
+                }
+            )
 
         return projetos_nomes, dados_tabela
 
@@ -296,27 +410,39 @@ class AtividadeService:
         """Calcula os totais por projeto e total geral.
 
         Args:
-            queryset: QuerySet com os dados do ControleHorasEquipe.
+            queryset: QuerySet com os dados consolidados de horas.
             projetos_nomes (list): Lista com nomes dos projetos.
 
         Returns:
             tuple: Tupla contendo (resumo_projetos, totais_por_projeto, total_geral_horas).
         """
-        total_geral_horas = queryset.aggregate(total=Sum("horas"))["total"] or 0
+        total_geral_horas = float(
+            queryset.aggregate(total=Sum("horas_trabalhadas"))["total"] or 0
+        )
 
-        resumo_projetos = (
+        resumo_qs = (
             queryset.values("projeto__nome")
             .annotate(
-                total_horas=Sum("horas"),
+                total_horas=Sum("horas_trabalhadas"),
                 devs_no_projeto=Count("funcionario", distinct=True),
             )
             .order_by("-total_horas")
         )
 
-        resumo_projetos_dict = {item["projeto__nome"]: item for item in resumo_projetos}
+        resumo_projetos = []
+        for item in resumo_qs:
+            nome = item.get("projeto__nome") or AtividadeService.PROJETO_PADRAO
+            resumo_projetos.append(
+                {
+                    "projeto__nome": nome,
+                    "total_horas": float(item["total_horas"] or 0),
+                    "devs_no_projeto": item["devs_no_projeto"] or 0,
+                }
+            )
 
+        resumo_projetos_dict = {item["projeto__nome"]: item for item in resumo_projetos}
         totais_por_projeto = [
-            resumo_projetos_dict.get(p_nome, {}).get("total_horas", 0)
+            resumo_projetos_dict.get(p_nome, {}).get("total_horas", 0.0)
             for p_nome in projetos_nomes
         ]
 
@@ -350,7 +476,13 @@ class AtividadeService:
         ]
 
     @staticmethod
-    def gerar_dados_relatorio_atividade(ano: int, mes: int) -> dict:
+    def gerar_dados_relatorio_atividade(
+        ano: int,
+        mes: int,
+        projeto_id: int | None = None,
+        funcionario_id: int | None = None,
+        using: str | None = None,
+    ) -> dict:
         """Gera os dados completos para o relatório de atividade.
 
         Esta função orquestra a geração de dados, delegando responsabilidades
@@ -364,7 +496,9 @@ class AtividadeService:
         Returns:
             dict: Dados formatados e prontos para geração do relatório.
         """
-        queryset = AtividadeService._buscar_dados_base(ano, mes)
+        queryset = AtividadeService._buscar_dados_base(
+            ano, mes, projeto_id, funcionario_id, using
+        )
 
         projetos_nomes, dados_tabela = (
             AtividadeService._processar_dados_por_colaborador(queryset)
@@ -383,7 +517,7 @@ class AtividadeService:
             "dados_cards": dados_cards,
             "projetos_nomes": projetos_nomes,
             "totais_por_projeto": totais_por_projeto,
-            "total_geral": total_geral_horas,
+            "total_geral": float(total_geral_horas),
         }
 
     @staticmethod
