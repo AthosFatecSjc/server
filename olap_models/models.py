@@ -159,8 +159,8 @@ class DimIssue(models.Model):
 
     id = models.AutoField(primary_key=True)
     issue_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
-    issue_type = models.CharField(max_length=30, null=True, blank=True)
-    issue_title = models.CharField(max_length=200, null=True, blank=True)
+    issue_type = models.CharField(max_length=30, blank=True)
+    issue_title = models.CharField(max_length=200, blank=True)
     created_date = models.DateField(null=True, blank=True)
 
     class Meta:

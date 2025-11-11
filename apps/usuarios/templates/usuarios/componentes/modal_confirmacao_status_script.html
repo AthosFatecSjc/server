@@ -27,11 +27,19 @@
         const closeElements = modal.querySelectorAll("[data-status-modal-close]");
         let lastTrigger = null;
 
+        const supportsNativeDialog = typeof modal.showModal === "function";
+
         function openModal() {
             modal.classList.remove("hidden");
-            modal.classList.add("flex");
             document.body.classList.add("overflow-hidden");
             modal.setAttribute("aria-hidden", "false");
+
+            if (supportsNativeDialog && !modal.hasAttribute("open")) {
+                modal.showModal();
+            } else {
+                modal.setAttribute("open", "");
+            }
+
             window.setTimeout(() => {
                 if (confirmBtn) {
                     confirmBtn.focus();
@@ -40,10 +48,16 @@
         }
 
         function closeModal() {
-            modal.classList.remove("flex");
             modal.classList.add("hidden");
             document.body.classList.remove("overflow-hidden");
             modal.setAttribute("aria-hidden", "true");
+
+            if (supportsNativeDialog && modal.hasAttribute("open")) {
+                modal.close();
+            } else {
+                modal.removeAttribute("open");
+            }
+
             if (lastTrigger) {
                 lastTrigger.focus();
             }
@@ -51,6 +65,17 @@
 
         closeElements.forEach((el) => {
             el.addEventListener("click", closeModal);
+        });
+
+        modal.addEventListener("cancel", (event) => {
+            event.preventDefault();
+            closeModal();
+        });
+
+        modal.addEventListener("click", (event) => {
+            if (event.target === modal) {
+                closeModal();
+            }
         });
 
         document.addEventListener("keydown", (event) => {

@@ -17,16 +17,18 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
 
 from .views import LoginView, chrome_devtools_descriptor, index, logout_view
 
 urlpatterns = [
-    path("", index, name="home"),
+    path("", RedirectView.as_view(pattern_name="home", permanent=False)),
     path(
         ".well-known/appspecific/com.chrome.devtools.json",
         chrome_devtools_descriptor,
         name="chrome-devtools-descriptor",
     ),
+    path("home/", index, name="home"),
     path("login/", LoginView.as_view(), name="login"),
     path("logout/", logout_view, name="logout"),
     path("admin/", admin.site.urls),

@@ -1,370 +1,130 @@
--- ==================================================================================================
--- 0. Limpeza das tabelas
--- ==================================================================================================
+-- =================================================================================
+-- Script de carga para o OLTP (baseado em apps/relatorios/models.py)
+-- =================================================================================
+DO $$
+DECLARE
+    c_marina_nome CONSTANT TEXT := 'Marina Costa';
+    c_rafael_nome CONSTANT TEXT := 'Rafael Nogueira';
+    c_plat_key    CONSTANT TEXT := 'PLAT-1';
+    c_mkt_key     CONSTANT TEXT := 'MKT-42';
+    c_data_key    CONSTANT TEXT := 'DATA-7';
+    c_status_wip  CONSTANT TEXT := 'Em progresso';
+    c_status_done CONSTANT TEXT := 'Concluída';
+BEGIN
+    -- =================================================================================
+    -- 0. Limpeza das tabelas base
+    -- =================================================================================
+    TRUNCATE TABLE
+        issue,
+        tipo_issue,
+        projeto,
+        funcionario,
+        cargo
+    RESTART IDENTITY CASCADE;
 
-TRUNCATE TABLE
-    cargo,
-    funcionario,
-    projeto,
-    controle_horas_equipe_resumo,
-    meta_tempo_controle,
-    controle_horas_equipe,
-    controle_tempo_equipe,
-    controle_tempo_resumo
-RESTART IDENTITY CASCADE;
+    -- =================================================================================
+    -- 1. Inserção na tabela 'cargo'
+    -- =================================================================================
+    INSERT INTO cargo (sigla) VALUES
+    ('PM'),
+    ('TECH_LEAD'),
+    ('DEV_BACKEND'),
+    ('DEV_FRONTEND'),
+    ('QA');
 
--- ==================================================================================================
--- 1. Inserção na Tabela 'cargo'
--- ==================================================================================================
+    -- =================================================================================
+    -- 2. Inserção na tabela 'funcionario'
+    -- =================================================================================
+    INSERT INTO funcionario (nome, time, cargo_id, gerente_id, data_criacao, valor_hora) VALUES
+    (c_marina_nome, 'Discovery', (SELECT id FROM cargo WHERE sigla = 'PM'), NULL, '2023-10-01', 190.00);
 
-INSERT INTO cargo (sigla) VALUES
-('Gerente de Projetos'),
-('Membro de Equipe'),
-('Lider de Equipe');
+    INSERT INTO funcionario (nome, time, cargo_id, gerente_id, data_criacao, valor_hora) VALUES
+    (c_rafael_nome, 'Platform', (SELECT id FROM cargo WHERE sigla = 'TECH_LEAD'), (SELECT id FROM funcionario WHERE nome = c_marina_nome), '2023-11-15', 160.00),
+    ('Clara Mendes', 'Platform', (SELECT id FROM cargo WHERE sigla = 'DEV_BACKEND'), (SELECT id FROM funcionario WHERE nome = c_rafael_nome), '2024-01-10', 125.00),
+    ('Otavio Ramos', 'Marketing Tech', (SELECT id FROM cargo WHERE sigla = 'DEV_FRONTEND'), (SELECT id FROM funcionario WHERE nome = c_rafael_nome), '2024-01-22', 115.00),
+    ('Beatriz Lopes', 'Data', (SELECT id FROM cargo WHERE sigla = 'QA'), (SELECT id FROM funcionario WHERE nome = c_marina_nome), '2024-02-05', 110.00);
 
--- ==================================================================================================
--- 2. Inserção na Tabela 'projeto' com data_criacao randômica
--- ==================================================================================================
+    -- =================================================================================
+    -- 3. Inserção na tabela 'projeto'
+    -- =================================================================================
+    INSERT INTO projeto (jira_id, jira_key, nome, data_criacao, orcamento_previsto) VALUES
+    (9101, c_plat_key, 'Plataforma de Pagamentos', '2024-02-15', 250000.00),
+    (9102, c_mkt_key, 'Motor de Campanhas', '2023-11-01', 175000.00),
+    (9103, c_data_key, 'Lakehouse Observability', '2024-04-20', 150000.00);
 
-INSERT INTO projeto (nome, data_criacao, orcamento_previsto)
-SELECT
-    nome,
-    '2025-01-01'::DATE + (random() * (DATE '2025-12-31' - DATE '2025-01-01'))::INT AS data_criacao,
-	20000.00
-FROM (
-    VALUES
-        ('Mnt'),
-        ('Ges'),
-        ('Ed'),
-        ('Ball'),
-        ('LNO'),
-        ('PFS'),
-        ('Dados'),
-        ('Mak'),
-        ('Incra'),
-        ('Climatem'),
-        ('Comercial'),
-        ('Reunião'),
-        ('Projeto A'),
-        ('Projeto B'),
-        ('Projeto C'),
-        ('Projeto D'),
-        ('Projeto E'),
-        ('Projeto F'),
-        ('Projeto G'),
-        ('Projeto H'),
-        ('Projeto I'),
-        ('Projeto J')
-) AS projetos(nome);
-
--- ==================================================================================================
--- 3. Inserção na Tabela 'meta_tempo_controle'
--- ==================================================================================================
-
-INSERT INTO meta_tempo_controle (objetivo_clt, objetivo_estagiario) VALUES
-('7', '6');
-
--- ==================================================================================================
--- 4. Inserção na Tabela 'funcionario'
--- ==================================================================================================
-
-INSERT INTO funcionario (nome, time, cargo_id, gerente_id, data_criacao, valor_hora) VALUES
-('Daniel Maturana', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Gerente de Projetos'), NULL, CURRENT_DATE, 40),
-('Aline Dominique', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
-('Felipe Faria', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
-('Eric Lourenço', 'Squad A', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
-('Alison Americo', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
-('Francisco Bustamante', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
-('Helena Benevenuto', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
-('João V Menezes', 'Squad B', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
-('Jose Thomazini', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
-('Lucas Paiva', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Lider de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40),
-('Sérgio Casas', 'Squad C', (SELECT id FROM cargo WHERE sigla = 'Membro de Equipe'), (SELECT id FROM funcionario WHERE nome = 'Daniel Maturana'), CURRENT_DATE, 40);
-
--- ==================================================================================================
--- 5. Inserção na Tabela 'controle_tempo_equipe'
--- ==================================================================================================
--- ==================================================================================================
--- 5.1. Dados diários para vários funcionários durante todo o mês de agosto de 2025.
--- A soma das horas diárias para cada funcionário no mês de agosto se aproxima do total no relatório.
--- ==================================================================================================
-
-INSERT INTO controle_tempo_equipe (dia_semana, dia_mes, mes, tempo_gasto, funcionario_id, meta_id) VALUES
--- Dados para Aline Dominique
-('Segunda', 4, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 5, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 6, '2025-08-01', 8.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 7, '2025-08-01', 7.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 8, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Segunda', 11, '2025-08-01', 7.8, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 12, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 13, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 14, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 15, '2025-08-01', 8.3, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Segunda', 18, '2025-08-01', 7.6, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 19, '2025-08-01', 7.8, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 20, '2025-08-01', 8.1, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 21, '2025-08-01', 8.4, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 22, '2025-08-01', 7.7, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Segunda', 25, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 26, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 27, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 28, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 29, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-
--- Dados para Felipe Faria
-('Segunda', 4, '2025-08-01', 7.0, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 5, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 6, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 7, '2025-08-01', 6.8, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 8, '2025-08-01', 7.2, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Segunda', 11, '2025-08-01', 8.1, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 12, '2025-08-01', 7.4, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 13, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 14, '2025-08-01', 7.5, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 15, '2025-08-01', 7.8, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-
--- Dados para Eric Lourenço
-('Segunda', 4, '2025-08-01', 8.5, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 5, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 6, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 7, '2025-08-01', 7.9, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 8, '2025-08-01', 8.3, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-
--- Dados para Lucas Paiva
-('Segunda', 4, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Terça', 5, '2025-08-01', 8.5, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quarta', 6, '2025-08-01', 8.2, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Quinta', 7, '2025-08-01', 8.3, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1)),
-('Sexta', 8, '2025-08-01', 8.0, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM meta_tempo_controle LIMIT 1));
-
--- ==================================================================================================
--- 5.2. Geração e inserção de dados randomizados vários funcionários durante os meses de 2025.
--- A soma das horas diárias para cada funcionário no mês de agosto se aproxima do total no relatório.
--- ==================================================================================================
-
-INSERT INTO CONTROLE_TEMPO_EQUIPE (
-    DIA_SEMANA,
-    DIA_MES,
-    MES,
-    FUNCIONARIO_ID,
-    TEMPO_GASTO,
-    META_ID
-)
-WITH metas AS (
+    -- =================================================================================
+    -- 4. Inserção na tabela 'tipo_issue'
+    -- =================================================================================
+    WITH tipo_dados (projeto_key, nome, descricao, jira_id, data_criacao) AS (
+        VALUES
+            (c_plat_key, 'Bug', 'Correções críticas de checkout', 1201, '2024-03-01'),
+            (c_plat_key, 'Feature', 'Funcionalidades de pagamento', 1202, '2024-03-05'),
+            (c_mkt_key, 'Bug', 'Falhas em integrações de mídia', 2201, '2024-05-12'),
+            (c_mkt_key, 'Melhoria', 'Ajustes incrementais da régua', 2202, '2024-05-15'),
+            (c_data_key, 'Pesquisa', 'Spikes exploratórios', 3201, '2024-06-01'),
+            (c_data_key, 'Tarefa', 'Trabalho operacional do time', 3202, '2024-06-03')
+    )
+    INSERT INTO tipo_issue (nome, descricao, jira_id, projeto_id, data_criacao)
     SELECT
-        (SELECT id FROM meta_tempo_controle WHERE objetivo_estagiario = '6') AS estagiario_id,
-        (SELECT id FROM meta_tempo_controle WHERE objetivo_clt = '7') AS clt_id
-)
-SELECT
-    TRIM(TO_CHAR(D, 'Day')) AS DIA_SEMANA,
-    EXTRACT(DAY FROM D)::INT AS DIA_MES,
-    DATE_TRUNC('month', D)::DATE AS MES,
-	n.FUNCIONARIO_ID AS FUNCIONARIO_ID,
-    ROUND(
-        CASE
-            WHEN EXTRACT(DOW FROM D) IN (0,6) THEN 0
-            WHEN n.FUNCIONARIO_ID % 2 = 0 THEN (4 + RANDOM() * 2)::NUMERIC
-            ELSE (6 + RANDOM() * 3)::NUMERIC
-        END
-    , 1) AS TEMPO_GASTO,
-    CASE
-        WHEN n.FUNCIONARIO_ID % 2 = 0 THEN (SELECT id FROM meta_tempo_controle WHERE objetivo_estagiario = '6')
-        ELSE (SELECT id FROM meta_tempo_controle WHERE objetivo_clt = '7')
-    END AS META_ID
-FROM (
-    SELECT
-        D,
-        F.id AS FUNCIONARIO_ID
-    FROM
-        GENERATE_SERIES('2025-01-01'::DATE, '2025-12-31'::DATE, '1 day') D
-        CROSS JOIN funcionario F
-) AS n
-LEFT JOIN CONTROLE_TEMPO_EQUIPE cte
-    ON n.FUNCIONARIO_ID = cte.FUNCIONARIO_ID
-    AND EXTRACT(DAY FROM D)::INT = cte.dia_mes
-    AND DATE_TRUNC('month', D)::DATE = cte.mes
-WHERE cte.FUNCIONARIO_ID IS NULL
-ON CONFLICT (funcionario_id, dia_mes, mes) DO NOTHING;
+        td.nome,
+        td.descricao,
+        td.jira_id,
+        p.id,
+        td.data_criacao
+    FROM tipo_dados td
+    JOIN projeto p ON p.jira_key = td.projeto_key;
 
--- ==================================================================================================
--- 6. Inserção na Tabela 'controle_tempo_resumo'
--- ==================================================================================================
--- ==================================================================================================
--- 6.1. Dados de resumo diário com base nos dados de 'controle_tempo_equipe'.
--- Gerando resumos para diferentes dias e equipes.
--- ==================================================================================================
-
-INSERT INTO controle_tempo_resumo (realizado_equipe, total_real, total_meta, aproveitamento, controle_tempo_equipe_id) VALUES
--- Resumo para o dia 4 de agosto
-(7.5, 7.5, 7.0, 107.14, (SELECT id FROM controle_tempo_equipe WHERE dia_mes = 4 AND funcionario_id = (SELECT id FROM funcionario WHERE nome = 'Aline Dominique') LIMIT 1)),
-(7.0, 7.0, 7.0, 100.00, (SELECT id FROM controle_tempo_equipe WHERE dia_mes = 4 AND funcionario_id = (SELECT id FROM funcionario WHERE nome = 'Felipe Faria') LIMIT 1)),
-(8.5, 8.5, 7.0, 121.43, (SELECT id FROM controle_tempo_equipe WHERE dia_mes = 4 AND funcionario_id = (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço') LIMIT 1)),
-(8.0, 8.0, 7.0, 114.28, (SELECT id FROM controle_tempo_equipe WHERE dia_mes = 4 AND funcionario_id = (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva') LIMIT 1)),
--- Resumo para o dia 5 de agosto
-(8.0, 8.0, 7.0, 114.28, (SELECT id FROM controle_tempo_equipe WHERE dia_mes = 5 AND funcionario_id = (SELECT id FROM funcionario WHERE nome = 'Aline Dominique') LIMIT 1)),
-(7.5, 7.5, 7.0, 107.14, (SELECT id FROM controle_tempo_equipe WHERE dia_mes = 5 AND funcionario_id = (SELECT id FROM funcionario WHERE nome = 'Felipe Faria') LIMIT 1));
-
--- ==================================================================================================
--- 6.2. Geração e inserção de dados randomizados, resumo diário com base nos dados de 'controle_tempo_equipe'.
--- Gerando resumos para diferentes dias e equipes.
--- ==================================================================================================
-
-INSERT INTO controle_tempo_resumo (
-    realizado_equipe,
-    total_real,
-    total_meta,
-    aproveitamento,
-    controle_tempo_equipe_id
-)
-SELECT
-    c.tempo_gasto AS realizado_equipe,
-    c.tempo_gasto AS total_real,
-    CASE
-        WHEN mtc.objetivo_clt = '7' THEN 154.0
-        WHEN mtc.objetivo_estagiario = '6' THEN 132.0
-        ELSE 0
-    END AS total_meta,
-    CASE
-        WHEN c.tempo_gasto > 0 THEN
-            ROUND((c.tempo_gasto /
-                CASE
-                    WHEN mtc.objetivo_clt = '7' THEN 154.0
-                    WHEN mtc.objetivo_estagiario = '6' THEN 132.0
-                    ELSE 1
-                END) * 100, 2)
-        ELSE 0
-    END AS aproveitamento,
-    c.id AS controle_tempo_equipe_id
-FROM
-    controle_tempo_equipe c
-JOIN
-    meta_tempo_controle mtc ON c.meta_id = mtc.id
-WHERE
-    c.tempo_gasto > 0;
-
--- ==================================================================================================
--- 7. Inserção nas tabelas 'controle_horas_equipe_resumo' e 'controle_horas_equipe'
--- ==================================================================================================
--- ==================================================================================================
--- 7.1.1. Inserção na Tabela 'controle_horas_equipe_resumo'
--- Adiciona dados de resumo para simular o total de horas para o mês de agosto.
--- ==================================================================================================
-
-INSERT INTO controle_horas_equipe_resumo (total_dev, total_projeto) VALUES
-(154.00, 154.00);
-
--- ==================================================================================================
--- 7.1.2. Inserção na Tabela 'controle_horas_equipe'
--- Adiciona os dados de horas por funcionário e projeto para os meses de agosto e julho, para criar um conjunto de dados mais robusto.
--- ==================================================================================================
-
-INSERT INTO controle_horas_equipe (mes, horas, funcionario_id, projeto_id, resumo_id) VALUES
--- Dados de Agosto (baseados nos relatórios)
-('2025-08-01', 78.5, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM projeto WHERE nome = 'Ball'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 3.25, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM projeto WHERE nome = 'Reunião'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 0.5, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM projeto WHERE nome = 'Mnt'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 76.33, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM projeto WHERE nome = 'LNO'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 2.75, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM projeto WHERE nome = 'PFS'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 7, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM projeto WHERE nome = 'Mak'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 66.67, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM projeto WHERE nome = 'Incra'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 21.75, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM projeto WHERE nome = 'Reunião'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 126.58, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM projeto WHERE nome = 'Ed'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 147.15, (SELECT id FROM funcionario WHERE nome = 'Alison Americo'), (SELECT id FROM projeto WHERE nome = 'LNO'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 20.78, (SELECT id FROM funcionario WHERE nome = 'Alison Americo'), (SELECT id FROM projeto WHERE nome = 'Reunião'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 3, (SELECT id FROM funcionario WHERE nome = 'Francisco Bustamante'), (SELECT id FROM projeto WHERE nome = 'Dados'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 143.83, (SELECT id FROM funcionario WHERE nome = 'Francisco Bustamante'), (SELECT id FROM projeto WHERE nome = 'Climatem'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 1.17, (SELECT id FROM funcionario WHERE nome = 'Francisco Bustamante'), (SELECT id FROM projeto WHERE nome = 'Comercial'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 158.92, (SELECT id FROM funcionario WHERE nome = 'Helena Benevenuto'), (SELECT id FROM projeto WHERE nome = 'LNO'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 9.75, (SELECT id FROM funcionario WHERE nome = 'Helena Benevenuto'), (SELECT id FROM projeto WHERE nome = 'Reunião'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 168, (SELECT id FROM funcionario WHERE nome = 'João V Menezes'), (SELECT id FROM projeto WHERE nome = 'Dados'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 139, (SELECT id FROM funcionario WHERE nome = 'Jose Thomazini'), (SELECT id FROM projeto WHERE nome = 'Incra'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 15.08, (SELECT id FROM funcionario WHERE nome = 'Jose Thomazini'), (SELECT id FROM projeto WHERE nome = 'Reunião'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 160, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM projeto WHERE nome = 'Ges'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 5, (SELECT id FROM funcionario WHERE nome = 'Lucas Paiva'), (SELECT id FROM projeto WHERE nome = 'Ed'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 91.42, (SELECT id FROM funcionario WHERE nome = 'Sérgio Casas'), (SELECT id FROM projeto WHERE nome = 'Mnt'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 2.28, (SELECT id FROM funcionario WHERE nome = 'Sérgio Casas'), (SELECT id FROM projeto WHERE nome = 'Ges'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 7.82, (SELECT id FROM funcionario WHERE nome = 'Sérgio Casas'), (SELECT id FROM projeto WHERE nome = 'Ed'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 3.98, (SELECT id FROM funcionario WHERE nome = 'Sérgio Casas'), (SELECT id FROM projeto WHERE nome = 'PFS'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
-('2025-08-01', 19.5, (SELECT id FROM funcionario WHERE nome = 'Sérgio Casas'), (SELECT id FROM projeto WHERE nome = 'Reunião'), (SELECT id FROM controle_horas_equipe_resumo LIMIT 1)),
--- Dados de Julho (amostras para popular o banco)
-('2025-07-01', 85, (SELECT id FROM funcionario WHERE nome = 'Aline Dominique'), (SELECT id FROM projeto WHERE nome = 'Ball'), NULL),
-('2025-07-01', 70, (SELECT id FROM funcionario WHERE nome = 'Felipe Faria'), (SELECT id FROM projeto WHERE nome = 'Incra'), NULL),
-('2025-07-01', 110, (SELECT id FROM funcionario WHERE nome = 'Eric Lourenço'), (SELECT id FROM projeto WHERE nome = 'Ed'), NULL),
-('2025-07-01', 130, (SELECT id FROM funcionario WHERE nome = 'Alison Americo'), (SELECT id FROM projeto WHERE nome = 'LNO'), NULL);
-
--- ==================================================================================================
--- 7.2. Geração e inserção de dados randomizados na Tabela 'controle_horas_equipe'
--- Adiciona os dados de horas por funcionário e projeto para os meses de agosto e julho, para criar um conjunto de dados mais robusto.
--- ==================================================================================================
-
-WITH TotalHorasFuncionarioMes AS (
-    SELECT
-        DATE_TRUNC('month', mes)::DATE AS mes_referencia,
+    -- =================================================================================
+    -- 5. Inserção na tabela 'issue'
+    -- =================================================================================
+    WITH issue_dados (
+        projeto_key,
+        tipo_nome,
+        jira_id,
+        jira_key,
+        titulo,
+        responsavel,
+        criado_em,
+        atualizado_em,
+        tempo_estimado,
+        tempo_gasto,
+        status
+    ) AS (
+        VALUES
+            (c_plat_key, 'Feature', 6001, 'PLAT-101', 'Checkout internacional', 'Clara Mendes', '2024-05-10 09:00:00', '2024-05-14 17:12:00', 36000, 37200, c_status_wip),
+            (c_plat_key, 'Bug', 6002, 'PLAT-145', 'Timeout na conciliação', 'Beatriz Lopes', '2024-05-11 14:00:00', '2024-05-12 09:35:00', 14400, 10800, c_status_done),
+            (c_mkt_key, 'Melhoria', 7001, 'MKT-420', 'Segmentação por região', c_rafael_nome, '2024-05-03 10:15:00', '2024-05-09 16:48:00', 28800, 32400, c_status_wip),
+            (c_mkt_key, 'Bug', 7002, 'MKT-432', 'Eventos duplicados', 'Otavio Ramos', '2024-05-07 08:50:00', '2024-05-07 19:05:00', 21600, 19800, c_status_done),
+            (c_data_key, 'Pesquisa', 8001, 'DATA-702', 'Avaliar formato Iceberg', c_marina_nome, '2024-06-01 11:00:00', '2024-06-04 18:20:00', 43200, 39600, c_status_wip),
+            (c_data_key, 'Tarefa', 8002, 'DATA-715', 'Rotina de vacuum autom.', NULL, '2024-06-05 09:30:00', '2024-06-06 13:10:00', 14400, 12600, 'Backlog')
+    )
+    INSERT INTO issue (
+        jira_id,
+        jira_key,
+        projeto_id,
+        titulo,
+        tipo_issue_id,
+        criado_em,
+        tempo_gasto_seconds,
+        tempo_estimado_seconds,
         funcionario_id,
-        SUM(tempo_gasto) AS total_horas
-    FROM
-        controle_tempo_equipe
-    WHERE
-        EXTRACT(DOW FROM mes) NOT IN (0,6) AND tempo_gasto > 0
-    GROUP BY
-        DATE_TRUNC('month', mes), funcionario_id
-),
-HorasDistribuidaPorProjeto AS (
+        atualizado_em,
+        status
+    )
     SELECT
-        thfm.mes_referencia,
-        thfm.funcionario_id,
+        dados.jira_id,
+        dados.jira_key,
         p.id AS projeto_id,
-        ROUND((thfm.total_horas * (RANDOM() * 0.7 + 0.3))::numeric, 2) AS horas_parciais
-    FROM
-        TotalHorasFuncionarioMes thfm
-        JOIN LATERAL (
-            SELECT id FROM projeto
-            ORDER BY RANDOM()
-            LIMIT GREATEST(1, (1 + (RANDOM() * 7)::INT))
-        ) p ON TRUE
-),
-HorasFinaisPorFuncionarioProjetoMes AS (
-    SELECT
-        hdp.mes_referencia,
-        hdp.funcionario_id,
-        hdp.projeto_id,
-        SUM(hdp.horas_parciais) AS horas_trabalhadas
-    FROM
-        HorasDistribuidaPorProjeto hdp
-    WHERE
-        hdp.projeto_id IS NOT NULL
-    GROUP BY
-        hdp.mes_referencia, hdp.funcionario_id, hdp.projeto_id
-),
-TotaisMensaisResumo AS (
-    SELECT
-        mes_referencia,
-        SUM(horas_trabalhadas) AS total_dev_no_mes,
-        SUM(horas_trabalhadas) AS total_projeto_no_mes
-    FROM
-        HorasFinaisPorFuncionarioProjetoMes
-    GROUP BY
-        mes_referencia
-),
-ResumosMensaisGerados AS (
-    INSERT INTO controle_horas_equipe_resumo (total_dev, total_projeto)
-    SELECT
-        tmr.total_dev_no_mes,
-        tmr.total_projeto_no_mes
-    FROM
-        TotaisMensaisResumo tmr
-    ORDER BY
-        tmr.mes_referencia
-    RETURNING id, total_dev, total_projeto, CURRENT_DATE AS mes_referencia
-)
-INSERT INTO controle_horas_equipe (mes, horas, funcionario_id, projeto_id, resumo_id)
-SELECT
-    hfp.mes_referencia AS mes,
-    hfp.horas_trabalhadas AS horas,
-    hfp.funcionario_id,
-    hfp.projeto_id,
-    (SELECT r.id FROM ResumosMensaisGerados r ORDER BY RANDOM() LIMIT 1)
-FROM
-    HorasFinaisPorFuncionarioProjetoMes hfp
-ON CONFLICT (funcionario_id, mes, projeto_id) DO NOTHING;
+        dados.titulo,
+        ti.id AS tipo_issue_id,
+        dados.criado_em::TIMESTAMP,
+        dados.tempo_gasto,
+        dados.tempo_estimado,
+        f.id AS funcionario_id,
+        dados.atualizado_em::TIMESTAMP,
+        dados.status
+    FROM issue_dados dados
+    JOIN projeto p ON p.jira_key = dados.projeto_key
+    JOIN tipo_issue ti ON ti.projeto_id = p.id AND ti.nome = dados.tipo_nome
+    LEFT JOIN funcionario f ON f.nome = dados.responsavel;
+END $$;

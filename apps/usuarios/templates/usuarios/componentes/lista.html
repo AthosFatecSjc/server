@@ -10,7 +10,7 @@
                     <th class="px-4 py-3 text-slate-600">Perfil de Acesso</th>
                     <th class="px-4 py-3 text-slate-600">Status</th>
                     <th class="px-4 py-3 text-slate-600">Data de Registro</th>
-                    <th class="px-4 py-3 text-right text-slate-600">Ações</th>
+                    <th class="px-4 py-3 text-center text-slate-600">Ações</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-100 text-gray-700">
@@ -84,6 +84,14 @@
                                         <i class="fas fa-user-check"></i>
                                     </button>
                                 {% endif %}
+                                <button type="button"
+                                        class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:border-red-300 hover:text-red-600"
+                                        data-delete-modal
+                                        data-url="{% url 'usuarios:excluir' usuario.pk %}"
+                                        data-nome="{{ usuario.nome_completo|escape }}"
+                                        data-next="{{ request.get_full_path|escape }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>

@@ -1,0 +1,72 @@
+<script>
+    (() => {
+        if (window.__deleteModalInitialized) {
+            return;
+        }
+        window.__deleteModalInitialized = true;
+
+        const triggerSelector = "[data-delete-modal]";
+        const modal = document.getElementById("deleteModal");
+        if (!modal) {
+            return;
+        }
+
+        const form = document.getElementById("deleteModalForm");
+        const nextInput = document.getElementById("deleteModalNext");
+        const messageEl = document.getElementById("deleteModalMessage");
+        const closeElements = modal.querySelectorAll("[data-delete-modal-close]");
+        const container = modal.querySelector("[data-delete-modal-container]");
+        let lastTrigger = null;
+
+        function openModal() {
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+            document.body.classList.add("overflow-hidden");
+            modal.setAttribute("aria-hidden", "false");
+        }
+
+        function closeModal() {
+            modal.classList.remove("flex");
+            modal.classList.add("hidden");
+            document.body.classList.remove("overflow-hidden");
+            modal.setAttribute("aria-hidden", "true");
+            if (lastTrigger) {
+                lastTrigger.focus();
+            }
+        }
+
+        closeElements.forEach((element) => {
+            element.addEventListener("click", closeModal);
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && !modal.classList.contains("hidden")) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener("click", (event) => {
+            const trigger = event.target.closest(triggerSelector);
+            if (!trigger) {
+                return;
+            }
+
+            event.preventDefault();
+            lastTrigger = trigger;
+
+            const url = trigger.getAttribute("data-url");
+            const nome = trigger.getAttribute("data-nome") || "";
+            const next = trigger.getAttribute("data-next") || "";
+
+            form.setAttribute("action", url);
+            nextInput.value = next;
+            messageEl.textContent = `Esta ação removerá ${nome} de forma permanente.`;
+
+            openModal();
+        });
+
+        if (container) {
+            container.addEventListener("click", (event) => event.stopPropagation());
+        }
+    })();
+</script>

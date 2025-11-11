@@ -106,6 +106,44 @@ class ComparacaoService:
         )
 
     @staticmethod
+    def _agrupar_issues_por_mes(ano, nome_projeto, *, campo_segundos: str):
+        """
+        Retorna lista de dicionários contendo horas (em horas) por dev/mês.
+        campo_segundos define qual métrica será utilizada (realizado/previsto).
+        """
+
+        queryset = (
+            Issue.objects.filter(funcionario__isnull=False)
+            .annotate(referencia=Coalesce("atualizado_em", "criado_em"))
+            .filter(referencia__isnull=False, referencia__year=ano)
+        )
+
+        if nome_projeto:
+            queryset = queryset.filter(projeto__nome=nome_projeto)
+
+        queryset = (
+            queryset.annotate(mes=ExtractMonth("referencia"))
+            .values("funcionario__nome", "mes")
+            .annotate(total_segundos=Sum(campo_segundos))
+            .order_by("funcionario__nome", "mes")
+        )
+
+        linhas = []
+        for item in queryset:
+            total_segundos = item.get("total_segundos") or 0
+            horas = total_segundos / 3600.0
+            if horas <= 0:
+                continue
+            linhas.append(
+                {
+                    "funcionario__nome": item["funcionario__nome"],
+                    "mes": item["mes"],
+                    "total_horas": horas,
+                }
+            )
+        return linhas
+
+    @staticmethod
     def _calcular_soma_valores(dicionario):
         return (
             sum(sum(meses.values()) for meses in dicionario.values())
