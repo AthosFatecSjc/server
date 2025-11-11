@@ -271,24 +271,24 @@ class ConfigViewsTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.user_model = get_user_model()
-        self.user_password = "senha123"
+        self.password_field = LOGIN_PASSWORD_FIELD
+        self.test_password = _generate_test_password()
         self.user = self.user_model.objects.create_user(
             username="gerente-config",
-            password=self.user_password,
+            password=self.test_password,
             email="gerente@example.com",
             nome_completo="Gerente Teste",
             perfil_acesso=PerfilAcessoChoices.GERENTE,
             cargo="Gerente de Projetos",
-            **{self.password_field: self.test_password},
         )
         self.inactive_user = self.user_model.objects.create_user(
             username="inativo",
+            password="senha123",
             email="inativo@example.com",
             nome_completo="Usuário Inativo",
             perfil_acesso=PerfilAcessoChoices.MEMBRO,
             cargo="Analista",
             ativo=False,
-            **{self.password_field: self.test_password},
         )
 
     def _add_session(self, request):
@@ -402,7 +402,7 @@ class ConfigViewsTests(TestCase):
                 "/login/",
                 data={
                     "username": self.user.username,
-                    LOGIN_PASSWORD_FIELD: self.user_password,
+                    LOGIN_PASSWORD_FIELD: self.test_password,
                 },
             )
         )
@@ -420,7 +420,7 @@ class ConfigViewsTests(TestCase):
 
     @patch("config.views.render", return_value=HttpResponse(status=200))
     def test_login_view_post_erro(self, mock_render):
-        invalid_credential = f"{self.user_password}_invalid"
+        invalid_credential = f"{self.test_password}_invalid"
         request = self._add_session(
             self.factory.post(
                 "/login/",
@@ -445,7 +445,7 @@ class ConfigViewsTests(TestCase):
                 "/login/",
                 data={
                     "username": self.user.username,
-                    LOGIN_PASSWORD_FIELD: self.user_password,
+                    LOGIN_PASSWORD_FIELD: self.test_password,
                 },
             )
         )
