@@ -1,3 +1,4 @@
+{% load usuarios_extras %}
 <form method="post" class="space-y-5">
     {% csrf_token %}
     {% if form.non_field_errors %}
@@ -101,7 +102,9 @@
                 </label>
                 {{ form.senha }}
                 {% if form.senha.help_text %}
-                    <p class="mt-1 text-xs text-gray-500">{{ form.senha.help_text|safe }}</p>
+                    <div class="mt-1 text-xs text-gray-500">
+                        {{ form.senha.help_text|render_help_text }}
+                    </div>
                 {% endif %}
                 {% for error in form.senha.errors %}
                     <p class="mt-1 text-xs text-red-600">{{ error }}</p>
@@ -128,7 +131,9 @@
                 </label>
                 {{ form.nova_senha }}
                 {% if form.nova_senha.help_text %}
-                    <p class="mt-1 text-xs text-gray-500">{{ form.nova_senha.help_text|safe }}</p>
+                    <div class="mt-1 text-xs text-gray-500">
+                        {{ form.nova_senha.help_text|render_help_text }}
+                    </div>
                 {% endif %}
                 {% for error in form.nova_senha.errors %}
                     <p class="mt-1 text-xs text-red-600">{{ error }}</p>
@@ -150,8 +155,8 @@
 
         {% if usuario %}
             <div class="md:col-span-2">
-                <label class="text-sm font-medium text-gray-500">Data de Registro</label>
-                <div class="mt-1 rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-600">
+                <p id="usuarioDataRegistroLabel" class="text-sm font-medium text-gray-500">Data de Registro</p>
+                <div class="mt-1 rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-600" aria-labelledby="usuarioDataRegistroLabel">
                     {{ usuario.date_joined|date:"d/m/Y" }}
                 </div>
             </div>
