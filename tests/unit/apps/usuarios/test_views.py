@@ -2,6 +2,7 @@
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -36,24 +37,29 @@ class UsuarioViewsTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.membro = Usuario.objects.create_user(
+        cls.membro, _ = Usuario.objects.update_or_create(
             username="membro",
-            nome_completo="Membro Ativo",
-            email="membro@example.com",
-            contrato=ContratoChoices.CLT,
-            cargo="Analista",
-            perfil_acesso=PerfilAcessoChoices.MEMBRO,
-            password="Str0ng@123",
+            defaults={
+                "nome_completo": "Membro Ativo",
+                "email": "membro@example.com",
+                "contrato": ContratoChoices.CLT,
+                "cargo": "Analista",
+                "perfil_acesso": PerfilAcessoChoices.MEMBRO,
+                "password": make_password("Str0ng@123"),
+            },
         )
-        cls.lider = Usuario.objects.create_user(
+
+        cls.lider, _ = Usuario.objects.update_or_create(
             username="lider-view",
-            nome_completo="Líder Inativo",
-            email="liderview@example.com",
-            contrato=ContratoChoices.ESTAGIARIO,
-            cargo="Estagiário",
-            perfil_acesso=PerfilAcessoChoices.LIDER,
-            password="Str0ng@123",
-            ativo=False,
+            defaults={
+                "nome_completo": "Líder Inativo",
+                "email": "liderview@example.com",
+                "contrato": ContratoChoices.ESTAGIARIO,
+                "cargo": "Estagiário",
+                "perfil_acesso": PerfilAcessoChoices.LIDER,
+                "password": make_password("Str0ng@123"),
+                "ativo": False,
+            },
         )
 
     def test_list_view_aplica_filtros(self):
@@ -61,7 +67,7 @@ class UsuarioViewsTests(TestCase):
         response = self.client.get(
             url,
             {
-                "busca": "membro",
+                "busca": self.membro.nome_completo,
                 "perfil_acesso": PerfilAcessoChoices.MEMBRO,
                 "status": "ativo",
             },
@@ -153,3 +159,49 @@ class UsuarioViewsTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("usuarios:lista"))
+
+    def test_delete_view_remove_usuario(self):
+        usuario = Usuario.objects.create_user(
+            username="excluir",
+            nome_completo="Excluir Demo",
+            email="excluir@example.com",
+            contrato=ContratoChoices.CLT,
+            cargo="Analista",
+            perfil_acesso=PerfilAcessoChoices.MEMBRO,
+            password="Str0ng@123",
+        )
+
+        response = self.client.post(reverse("usuarios:excluir", args=[usuario.pk]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("usuarios:lista"))
+        self.assertFalse(Usuario.objects.filter(pk=usuario.pk).exists())
+
+    def test_delete_view_respeita_next_valido(self):
+        usuario = Usuario.objects.create_user(
+            username="excluir-next",
+            nome_completo="Excluir Next",
+            email="excluir-next@example.com",
+            contrato=ContratoChoices.CLT,
+            cargo="Analista",
+            perfil_acesso=PerfilAcessoChoices.MEMBRO,
+            password="Str0ng@123",
+        )
+        next_url = reverse("usuarios:detalhe", args=[self.membro.pk])
+
+        response = self.client.post(
+            reverse("usuarios:excluir", args=[usuario.pk]),
+            {"next": next_url},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, next_url)
+
+    def test_delete_view_nao_permite_auto_exclusao(self):
+        self.client.force_login(self.membro)
+
+        response = self.client.post(reverse("usuarios:excluir", args=[self.membro.pk]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("usuarios:lista"))
+        self.assertTrue(Usuario.objects.filter(pk=self.membro.pk).exists())

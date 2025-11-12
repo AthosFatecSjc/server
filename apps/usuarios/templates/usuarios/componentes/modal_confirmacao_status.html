@@ -1,5 +1,4 @@
-<div id="statusModal" class="fixed inset-0 z-50 hidden items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="statusModalTitle" aria-describedby="statusModalMessage" aria-hidden="true">
-    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" data-status-modal-close></div>
+<dialog id="statusModal" class="status-modal hidden" aria-modal="true" aria-labelledby="statusModalTitle" aria-describedby="statusModalMessage" aria-hidden="true">
     <div class="relative mx-4 w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl" tabindex="-1" data-status-modal-container>
         <form method="post" id="statusModalForm" class="space-y-6">
             {% csrf_token %}
@@ -36,4 +35,29 @@
             </div>
         </form>
     </div>
-</div>
+</dialog>
+
+<style>
+    #statusModal {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        padding: 0;
+        margin: 0;
+        border: none;
+        background: transparent;
+        width: 100%;
+        height: 100%;
+    }
+
+    #statusModal[open] {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #statusModal::backdrop {
+        background-color: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+    }
+</style>
