@@ -27,6 +27,7 @@
                 data-project-orcamento-previsto="{{ projeto.orcamento_previsto }}"
                 data-project-saldo-remanescente="{{ projeto.saldo_remanescente }}"
                 data-project-percentual-utilizado="{{ projeto.percentual_utilizado }}"
+                data-project-issues-dashboard='{{ projeto.issues_bugs|jsonify }}'
                 onclick="selectProject('{{ projeto.id }}', '{{ projeto.nome_projeto|escapejs }}')"
             >
                 {{ projeto.nome_projeto }}

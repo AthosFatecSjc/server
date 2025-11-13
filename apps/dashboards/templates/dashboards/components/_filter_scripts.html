@@ -157,6 +157,7 @@
     const realized = safeFloat(option.dataset.projectCustoRealizado);
     const remaining = safeFloat(option.dataset.projectSaldoRemanescente);
     const utilization = safeFloat(option.dataset.projectPercentualUtilizado);
+    const issuesDashboard = parseJSON(option.dataset.projectIssuesDashboard);
 
     const safeBudget = Number.isFinite(budget) ? budget : 0;
     const safeRealized = Number.isFinite(realized) ? realized : 0;
@@ -186,6 +187,7 @@
         orcamentoPrevisto: safeBudget,
         saldoRemanescente: saldo,
         percentualUtilizado: percentual,
+        issuesDashboard,
     };
     }
 
