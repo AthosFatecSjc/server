@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from apps.dashboards.services import JiraService
 from apps.relatorios.models import Funcionario
+from apps.usuarios.utils import garantir_usuario_placeholder
 
 
 class Command(BaseCommand):
@@ -56,6 +57,8 @@ class Command(BaseCommand):
 
         criados = 0
         atualizados = 0
+        usuarios_criados = 0
+        usuarios_existentes = 0
         for nome_assignee in assignees:
             funcionario, created = Funcionario.objects.update_or_create(
                 nome=nome_assignee,
@@ -69,8 +72,32 @@ class Command(BaseCommand):
             else:
                 atualizados += 1
 
+            try:
+                placeholder = garantir_usuario_placeholder(nome_assignee)
+            except ValueError:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  [USUARIO] Nome inválido ao criar placeholder para '{nome_assignee}'."
+                    )
+                )
+                continue
+
+            if placeholder.criado:
+                usuarios_criados += 1
+                self.stdout.write(
+                    f"  [USUARIO] Criado placeholder '{placeholder.usuario.username}' para {nome_assignee}."
+                )
+            else:
+                usuarios_existentes += 1
+
         self.stdout.write(self.style.SUCCESS("\nSincronização concluída com sucesso!"))
         self.stdout.write(self.style.SUCCESS(f"  - {criados} funcionários criados."))
         self.stdout.write(
             self.style.SUCCESS(f"  - {atualizados} funcionários já existentes.")
+        )
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"  - {usuarios_criados} usuários placeholder criados "
+                f"({usuarios_existentes} já existiam)."
+            )
         )
