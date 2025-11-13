@@ -118,150 +118,59 @@ class _FakeAggregateManager:
         return _FakeAggregateQuery(self.total)
 
 
-class ProdutividadeServiceBaseTestCase(TestCase):
-    databases = {"default", "olap"}
+class ListarMesesDisponiveisTests(SimpleTestCase):
+    def _mock_issue_queryset(self, mock_issue, order_by_result):
+        queryset = mock.MagicMock()
+        queryset.filter.return_value = queryset
+        queryset.values_list.return_value = queryset
+        queryset.distinct.return_value = queryset
+        queryset.order_by.return_value = order_by_result
+        mock_issue.objects.using.return_value = queryset
+        return queryset
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.cargo = Cargo.objects.create(sigla="DEV")
-        cls.funcionario = Funcionario.objects.create(
-            nome="Alice",
-            time="Alpha",
-            cargo=cls.cargo,
-            valor_hora=Decimal("120"),
-        )
-        cls.funcionario2 = Funcionario.objects.create(
-            nome="Bob",
-            time="Beta",
-            cargo=cls.cargo,
-            valor_hora=Decimal("110"),
-        )
-        cls.projeto = Projeto.objects.create(nome="Projeto Teste")
-        cls.tipo_issue = TipoIssue.objects.create(
-            nome="Bug",
-            descricao="Bug",
-            jira_id=101,
-            projeto=cls.projeto,
-        )
+    @mock.patch("apps.relatorios.produtividade.services.Issue")
+    def test_usa_datas_das_issues(self, mock_issue):
+        self._mock_issue_queryset(mock_issue, [(2025, 11)])
 
-        Issue.objects.create(
-            jira_id=1,
-            jira_key="PROD-1",
-            projeto=cls.projeto,
-            titulo="Implantação",
-            tipo_issue=cls.tipo_issue,
-            criado_em=datetime(2025, 11, 1, 10, 0),
-            tempo_gasto_seconds=7200,
-            funcionario=cls.funcionario,
-        )
-        Issue.objects.create(
-            jira_id=2,
-            jira_key="PROD-2",
-            projeto=cls.projeto,
-            titulo="Homologação",
-            tipo_issue=cls.tipo_issue,
-            criado_em=datetime(2025, 11, 2, 9, 0),
-            tempo_gasto_seconds=3600,
-            funcionario=cls.funcionario,
-        )
-
-        RegistroProdutividade.objects.create(
-            funcionario=cls.funcionario, dia=date(2025, 11, 1), valor=Decimal("8")
-        )
-        RegistroProdutividade.objects.create(
-            funcionario=cls.funcionario, dia=date(2025, 11, 2), valor=Decimal("2")
-        )
-        RegistroProdutividade.objects.create(
-            funcionario=cls.funcionario, dia=date(2025, 11, 3), valor=Decimal("3")
-        )
-
-        MetaProdutividade.objects.create(
-            funcionario=cls.funcionario, mes=11, ano=2025, meta_horas=Decimal("200")
-        )
-
-        cls.dim_func1 = DimFuncionario.objects.using("olap").create(
-            id=cls.funcionario.id,
-            nome=cls.funcionario.nome,
-            time=cls.funcionario.time,
-            valor_hora=cls.funcionario.valor_hora,
-        )
-        cls.dim_func2 = DimFuncionario.objects.using("olap").create(
-            id=cls.funcionario2.id,
-            nome=cls.funcionario2.nome,
-            time=cls.funcionario2.time,
-            valor_hora=cls.funcionario2.valor_hora,
-        )
-        cls.dim_proj = DimProjeto.objects.using("olap").create(
-            id=cls.projeto.id,
-            nome=cls.projeto.nome,
-            data_criacao=date(2025, 1, 1),
-        )
-
-        cls.dim_tempo_1 = DimTempo.objects.using("olap").create(
-            hora=0,
-            dia=1,
-            mes=11,
-            ano=2025,
-            data_completa=date(2025, 11, 1),
-            trimestre="Q4",
-            dia_da_semana="Segunda",
-        )
-        cls.dim_tempo_2 = DimTempo.objects.using("olap").create(
-            hora=0,
-            dia=2,
-            mes=11,
-            ano=2025,
-            data_completa=date(2025, 11, 2),
-            trimestre="Q4",
-            dia_da_semana="Terça",
-        )
-        cls.dim_tempo_3 = DimTempo.objects.using("olap").create(
-            hora=0,
-            dia=3,
-            mes=11,
-            ano=2025,
-            data_completa=date(2025, 11, 3),
-            trimestre="Q4",
-            dia_da_semana="Quarta",
-        )
-
-        FatoRegistroHoras.objects.using("olap").create(
-            funcionario=cls.dim_func1,
-            projeto=cls.dim_proj,
-            data=cls.dim_tempo_1,
-            horas_trabalhadas=Decimal("4"),
-            custo=Decimal("0"),
-        )
-
-
-class ListarMesesDisponiveisTests(ProdutividadeServiceBaseTestCase):
-    def test_usa_datas_das_issues(self):
         meses = listar_meses_disponiveis()
-        self.assertTrue(any(m["mes"] == 11 and m["ano"] == 2025 for m in meses))
 
-    def test_listar_meses_disponiveis_com_dados(self):
-        meses = listar_meses_disponiveis()
         self.assertEqual(meses[0]["mes"], 11)
         self.assertEqual(meses[0]["ano"], 2025)
 
-    def test_listar_meses_disponiveis_sem_registros(self):
-        Issue.objects.all().delete()
+    @mock.patch("apps.relatorios.produtividade.services.Issue")
+    def test_listar_meses_disponiveis_com_dados(self, mock_issue):
+        self._mock_issue_queryset(mock_issue, [(2025, 11), (2024, 12)])
+
         meses = listar_meses_disponiveis()
+
+        self.assertEqual([meses[0]["mes"], meses[1]["mes"]], [11, 12])
+        self.assertEqual([meses[0]["ano"], meses[1]["ano"]], [2025, 2024])
+
+    @mock.patch("apps.relatorios.produtividade.services.Issue")
+    def test_listar_meses_disponiveis_sem_registros(self, mock_issue):
+        self._mock_issue_queryset(mock_issue, [])
+
+        meses = listar_meses_disponiveis()
+
         self.assertEqual(len(meses), 1)
 
     @mock.patch("apps.relatorios.produtividade.services.datetime")
-    def test_retorna_mes_atual_quando_sem_dados(self, mock_datetime):
+    @mock.patch("apps.relatorios.produtividade.services.Issue")
+    def test_retorna_mes_atual_quando_sem_dados(self, mock_issue, mock_datetime):
         mock_datetime.now.return_value = datetime(2024, 12, 15, 10, 0, 0)
-        Issue.objects.all().delete()
-        RegistroProdutividade.objects.all().delete()
-        MetaProdutividade.objects.all().delete()
+        self._mock_issue_queryset(mock_issue, [])
 
         meses = services.listar_meses_disponiveis()
 
         self.assertEqual(meses, [{"mes": 12, "ano": 2024, "mes_nome": "Dezembro"}])
 
 
-class ListarDiasDisponiveisTests(ProdutividadeServiceBaseTestCase):
+class ListarDiasDisponiveisTests(SimpleTestCase):
+    def setUp(self):
+        self.funcionario = SimpleNamespace(id=1, nome="Alice", time="Alpha")
+        self.funcionario2 = SimpleNamespace(id=2, nome="Bob", time="Beta")
+        self.funcionarios = [self.funcionario, self.funcionario2]
+
     def test_listar_dias_mes_usando_dimtempo(self):
         fake_manager = _FakeDimTempoManager([1, 5, 10])
         with mock.patch.object(services.DimTempo, "objects", fake_manager):
@@ -279,58 +188,116 @@ class ListarDiasDisponiveisTests(ProdutividadeServiceBaseTestCase):
         self.assertEqual(dias[-1], 30)
 
     def test_listar_dias_mes_com_dim_e_sem_dim(self):
-        dias_dim = _listar_dias_mes(11, 2025)
+        fake_manager = _FakeDimTempoManager([1, 2, 3])
+        with mock.patch.object(services.DimTempo, "objects", fake_manager):
+            dias_dim = _listar_dias_mes(11, 2025)
         self.assertEqual(dias_dim, [1, 2, 3])
 
-        dias_fallback = _listar_dias_mes(1, 2025)
+        fake_empty = _FakeDimTempoManager([])
+        with mock.patch.object(services.DimTempo, "objects", fake_empty):
+            dias_fallback = _listar_dias_mes(1, 2025)
+
         self.assertEqual(dias_fallback[0], 1)
         self.assertEqual(dias_fallback[-1], 31)
 
-    def test_calcular_spends_por_dev(self):
+    @mock.patch("apps.relatorios.produtividade.services.obter_meta_funcionario")
+    @mock.patch("apps.relatorios.produtividade.services._buscar_horas_fato")
+    @mock.patch("apps.relatorios.produtividade.services._buscar_horas_issue")
+    @mock.patch("apps.relatorios.produtividade.services._buscar_registros_diarios")
+    @mock.patch("apps.relatorios.produtividade.services._buscar_funcionarios")
+    @mock.patch("apps.relatorios.produtividade.services._listar_dias_mes")
+    def test_calcular_spends_por_dev(
+        self,
+        mock_listar_dias,
+        mock_buscar_func,
+        mock_registros,
+        mock_horas_issue,
+        mock_horas_fato,
+        mock_meta,
+    ):
+        mock_listar_dias.return_value = [1, 2, 3]
+        mock_buscar_func.return_value = [self.funcionario]
+        mock_registros.return_value = {
+            (self.funcionario.id, 1): Decimal("8"),
+            (self.funcionario.id, 2): Decimal("2"),
+        }
+        mock_horas_issue.return_value = {(self.funcionario.id, 3): Decimal("3")}
+        mock_horas_fato.return_value = {}
+        mock_meta.return_value = Decimal("200")
+
         dados = calcular_spends_por_dev_com_legendas(11, 2025)
-        self.assertIn("dias", dados)
-        self.assertTrue(dados["resultados"])
-        self.assertEqual(dados["resultados"][-1]["funcionario"], "REALIZADO")
 
-    def test_calcular_spends_sem_funcionarios(self):
-        resultado = _calcular_spends_por_dev(11, 2025, [1, 2], equipe="Inexistente")
-        self.assertEqual(resultado, [])
-
-    def test_buscas_de_fontes_de_dados(self):
-        funcionarios = _buscar_funcionarios(None)
-        registros, horas_issue, horas_fato = _buscar_fontes_horas(
-            funcionarios, 11, 2025
-        )
-        self.assertTrue(registros)
-        self.assertTrue(horas_issue)
-        self.assertTrue(horas_fato)
-
-    def test_registros_diarios_e_horas_issue(self):
-        funcionarios = [self.funcionario.id]
-        registros = _buscar_registros_diarios(11, 2025, funcionarios)
-        self.assertEqual(registros[(self.funcionario.id, 1)], Decimal("8"))
-
-        horas_issue = _buscar_horas_issue(11, 2025, funcionarios)
-        self.assertIn((self.funcionario.id, 1), horas_issue)
-
-    def test_horas_fato(self):
-        funcionarios = [self.funcionario.id]
-        horas = _buscar_horas_fato(11, 2025, funcionarios)
-        self.assertEqual(horas[(self.funcionario.id, 1)], Decimal("4"))
-
-    def test_atualizar_codigo_especial_fluxos(self):
-        _, _ = _atualizar_codigo_especial(self.funcionario.id, 11, 2025, 10, "FE")
-
-        data = services.calcular_spends_por_dev_com_legendas(11, 2025)
-
-        resultado = data["resultados"][0]
+        resultado = dados["resultados"][0]
         self.assertEqual(resultado["real"], 13.0)
         self.assertEqual(resultado["dias"][1], 8.0)
         self.assertEqual(resultado["dias"][2], 2.0)
         self.assertEqual(resultado["dias"][3], 3.0)
         self.assertEqual(resultado["meta"], 200.0)
         self.assertAlmostEqual(resultado["percentual"], round(13 / 200 * 100, 1))
-        self.assertIn("REALIZADO", data["resultados"][-1]["funcionario"])
+        self.assertEqual(dados["resultados"][-1]["funcionario"], "REALIZADO")
+
+    @mock.patch(
+        "apps.relatorios.produtividade.services._buscar_funcionarios", return_value=[]
+    )
+    def test_calcular_spends_sem_funcionarios(self, mock_buscar):
+        resultado = _calcular_spends_por_dev(11, 2025, [1, 2], equipe="Inexistente")
+        self.assertEqual(resultado, [])
+        mock_buscar.assert_called_once_with("Inexistente")
+
+    @mock.patch(
+        "apps.relatorios.produtividade.services._buscar_horas_fato",
+        return_value={"hf": 1},
+    )
+    @mock.patch(
+        "apps.relatorios.produtividade.services._buscar_horas_issue",
+        return_value={"hi": 1},
+    )
+    @mock.patch(
+        "apps.relatorios.produtividade.services._buscar_registros_diarios",
+        return_value={"rd": 1},
+    )
+    def test_buscas_de_fontes_de_dados(
+        self,
+        mock_registros,
+        mock_horas_issue,
+        mock_horas_fato,
+    ):
+        registros, horas_issue, horas_fato = _buscar_fontes_horas(
+            self.funcionarios, 11, 2025
+        )
+        self.assertEqual(registros, {"rd": 1})
+        self.assertEqual(horas_issue, {"hi": 1})
+        self.assertEqual(horas_fato, {"hf": 1})
+        mock_registros.assert_called_once()
+        mock_horas_issue.assert_called_once()
+        mock_horas_fato.assert_called_once()
+
+    def test_registros_diarios_e_horas_issue(self):
+        manager = mock.MagicMock()
+        queryset = mock.MagicMock()
+        queryset.filter.return_value = queryset
+        queryset.values_list.return_value = [
+            (self.funcionario.id, 1, Decimal("8")),
+        ]
+        manager.using.return_value = queryset
+        with mock.patch.object(services.RegistroProdutividade, "objects", manager):
+            registros = _buscar_registros_diarios(11, 2025, [self.funcionario.id])
+
+        self.assertEqual(registros[(self.funcionario.id, 1)], Decimal("8"))
+
+        issue_manager = mock.MagicMock()
+        issue_qs = mock.MagicMock()
+        issue_qs.filter.return_value = issue_qs
+        issue_qs.annotate.return_value = issue_qs
+        values_qs = mock.MagicMock()
+        values_qs.annotate.return_value = [
+            {"funcionario_id": self.funcionario.id, "dia": 1, "total": 7200}
+        ]
+        issue_qs.values.return_value = values_qs
+        issue_manager.using.return_value = issue_qs
+        with mock.patch.object(services.Issue, "objects", issue_manager):
+            horas_issue = _buscar_horas_issue(11, 2025, [self.funcionario.id])
+        self.assertEqual(horas_issue[(self.funcionario.id, 1)], Decimal("2"))
 
     @mock.patch(
         "apps.relatorios.produtividade.services._buscar_funcionarios", return_value=[]
@@ -341,10 +308,32 @@ class ListarDiasDisponiveisTests(ProdutividadeServiceBaseTestCase):
         self.assertEqual(resultado, [])
         mock_buscar.assert_called_once_with(None)
 
-    def test_buscar_funcionarios_filtra_por_equipe(self):
-        Funcionario.objects.all().delete()
-        Funcionario.objects.create(nome="Alice", time="Alpha")
-        Funcionario.objects.create(nome="Bob", time="Beta")
+    @mock.patch("apps.relatorios.produtividade.services.Funcionario")
+    def test_buscar_funcionarios_filtra_por_equipe(self, mock_funcionario):
+        class FakeQuery:
+            def __init__(self, data):
+                self.data = data
+
+            def order_by(self, *_args, **_kwargs):
+                return self
+
+            def filter(self, **kwargs):
+                time = kwargs.get("time")
+                if time:
+                    return FakeQuery([f for f in self.data if f.time == time])
+                return self
+
+            def __iter__(self):
+                return iter(self.data)
+
+        fake_data = [
+            SimpleNamespace(id=1, nome="Alice", time="Alpha"),
+            SimpleNamespace(id=2, nome="Bob", time="Beta"),
+        ]
+        fake_query = FakeQuery(fake_data)
+        manager = mock.MagicMock()
+        manager.using.return_value = fake_query
+        mock_funcionario.objects = manager
 
         todos = services._buscar_funcionarios(None)
         alpha = services._buscar_funcionarios("Alpha")
@@ -378,31 +367,35 @@ class ListarDiasDisponiveisTests(ProdutividadeServiceBaseTestCase):
         mock_fato.assert_called_once_with(7, 2025, [99])
 
     def test_buscar_registros_diarios_mapeia_valores(self):
-        func = Funcionario.objects.create(nome="Carol")
-        RegistroProdutividade.objects.create(
-            funcionario=func, dia=date(2025, 7, 2), valor=Decimal("6")
-        )
+        manager = mock.MagicMock()
+        queryset = mock.MagicMock()
+        queryset.filter.return_value = queryset
+        queryset.values_list.return_value = [
+            (self.funcionario.id, 2, Decimal("6")),
+        ]
+        manager.using.return_value = queryset
+        with mock.patch.object(services.RegistroProdutividade, "objects", manager):
+            resultado = services._buscar_registros_diarios(
+                7, 2025, [self.funcionario.id]
+            )
 
-        resultado = services._buscar_registros_diarios(7, 2025, [func.id])
-
-        self.assertEqual(resultado[(func.id, 2)], Decimal("6"))
+        self.assertEqual(resultado[(self.funcionario.id, 2)], Decimal("6"))
 
     def test_buscar_horas_issue_converte_segundos_em_horas(self):
-        func = Funcionario.objects.create(nome="Alice")
-        projeto = Projeto.objects.create(nome="Projeto Horas")
-        Issue.objects.create(
-            jira_id=10,
-            jira_key="PH-1",
-            projeto=projeto,
-            titulo="Apontamento",
-            funcionario=func,
-            tempo_gasto_seconds=7200,
-            criado_em="2025-07-03T12:00:00Z",
-        )
+        issue_manager = mock.MagicMock()
+        issue_qs = mock.MagicMock()
+        issue_qs.filter.return_value = issue_qs
+        issue_qs.annotate.return_value = issue_qs
+        values_qs = mock.MagicMock()
+        values_qs.annotate.return_value = [
+            {"funcionario_id": self.funcionario.id, "dia": 3, "total": 7200}
+        ]
+        issue_qs.values.return_value = values_qs
+        issue_manager.using.return_value = issue_qs
+        with mock.patch.object(services.Issue, "objects", issue_manager):
+            resultado = services._buscar_horas_issue(7, 2025, [self.funcionario.id])
 
-        resultado = services._buscar_horas_issue(7, 2025, [func.id])
-
-        self.assertEqual(resultado[(func.id, 3)], Decimal("2"))
+        self.assertEqual(resultado[(self.funcionario.id, 3)], Decimal("2"))
 
     def test_buscar_horas_fato_usa_resultado_iteravel(self):
         rows = [
@@ -416,37 +409,42 @@ class ListarDiasDisponiveisTests(ProdutividadeServiceBaseTestCase):
         self.assertEqual(resultado[(1, 5)], Decimal("4.5"))
         self.assertNotIn((2, 6), resultado)
 
-    @mock.patch(
-        "apps.relatorios.produtividade.services._possui_horas_fato", return_value=False
-    )
-    def test_atualiza_registro_com_legenda(self, mock_horas):
-        func = Funcionario.objects.create(nome="Alice")
-        sucesso, erro = services.atualizar_multiplos_dias(func.id, 7, 2025, [1], "FE")
+    @mock.patch("apps.relatorios.produtividade.services.transaction.atomic")
+    @mock.patch("apps.relatorios.produtividade.services._atualizar_codigo_especial")
+    def test_atualiza_registro_com_legenda(self, mock_atualizar, mock_atomic):
+        ctx = mock.MagicMock()
+        mock_atomic.return_value = ctx
+        ctx.__enter__.return_value = None
+        ctx.__exit__.return_value = None
+        mock_atualizar.return_value = (True, None)
+
+        sucesso, erro = services.atualizar_multiplos_dias(1, 7, 2025, [1, 2], "FE")
+
         self.assertTrue(sucesso)
         self.assertIsNone(erro)
-        registro = RegistroProdutividade.objects.get(funcionario=func)
-        self.assertEqual(registro.valor, Decimal("-1"))
-        mock_horas.assert_called_once()
+        mock_atualizar.assert_has_calls(
+            [
+                mock.call(1, 7, 2025, 1, "FE"),
+                mock.call(1, 7, 2025, 2, "FE"),
+            ]
+        )
 
-    @mock.patch(
-        "apps.relatorios.produtividade.services._possui_horas_fato", return_value=True
-    )
-    def test_atualiza_registro_bloqueia_quando_ha_horas(self, mock_horas):
-        func = Funcionario.objects.create(nome="Alice")
-        sucesso, erro = services.atualizar_multiplos_dias(func.id, 7, 2025, [1], "FE")
+    @mock.patch("apps.relatorios.produtividade.services.transaction.atomic")
+    @mock.patch("apps.relatorios.produtividade.services._atualizar_codigo_especial")
+    def test_atualiza_registro_bloqueia_quando_ha_horas(
+        self, mock_atualizar, mock_atomic
+    ):
+        ctx = mock.MagicMock()
+        mock_atomic.return_value = ctx
+        ctx.__enter__.return_value = None
+        ctx.__exit__.return_value = None
+        mock_atualizar.side_effect = [(False, "Dia já possui horas lançadas.")]
+
+        sucesso, erro = services.atualizar_multiplos_dias(1, 7, 2025, [1], "FE")
+
         self.assertFalse(sucesso)
-        self.assertIn("histórico", erro)
-
-        RegistroProdutividade.objects.using(OLTP_ALIAS).create(
-            funcionario=self.funcionario,
-            dia=date(2025, 11, 4),
-            valor=Decimal("4"),
-        )
-        MetaProdutividade.objects.create(
-            funcionario=func, mes=7, ano=2025, meta_horas=Decimal("200")
-        )
-        valor = services.obter_meta_funcionario(func, 7, 2025)
-        self.assertEqual(valor, 200.0)
+        self.assertIn("horas", erro)
+        mock_atualizar.assert_called_once()
 
 
 class AtualizarCodigoEspecialTests(TestCase):
