@@ -291,6 +291,12 @@ class IssuesBugsDashboardServiceTests(TestCase):
             jira_id=321,
             projeto=self.projeto,
         )
+        self.tipo_story = TipoIssue.objects.create(
+            nome="Story",
+            descricao="Tipo issue",
+            jira_id=322,
+            projeto=self.projeto,
+        )
         Issue.objects.create(
             jira_id=555,
             jira_key="BUG-555",
@@ -318,3 +324,110 @@ class IssuesBugsDashboardServiceTests(TestCase):
         self.assertEqual(vazio["cards"]["valor_total"], 0.0)
         self.assertEqual(vazio["chart"]["labels"], [])
         self.assertEqual(vazio["itens"], [])
+
+    def test_oculta_itens_sem_horas_e_nao_atribuidos(self):
+        Issue.objects.create(
+            jira_id=556,
+            jira_key="ISSUE-556",
+            projeto=self.projeto,
+            titulo="Issue pendente",
+            tipo_issue=self.tipo_story,
+            tempo_gasto_seconds=0,
+            tempo_estimado_seconds=0,
+            funcionario=None,
+            status="Em progresso",
+        )
+
+        dados = IssuesBugsDashboardService.obter_dados_para_projetos([self.projeto.id])
+        info = dados[self.projeto.id]
+
+        self.assertEqual(info["cards"]["total_issues"], 1)
+        self.assertEqual(info["cards"]["total_bugs"], 1)
+        self.assertEqual(len(info["itens"]), 1)
+        self.assertNotIn("ISSUE-556", [item["id"] for item in info["itens"]])
+        self.assertEqual(sum(info["chart"]["values"]), len(info["itens"]))
+        self.assertEqual(info["chart_por_tipo"]["issues"]["labels"], [])
+
+    def test_cards_mantem_contagem_quando_somente_pendentes(self):
+        Issue.objects.all().delete()
+        Issue.objects.create(
+            jira_id=600,
+            jira_key="ISSUE-600",
+            projeto=self.projeto,
+            titulo="Issue sem horas",
+            tipo_issue=self.tipo_story,
+            tempo_gasto_seconds=0,
+            tempo_estimado_seconds=0,
+            funcionario=None,
+            status="Novo",
+        )
+
+        dados = IssuesBugsDashboardService.obter_dados_para_projetos([self.projeto.id])
+        info = dados[self.projeto.id]
+
+        self.assertEqual(info["cards"]["total_issues"], 1)
+        self.assertEqual(info["cards"]["total_bugs"], 0)
+        self.assertEqual(info["itens"], [])
+        self.assertEqual(info["chart"]["labels"], [])
+
+    def test_serializar_issue_classifica_nao_iniciado(self):
+        issue = Issue(
+            jira_id=700,
+            jira_key="ISSUE-700",
+            projeto=self.projeto,
+            titulo="Issue backlog",
+            tipo_issue=self.tipo_story,
+            tempo_gasto_seconds=0,
+            tempo_estimado_seconds=0,
+            funcionario=None,
+            status="Backlog",
+        )
+
+        dado = IssuesBugsDashboardService._serializar_issue(issue)
+        self.assertEqual(dado["status"], "Não iniciado")
+
+    def test_serializar_issue_classifica_em_progresso_para_quem_tem_dev(self):
+        issue = Issue(
+            jira_id=701,
+            jira_key="ISSUE-701",
+            projeto=self.projeto,
+            titulo="Issue em andamento",
+            tipo_issue=self.tipo_story,
+            tempo_gasto_seconds=0,
+            tempo_estimado_seconds=7200,
+            funcionario=self.funcionario,
+            status="Em andamento",
+        )
+
+        dado = IssuesBugsDashboardService._serializar_issue(issue)
+        self.assertEqual(dado["status"], "Em progresso")
+
+    def test_serializar_issue_classifica_mr(self):
+        issue = Issue(
+            jira_id=702,
+            jira_key="ISSUE-702",
+            projeto=self.projeto,
+            titulo="Issue em MR",
+            tipo_issue=self.tipo_story,
+            tempo_gasto_seconds=3600,
+            funcionario=self.funcionario,
+            status="Merge Request",
+        )
+
+        dado = IssuesBugsDashboardService._serializar_issue(issue)
+        self.assertEqual(dado["status"], "MR")
+
+    def test_serializar_issue_classifica_concluido(self):
+        issue = Issue(
+            jira_id=703,
+            jira_key="ISSUE-703",
+            projeto=self.projeto,
+            titulo="Issue finalizada",
+            tipo_issue=self.tipo_story,
+            tempo_gasto_seconds=7200,
+            funcionario=self.funcionario,
+            status="Done",
+        )
+
+        dado = IssuesBugsDashboardService._serializar_issue(issue)
+        self.assertEqual(dado["status"], "Concluído")

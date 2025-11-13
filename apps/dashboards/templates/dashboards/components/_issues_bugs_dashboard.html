@@ -136,7 +136,7 @@
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Custo</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200" id="tabelaItens">
+                <tbody class="bg-white" id="tabelaItens">
                 </tbody>
             </table>
         </div>
@@ -173,14 +173,27 @@ const IssuesBugsDashboard = {
 
     setDados: function(dados) {
         const itensBackend = dados && Array.isArray(dados.itens) ? dados.itens : [];
-        this.itens = itensBackend.map((item) => ({
-            id: item.id || '-',
-            tipo: item.tipo === 'bug' ? 'bug' : 'issue',
-            developer: item.developer || 'Não atribuído',
-            status: item.status || 'Sem status',
-            horas: Number.parseFloat(item.horas) || 0,
-            custo: Number.parseFloat(item.custo) || 0,
-        }));
+        const itensNormalizados = itensBackend.map((item) => {
+            const developer = item.developer || 'Não atribuído';
+            const horas = this.parseNumber(item.horas);
+            const custo = this.parseNumber(item.custo);
+            return {
+                id: item.id || '-',
+                tipo: item.tipo === 'bug' ? 'bug' : 'issue',
+                developer,
+                status: item.status || 'Sem status',
+                horas,
+                custo,
+                pendenteAtribuicao: this.isNaoAtribuido(developer),
+            };
+        });
+
+        this.itens = itensNormalizados.sort((a, b) => {
+            if (a.pendenteAtribuicao === b.pendenteAtribuicao) {
+                return String(a.id).localeCompare(String(b.id));
+            }
+            return a.pendenteAtribuicao ? -1 : 1;
+        });
 
         this.cardsFromServer = dados && dados.cards ? this._normalizarCards(dados.cards) : null;
         this.chartFromServer = dados && dados.chart ? this._normalizarChart(dados.chart) : null;
@@ -221,6 +234,46 @@ const IssuesBugsDashboard = {
             valores,
             cores: safeArray(chart.colors || chart.cores),
         };
+    },
+
+    parseNumber: function(value) {
+        if (typeof value === 'number') {
+            return Number.isFinite(value) ? value : 0;
+        }
+        if (typeof value !== 'string') {
+            return 0;
+        }
+
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return 0;
+        }
+
+        let numeric = trimmed.replace(/\s/g, '');
+        if (numeric.includes(',')) {
+            numeric = numeric.replace(/\./g, '').replace(',', '.');
+        }
+        numeric = numeric.replace(/[^0-9.-]/g, '');
+        const parsed = Number.parseFloat(numeric);
+        return Number.isFinite(parsed) ? parsed : 0;
+    },
+
+    isNaoAtribuido: function(nome) {
+        if (nome === undefined || nome === null) {
+            return true;
+        }
+        try {
+            const normalized = nome
+                .toString()
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+            return normalized === 'nao atribuido';
+        } catch (e) {
+            const fallback = nome.toString().trim().toLowerCase();
+            return fallback === 'não atribuído' || fallback === 'nao atribuido';
+        }
     },
 
     formatCurrency: function(value) {
@@ -345,30 +398,42 @@ const IssuesBugsDashboard = {
 
         dadosFiltrados.forEach(item => {
             const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50 transition-colors';
+            const rowClasses = ['hover:bg-gray-50', 'transition-colors'];
+            if (item.pendenteAtribuicao) {
+                rowClasses.push('bg-yellow-50', 'border-2', 'border-yellow-300', 'shadow-lg');
+            }
+            row.className = rowClasses.join(' ');
 
-            const badgeClass = item.tipo === 'issue'
-                ? 'bg-blue-100 text-blue-800'
-                : 'bg-red-100 text-red-800';
+            const badgeClass = item.pendenteAtribuicao
+                ? 'bg-yellow-400 text-yellow-900 border border-yellow-500'
+                : item.tipo === 'issue'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-red-100 text-red-800';
 
             const custoFormatado = this.formatCurrency(item.custo);
+            const cellHighlightClass = item.pendenteAtribuicao ? ' bg-yellow-50' : '';
+            const devTextClass = item.pendenteAtribuicao
+                ? ' text-yellow-900 font-semibold'
+                : ' text-gray-500';
+            const horasTextClass = item.pendenteAtribuicao ? ' text-yellow-800 font-semibold' : ' text-gray-500';
+            const custoTextClass = item.pendenteAtribuicao ? ' text-yellow-900 font-bold' : ' text-gray-900';
 
             row.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap">
+                <td class="px-6 py-4 whitespace-nowrap${cellHighlightClass}">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClass}">
                         ${item.id}
                     </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900${cellHighlightClass}">
                     ${item.tipo === 'issue' ? 'Issue' : 'Bug'}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm${devTextClass}${cellHighlightClass}">
                     ${item.developer}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm${horasTextClass}${cellHighlightClass}">
                     ${item.horas.toFixed(2)}h
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                <td class="px-6 py-4 whitespace-nowrap text-sm${custoTextClass}${cellHighlightClass} text-right font-medium">
                     R$ ${custoFormatado}
                 </td>
             `;

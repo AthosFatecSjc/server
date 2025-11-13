@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -191,6 +192,11 @@ class IssuesBugsDashboardService:
             else 0.0
         )
         custo = round(horas * valor_hora, 2)
+        status = cls._classificar_status(
+            status_original=issue.status,
+            tem_funcionario=issue.funcionario is not None,
+            horas=horas,
+        )
 
         return {
             "id": issue.jira_key or f"ISSUE-{issue.id}",
@@ -198,8 +204,7 @@ class IssuesBugsDashboardService:
             "developer": (
                 issue.funcionario.nome if issue.funcionario else "Não atribuído"
             ),
-            "status": (issue.status or DEFAULT_STATUS_LABEL).strip()
-            or DEFAULT_STATUS_LABEL,
+            "status": status,
             "horas": horas,
             "custo": custo,
         }
@@ -209,21 +214,26 @@ class IssuesBugsDashboardService:
         if not itens:
             return cls.estrutura_vazia()
 
+        itens_visiveis = cls._filtrar_itens_visiveis(itens)
         cards = cls._calcular_cards(itens)
-        chart = cls._calcular_chart(itens)
+        chart = (
+            cls._calcular_chart(itens_visiveis)
+            if itens_visiveis
+            else cls._chart_vazio()
+        )
         chart_por_tipo = {
             "issues": cls._calcular_chart(
-                [item for item in itens if item["tipo"] == "issue"]
+                [item for item in itens_visiveis if item["tipo"] == "issue"]
             ),
             "bugs": cls._calcular_chart(
-                [item for item in itens if item["tipo"] == "bug"]
+                [item for item in itens_visiveis if item["tipo"] == "bug"]
             ),
         }
         return {
             "cards": cards,
             "chart": chart,
             "chart_por_tipo": chart_por_tipo,
-            "itens": itens,
+            "itens": itens_visiveis,
         }
 
     @classmethod
@@ -271,9 +281,74 @@ class IssuesBugsDashboardService:
 
         return {"labels": labels, "values": values, "colors": colors}
 
+    @classmethod
+    def _filtrar_itens_visiveis(
+        cls, itens: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        if not itens:
+            return []
+
+        visiveis: list[dict[str, Any]] = []
+        for item in itens:
+            if cls._deve_ocultar_item(item):
+                continue
+            visiveis.append(item)
+        return visiveis
+
+    @classmethod
+    def _deve_ocultar_item(cls, item: dict[str, Any]) -> bool:
+        developer = item.get("developer")
+        horas = cls._parse_float(item.get("horas"))
+
+        if not cls._is_nao_atribuido(developer):
+            return False
+        return horas <= 0.0
+
+    @staticmethod
+    def _parse_float(value: Any) -> float:
+        if value is None:
+            return 0.0
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return 0.0
+
+    @staticmethod
+    def _is_nao_atribuido(developer: Optional[str]) -> bool:
+        if developer is None:
+            return True
+        texto = unicodedata.normalize("NFKD", str(developer).strip().lower())
+        ascii_text = "".join(ch for ch in texto if not unicodedata.combining(ch))
+        return ascii_text == "nao atribuido"
+
     @staticmethod
     def _normalizar_status(status: Optional[str]) -> str:
         return (status or DEFAULT_STATUS_LABEL).strip() or DEFAULT_STATUS_LABEL
+
+    @classmethod
+    def _classificar_status(
+        cls, status_original: Optional[str], tem_funcionario: bool, horas: float
+    ) -> str:
+        if cls._is_mr_status(status_original):
+            return "MR"
+        if cls._esta_concluido(status_original):
+            return "Concluído"
+        if not tem_funcionario and horas <= 0:
+            return "Não iniciado"
+        return "Em progresso"
+
+    @staticmethod
+    def _is_mr_status(status: Optional[str]) -> bool:
+        if not status:
+            return False
+        normalized = status.strip().lower()
+        if not normalized:
+            return False
+        return normalized in {
+            "mr",
+            "merge request",
+            "merge-review",
+        } or normalized.startswith("mr ")
 
     @staticmethod
     def _esta_concluido(status: Optional[str]) -> bool:
