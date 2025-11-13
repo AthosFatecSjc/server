@@ -66,10 +66,10 @@ class DesenvolvedoresServiceTests(SimpleTestCase):
 
     def test_get_desenvolvedores_olap_sucesso(self):
         results = [
-            (1, "Alice Wonderland", 55.0),
-            (2, "Bob Builder", 40.0),
+            (1, "Alice Wonderland", 55.0, "CLT"),
+            (2, "Bob Builder", 40.0, "ESTAGIARIO"),
         ]
-        services.connections["olap"] = FakeConnection(FakeCursor(results=results))
+        services.connections["default"] = FakeConnection(FakeCursor(results=results))
 
         desenvolvedores = DesenvolvedoresService.get_desenvolvedores_olap()
 
@@ -77,20 +77,23 @@ class DesenvolvedoresServiceTests(SimpleTestCase):
         self.assertEqual(desenvolvedores[0]["iniciais"], "AW")
         self.assertEqual(desenvolvedores[0]["valor_hora"], 55.0)
         self.assertEqual(desenvolvedores[1]["iniciais"], "BB")
+        self.assertEqual(desenvolvedores[1]["contrato"], "ESTAGIARIO")
 
     def test_get_desenvolvedores_olap_trata_excecao(self):
-        services.connections["olap"] = FakeConnection(
+        services.connections["default"] = FakeConnection(
             FakeCursor(execute_exception=RuntimeError("fail"))
         )
+        services.connections["olap"] = FakeConnection(FakeCursor())
 
         desenvolvedores = DesenvolvedoresService.get_desenvolvedores_olap()
 
         self.assertEqual(desenvolvedores, [])
 
     def test_get_desenvolvedores_olap_excecao_no_enter(self):
-        services.connections["olap"] = FakeConnection(
+        services.connections["default"] = FakeConnection(
             FakeCursor(enter_exception=RuntimeError("cursor error"))
         )
+        services.connections["olap"] = FakeConnection(FakeCursor())
 
         desenvolvedores = DesenvolvedoresService.get_desenvolvedores_olap()
 
@@ -131,7 +134,9 @@ class DesenvolvedoresServiceTests(SimpleTestCase):
             "olap": FakeConnection(FakeCursor()),
         }
 
-        sucesso = DesenvolvedoresService.atualizar_valor_hora_oltp(1, "Alice", 123.45)
+        sucesso = DesenvolvedoresService.atualizar_valor_hora_oltp(
+            1, "Alice", 123.45, "CLT"
+        )
 
         self.assertTrue(sucesso)
         self.assertIn("UPDATE funcionario", cursor.last_query)
@@ -147,7 +152,9 @@ class DesenvolvedoresServiceTests(SimpleTestCase):
             "olap": FakeConnection(FakeCursor()),
         }
 
-        sucesso = DesenvolvedoresService.atualizar_valor_hora_oltp(2, "Bob", 75.0)
+        sucesso = DesenvolvedoresService.atualizar_valor_hora_oltp(
+            2, "Bob", 75.0, "ESTAGIARIO"
+        )
 
         self.assertTrue(sucesso)
         self.assertTrue(
@@ -162,7 +169,9 @@ class DesenvolvedoresServiceTests(SimpleTestCase):
             "olap": FakeConnection(FakeCursor()),
         }
 
-        sucesso = DesenvolvedoresService.atualizar_valor_hora_oltp(1, "Alice", 10)
+        sucesso = DesenvolvedoresService.atualizar_valor_hora_oltp(
+            1, "Alice", 10, "CLT"
+        )
 
         self.assertFalse(sucesso)
 

@@ -102,6 +102,7 @@ class DesenvolvedoresViewsTests(SimpleTestCase):
             "desenvolvedor_id": 1,
             "desenvolvedor_nome": "Alice",
             "valor_hora": 100,
+            "contrato": "CLT",
         }
         request = self.factory.post(
             reverse("atualizar_valor_hora"),
@@ -114,7 +115,7 @@ class DesenvolvedoresViewsTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn("atualizado para R$ 100.00", data["message"])
-        mock_atualizar.assert_called_once_with(1, "Alice", 100.0)
+        mock_atualizar.assert_called_once_with(1, "Alice", 100.0, "CLT")
 
     def test_atualizar_valor_hora_dados_incompletos(self):
         request = self.factory.post(
@@ -135,6 +136,7 @@ class DesenvolvedoresViewsTests(SimpleTestCase):
             "desenvolvedor_id": 1,
             "desenvolvedor_nome": "Alice",
             "valor_hora": "abc",
+            "contrato": "CLT",
         }
         request = self.factory.post(
             reverse("atualizar_valor_hora"),
@@ -158,6 +160,7 @@ class DesenvolvedoresViewsTests(SimpleTestCase):
             "desenvolvedor_id": 1,
             "desenvolvedor_nome": "Alice",
             "valor_hora": 50,
+            "contrato": "CLT",
         }
         request = self.factory.post(
             reverse("atualizar_valor_hora"),
@@ -182,6 +185,7 @@ class DesenvolvedoresViewsTests(SimpleTestCase):
             "desenvolvedor_id": 1,
             "desenvolvedor_nome": "Alice",
             "valor_hora": 50,
+            "contrato": "CLT",
         }
         request = self.factory.post(
             reverse("atualizar_valor_hora"),

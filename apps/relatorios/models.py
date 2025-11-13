@@ -40,6 +40,11 @@ class Funcionario(models.Model):
         default=40.00,
         help_text="Valor/hora do desenvolvedor (R$)",
     )
+    contrato = models.CharField(
+        max_length=20,
+        choices=[("CLT", "CLT"), ("ESTAGIARIO", "Estagiário")],
+        default="CLT",
+    )
 
     class Meta:
         """Meta dados do modelo Funcionario"""
@@ -197,3 +202,49 @@ class PlanejamentoProjeto(models.Model):
 
     def __str__(self):
         return f"{self.projeto.nome} ({self.ano}) - {self.horas_previstas}h"
+
+
+class RegistroProdutividade(models.Model):
+    """
+    Registra as horas (ou códigos especiais) lançadas por dia e funcionário.
+    Valores negativos representam códigos de ausência (ex: -1 = Férias).
+    """
+
+    funcionario = models.ForeignKey(
+        Funcionario,
+        on_delete=models.CASCADE,
+        related_name="registros_produtividade",
+    )
+    dia = models.DateField()
+    valor = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "registro_produtividade"
+        ordering = ("dia",)
+        unique_together = ("funcionario", "dia")
+
+    def __str__(self):
+        return f"{self.funcionario.nome} - {self.dia} => {self.valor}"
+
+
+class MetaProdutividade(models.Model):
+    """Meta de horas mensais por funcionário."""
+
+    funcionario = models.ForeignKey(
+        Funcionario,
+        on_delete=models.CASCADE,
+        related_name="metas_produtividade",
+    )
+    ano = models.PositiveIntegerField()
+    mes = models.PositiveIntegerField()
+    meta_horas = models.DecimalField(max_digits=6, decimal_places=2, default=154.0)
+
+    class Meta:
+        db_table = "meta_produtividade"
+        ordering = ("funcionario_id", "ano", "mes")
+        unique_together = ("funcionario", "ano", "mes")
+
+    def __str__(self):
+        return f"{self.funcionario.nome} {self.mes:02d}/{self.ano} - {self.meta_horas}h"

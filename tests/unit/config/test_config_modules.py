@@ -281,9 +281,10 @@ class ConfigViewsTests(TestCase):
             perfil_acesso=PerfilAcessoChoices.GERENTE,
             cargo="Gerente de Projetos",
         )
+        inactive_password = _generate_test_password()
         self.inactive_user = self.user_model.objects.create_user(
             username="inativo",
-            password="senha123",
+            password=inactive_password,
             email="inativo@example.com",
             nome_completo="Usuário Inativo",
             perfil_acesso=PerfilAcessoChoices.MEMBRO,
