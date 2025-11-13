@@ -15,11 +15,18 @@ def index(request):
     """Renderiza a página inicial do relatório de comparação anual."""
     hoje = datetime.date.today()
     anos_disponiveis = range(hoje.year - 5, hoje.year + 2)
+    header_context = {
+        "breadcrumb": "Relatórios",
+        "title": "Controle de Horas",
+        "subtitle": "Relatório de comparação de horas realizadas vs previstas",
+        "show_export": True,
+    }
 
     context = {
         "ano_atual": hoje.year,
         "nome_projetos": ComparacaoService.get_nome_projetos(),
         "anos_disponiveis": anos_disponiveis,
+        "header_context": header_context,
     }
 
     return render(request, "comparacao/index.html", context)
