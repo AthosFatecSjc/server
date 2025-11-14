@@ -1,15 +1,18 @@
 import json
 
 from django.shortcuts import render
+from django.views.decorators.http import require_http_methods
 
 from .services import DashboardEquipesService
 
 
+@require_http_methods(["GET"])
 def index(request):
     """View principal do dashboard de equipes"""
     return dashboard_equipes(request)
 
 
+@require_http_methods(["GET"])
 def dashboard_equipes(request):
     """View do dashboard de equipes - agora muito mais limpa"""
 
