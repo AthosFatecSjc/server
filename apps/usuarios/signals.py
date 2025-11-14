@@ -20,24 +20,26 @@ def _normalizar_sigla(cargo: str) -> str:
 def sincronizar_usuario_para_funcionarios(usuario: Usuario):
     """Atualiza o cargo dos funcionários com base no usuário correspondente."""
     nome = (usuario.nome_completo or "").strip()
-    Funcionario = django_apps.get_model(
+    funcionario_model = django_apps.get_model(
         "relatorios", "Funcionario"
     )  # pylint: disable=invalid-name
-    Cargo = django_apps.get_model("relatorios", "Cargo")  # pylint: disable=invalid-name
+    cargo_model = django_apps.get_model(
+        "relatorios", "Cargo"
+    )  # pylint: disable=invalid-name
 
     if not nome:
         return
 
-    funcionarios = Funcionario.objects.filter(nome__iexact=nome)
+    funcionarios = funcionario_model.objects.filter(nome__iexact=nome)
     if not funcionarios.exists():
         return
 
     sigla = _normalizar_sigla(usuario.cargo)
     cargo_obj = None
     if sigla:
-        cargo_obj = Cargo.objects.filter(sigla__iexact=sigla).first()
+        cargo_obj = cargo_model.objects.filter(sigla__iexact=sigla).first()
         if not cargo_obj:
-            cargo_obj = Cargo.objects.create(sigla=sigla)
+            cargo_obj = cargo_model.objects.create(sigla=sigla)
 
     novo_id = cargo_obj.id if cargo_obj else None
     ids_atualizados = funcionarios.exclude(cargo_id=novo_id)
