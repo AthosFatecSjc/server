@@ -28,5 +28,5 @@ class DashboardsIndexViewTests(SimpleTestCase):
         mock_render.assert_called_once()
         _, _, context = mock_render.call_args[0]
         self.assertIn("dashboards", context)
-        self.assertEqual(len(context["dashboards"]), 2)
+        self.assertEqual(len(context["dashboards"]), 3)
         self.assertEqual(response.status_code, 200)
