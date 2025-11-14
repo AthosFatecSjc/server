@@ -6,4 +6,5 @@ urlpatterns = [
     path("", index, name="dashboards_index"),
     path("desenvolvedores/", include("apps.dashboards.desenvolvedores.urls")),
     path("projeto/", include("apps.dashboards.projetos.urls")),
+    path("equipes/", include("apps.dashboards.equipes.urls")),
 ]
