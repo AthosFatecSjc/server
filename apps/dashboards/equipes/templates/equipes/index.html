@@ -27,14 +27,13 @@
         <div class="grid grid-cols-1 gap-6">
             {% include "equipes/components/grafico_horas_dia.html" %}
 
-            {% include "equipes/components/grafico_modulos_epics.html" %}
         </div>
     </div>
 
     <script>
         window.horasPorDevPorDiaData = {{ daily_data|safe }};
         window.horasPorDevPorModuloData = {{ module_data|safe }};
-
+        //erros causados por django
         window.DEV_COLORS = {
             {% for dev in devs %}
             "{{ dev.name }}": "{{ dev.color }}"{% if not forloop.last %},{% endif %}
