@@ -1,5 +1,3 @@
-import json
-
 from django.shortcuts import render
 
 from .services import DashboardEquipesService
@@ -36,8 +34,8 @@ def dashboard_equipes(request):
 
     context = {
         "header_context": header_context,
-        "daily_data": json.dumps(dados_grafico),
-        "module_data": json.dumps([]),
+        "daily_data": dados_grafico,
+        "module_data": [],
         "devs": desenvolvedores_dropdown,
         "devs_selected_count": devs_selected_count,
         "projetos": projetos,

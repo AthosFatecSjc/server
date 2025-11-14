@@ -13,14 +13,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Equipes</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link
+        href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+        rel="stylesheet"
+        integrity="sha384-HtMZLkYo+pR5/u7zCzXxMJP6QoNnQJt1qkHM0EaOPvGDIzaVZbmYr/TlvUZ/sKAg"
+        crossorigin="anonymous"
+    />
     <script src="{% static 'libs/chartjs/chart.umd.min.js' %}" crossorigin="anonymous"></script>
     <script src="{% static 'libs/chartjs/chartjs-plugin-datalabels.min.js' %}" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+        integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H"
+        crossorigin="anonymous"
+    ></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+        integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk"
+        crossorigin="anonymous"
+    ></script>
 </head>
 <body class="bg-gray-50 min-h-screen p-6">
-    <div class="space-y-6 max-w-7xl mx-auto">
+    <div class="space-y-6 mx-auto">
 
         {% include "equipes/components/filtros.html" %}
 
@@ -32,15 +45,25 @@
         </div>
     </div>
 
-    <script>
-        window.horasPorDevPorDiaData = {{ daily_data|safe }};
-        window.horasPorDevPorModuloData = {{ module_data|safe }};
+    {{ daily_data|json_script:"daily-data-json" }}
+    {{ module_data|json_script:"module-data-json" }}
+    {{ devs|json_script:"devs-json" }}
 
-        window.DEV_COLORS = {
-            {% for dev in devs %}
-            "{{ dev.name }}": "{{ dev.color }}"{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        };
+    <script>
+        window.horasPorDevPorDiaData = JSON.parse(
+            document.getElementById("daily-data-json").textContent
+        );
+        window.horasPorDevPorModuloData = JSON.parse(
+            document.getElementById("module-data-json").textContent
+        );
+        const devsData = JSON.parse(
+            document.getElementById("devs-json").textContent
+        );
+
+        window.DEV_COLORS = devsData.reduce((acc, dev) => {
+            acc[dev.name] = dev.color;
+            return acc;
+        }, {});
 
         window.MODULO_COLORS = {
             "Autenticação": "#0057B8",
@@ -50,17 +73,10 @@
             "Infraestrutura": "#bfdbfe"
         };
 
-        window.ALL_DEVS = [
-            {% for dev in devs %}
-            "{{ dev.name }}"{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
-
-        window.selectedDevs = [
-            {% for dev in devs %}
-                {% if dev.selected %}"{{ dev.name }}"{% if not forloop.last %},{% endif %}{% endif %}
-            {% endfor %}
-        ];
+        window.ALL_DEVS = devsData.map(dev => dev.name);
+        window.selectedDevs = devsData
+            .filter(dev => dev.selected)
+            .map(dev => dev.name);
 
         document.addEventListener('DOMContentLoaded', function() {
             updateDevsDisplay();
