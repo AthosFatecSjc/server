@@ -1,0 +1,547 @@
+<section class="mt-6 mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <button type="button"
+             class="relative w-full text-left bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
+             onclick="toggleIssuesBugsFilter('issues')">
+            <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-blue-500 pointer-events-none"></span>
+            <div class="flex justify-between items-start">
+                <span class="text-sm text-gray-500 font-medium">Total de Issues — clique para filtrar</span>
+                <div class="text-blue-500">
+                    <i class="fa fa-filter text-sm"></i>
+                </div>
+            </div>
+            <span class="text-3xl font-bold text-blue-600 mt-2 block" id="totalIssuesValue">--</span>
+            <div class="flex items-center mt-2 text-sm text-gray-500">
+                <i class="fa fa-circle text-blue-400 mr-1"></i>
+                <span id="issuesAbertasValue">-- abertas</span>
+            </div>
+        </button>
+
+        <button type="button"
+             class="relative w-full text-left bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
+             onclick="toggleIssuesBugsFilter('bugs')">
+            <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-red-500 pointer-events-none"></span>
+            <div class="flex justify-between items-start">
+                <span class="text-sm text-gray-500 font-medium">Total de Bugs — clique para filtrar</span>
+                <div class="text-red-500">
+                    <i class="fa fa-filter text-sm"></i>
+                </div>
+            </div>
+            <span class="text-3xl font-bold text-red-600 mt-2 block" id="totalBugsValue">--</span>
+            <div class="flex items-center mt-2 text-sm text-gray-500">
+                <i class="fa fa-circle text-red-400 mr-1"></i>
+                <span id="bugsAtivosValue">-- ativos</span>
+            </div>
+        </button>
+
+        <button type="button"
+             class="relative w-full text-left bg-white border border-gray-200 rounded-xl p-6 pl-8 shadow-sm hover:shadow-md transition-all cursor-pointer"
+             onclick="toggleIssuesBugsFilter('all')">
+            <span aria-hidden="true" class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-green-500 pointer-events-none"></span>
+            <div class="flex justify-between items-start">
+                <span class="text-sm text-gray-500 font-medium">Valor Total - clique para filtrar</span>
+                <div class="text-green-500">
+                    <i class="fa fa-eye text-sm"></i>
+                </div>
+            </div>
+            <span class="text-3xl font-bold text-green-600 mt-2 block" id="valorTotalValue">--</span>
+            <div class="flex items-center mt-2 text-sm text-gray-500">
+                <i class="fa fa-dollar-sign text-green-400 mr-1"></i>
+                <span id="tipoFiltroValue">Todos os itens</span>
+            </div>
+        </button>
+    </div>
+</section>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900" id="graficoTitle">Distribuição por Status</h2>
+                <p class="text-sm text-gray-500" id="graficoSubtitle">Status dos itens no projeto</p>
+            </div>
+            <div class="flex space-x-2">
+                <button
+                    onclick="toggleIssuesBugsFilter('issues')"
+                    class="px-3 py-1 text-xs font-medium rounded-full border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                    id="btnIssues"
+                >
+                    Issues
+                </button>
+                <button
+                    onclick="toggleIssuesBugsFilter('bugs')"
+                    class="px-3 py-1 text-xs font-medium rounded-full border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                    id="btnBugs"
+                >
+                    Bugs
+                </button>
+                <button
+                    onclick="toggleIssuesBugsFilter('all')"
+                    class="px-3 py-1 text-xs font-medium rounded-full border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+                    id="btnAll"
+                >
+                    Todos
+                </button>
+            </div>
+        </div>
+        <div class="h-80">
+            <canvas id="graficoPizzaIssuesBugs"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+        <div class="px-6 py-4 border-b border-gray-200 flex-shrink-0">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900" id="tabelaTitle">Itens do Projeto</h2>
+                    <p class="text-sm text-gray-500" id="tabelaSubtitle">Detalhamento completo</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm text-gray-500" id="contadorItens">0 itens</span>
+                    <div class="flex bg-gray-100 rounded-lg p-1">
+                        <button
+                            onclick="toggleIssuesBugsFilter('issues')"
+                            class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
+                            id="tabIssues"
+                        >
+                            Issues
+                        </button>
+                        <button
+                            onclick="toggleIssuesBugsFilter('bugs')"
+                            class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
+                            id="tabBugs"
+                        >
+                            Bugs
+                        </button>
+                        <button
+                            onclick="toggleIssuesBugsFilter('all')"
+                            class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
+                            id="tabAll"
+                        >
+                            Todos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-auto flex-1 max-h-96">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200 sticky top-0">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Desenvolvedor</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horas</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Custo</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white" id="tabelaItens">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+const IssuesBugsDashboard = {
+    currentFilter: 'all',
+    pizzaChart: null,
+    itens: [],
+    cardsFromServer: null,
+    chartFromServer: null,
+    initialized: false,
+
+    init: function(initialData) {
+        const data =
+            initialData ||
+            (globalThis.selectedProjectData
+                ? globalThis.selectedProjectData.issuesDashboard
+                : null);
+
+        if (data) {
+            this.setDados(data);
+        } else if (!this.initialized) {
+            this.atualizarCardsComTotais();
+            this.atualizarDashboard();
+        } else {
+            this.atualizarDashboard();
+        }
+
+        this.initialized = true;
+    },
+
+    setDados: function(dados) {
+        const itensBackend = dados && Array.isArray(dados.itens) ? dados.itens : [];
+        const itensNormalizados = itensBackend.map((item) => {
+            const developer = item.developer || 'Não atribuído';
+            const horas = this.parseNumber(item.horas);
+            const custo = this.parseNumber(item.custo);
+            return {
+                id: item.id || '-',
+                tipo: item.tipo === 'bug' ? 'bug' : 'issue',
+                developer,
+                status: item.status || 'Sem status',
+                horas,
+                custo,
+                pendenteAtribuicao: this.isNaoAtribuido(developer),
+            };
+        });
+
+        this.itens = itensNormalizados.sort((a, b) => {
+            if (a.pendenteAtribuicao === b.pendenteAtribuicao) {
+                return String(a.id).localeCompare(String(b.id));
+            }
+            return a.pendenteAtribuicao ? -1 : 1;
+        });
+
+        this.cardsFromServer = dados && dados.cards ? this._normalizarCards(dados.cards) : null;
+        this.chartFromServer = dados && dados.chart ? this._normalizarChart(dados.chart) : null;
+        this.currentFilter = 'all';
+
+        this.atualizarCardsComTotais();
+        this.atualizarDashboard();
+    },
+
+    _normalizarCards: function(cards) {
+        const pickValue = (primary, secondary) => {
+            if (primary !== undefined && primary !== null) {
+                return primary;
+            }
+            if (secondary !== undefined && secondary !== null) {
+                return secondary;
+            }
+            return 0;
+        };
+        const toNumber = (value) => {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
+        return {
+            totalIssues: toNumber(pickValue(cards.total_issues, cards.totalIssues)),
+            issuesAbertas: toNumber(pickValue(cards.issues_abertas, cards.issuesAbertas)),
+            totalBugs: toNumber(pickValue(cards.total_bugs, cards.totalBugs)),
+            bugsAtivos: toNumber(pickValue(cards.bugs_ativos, cards.bugsAtivos)),
+            valorTotal: toNumber(pickValue(cards.valor_total, cards.valorTotal)),
+        };
+    },
+
+    _normalizarChart: function(chart) {
+        const safeArray = (value) => (Array.isArray(value) ? value : []);
+        const valores = safeArray(chart.values || chart.valores);
+        return {
+            labels: safeArray(chart.labels),
+            valores,
+            cores: safeArray(chart.colors || chart.cores),
+        };
+    },
+
+    parseNumber: function(value) {
+        if (typeof value === 'number') {
+            return Number.isFinite(value) ? value : 0;
+        }
+        if (typeof value !== 'string') {
+            return 0;
+        }
+
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return 0;
+        }
+
+        let numeric = trimmed.replace(/\s/g, '');
+        if (numeric.includes(',')) {
+            numeric = numeric.replace(/\./g, '').replace(',', '.');
+        }
+        numeric = numeric.replace(/[^0-9.-]/g, '');
+        const parsed = Number.parseFloat(numeric);
+        return Number.isFinite(parsed) ? parsed : 0;
+    },
+
+    isNaoAtribuido: function(nome) {
+        if (nome === undefined || nome === null) {
+            return true;
+        }
+        try {
+            const normalized = nome
+                .toString()
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+            return normalized === 'nao atribuido';
+        } catch (e) {
+            const fallback = nome.toString().trim().toLowerCase();
+            return fallback === 'não atribuído' || fallback === 'nao atribuido';
+        }
+    },
+
+    formatCurrency: function(value) {
+        const numeric = Number(value);
+        return Number.isFinite(numeric)
+            ? numeric.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : '0,00';
+    },
+
+    toggleFilter: function(tipo) {
+        this.currentFilter = tipo;
+        this.atualizarDashboard();
+    },
+
+    atualizarDashboard: function() {
+        const chartData = this.currentFilter === 'all' ? this.chartFromServer : null;
+        this.atualizarGraficoPizza(chartData);
+        this.atualizarTabela();
+        this.atualizarBotoesAtivos();
+    },
+
+    atualizarCardsComTotais: function() {
+        const statsTotais = this.cardsFromServer || this.calcularEstatisticas(this.itens);
+
+        document.getElementById('totalIssuesValue').textContent = statsTotais.totalIssues || 0;
+        document.getElementById('issuesAbertasValue').textContent = `${statsTotais.issuesAbertas || 0} abertas`;
+
+        document.getElementById('totalBugsValue').textContent = statsTotais.totalBugs || 0;
+        document.getElementById('bugsAtivosValue').textContent = `${statsTotais.bugsAtivos || 0} ativos`;
+
+        const valorTotal = Number.isFinite(statsTotais.valorTotal) ? statsTotais.valorTotal : 0;
+        document.getElementById('valorTotalValue').textContent = `R$ ${this.formatCurrency(valorTotal)}`;
+    },
+
+    atualizarCardsComFiltro: function() {
+        const dadosFiltrados = this.obterDadosFiltrados();
+        const stats = this.calcularEstatisticas(dadosFiltrados);
+
+        const tipoFiltroElement = document.getElementById('tipoFiltroValue');
+        switch (this.currentFilter) {
+            case 'issues':
+                tipoFiltroElement.textContent = 'Apenas issues';
+                break;
+            case 'bugs':
+                tipoFiltroElement.textContent = 'Apenas bugs';
+                break;
+            default:
+                tipoFiltroElement.textContent = 'Todos os itens';
+        }
+
+        document.getElementById('valorTotalValue').textContent = `R$ ${this.formatCurrency(stats.valorTotal)}`;
+    },
+
+    atualizarGraficoPizza: function(chartData) {
+        const dadosFiltrados = this.obterDadosFiltrados();
+        const dadosGrafico = chartData || this.agruparPorStatus(dadosFiltrados);
+
+        const canvas = document.getElementById('graficoPizzaIssuesBugs');
+        if (!canvas) {
+            return;
+        }
+
+        const ctx = canvas.getContext('2d');
+
+        if (this.pizzaChart) {
+            this.pizzaChart.destroy();
+        }
+
+        this.pizzaChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: dadosGrafico.labels,
+                datasets: [{
+                    data: dadosGrafico.valores,
+                    backgroundColor: dadosGrafico.cores,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total ? Math.round((value / total) * 100) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        document.getElementById('graficoTitle').textContent = 'Distribuição por Status';
+        let subtitulo = 'Status de todos os itens';
+        if (this.currentFilter === 'issues') subtitulo = 'Status das issues';
+        if (this.currentFilter === 'bugs') subtitulo = 'Status dos bugs';
+        document.getElementById('graficoSubtitle').textContent = subtitulo;
+    },
+
+    atualizarTabela: function() {
+        const dadosFiltrados = this.obterDadosFiltrados();
+        const tbody = document.getElementById('tabelaItens');
+
+        if (!tbody) {
+            return;
+        }
+
+        tbody.innerHTML = '';
+
+        dadosFiltrados.forEach(item => {
+            const row = document.createElement('tr');
+            const rowClasses = ['hover:bg-gray-50', 'transition-colors'];
+            if (item.pendenteAtribuicao) {
+                rowClasses.push('bg-yellow-50', 'border-2', 'border-yellow-300', 'shadow-lg');
+            }
+            row.className = rowClasses.join(' ');
+
+            const badgeClass = item.pendenteAtribuicao
+                ? 'bg-yellow-400 text-yellow-900 border border-yellow-500'
+                : item.tipo === 'issue'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-red-100 text-red-800';
+
+            const custoFormatado = this.formatCurrency(item.custo);
+            const cellHighlightClass = item.pendenteAtribuicao ? ' bg-yellow-50' : '';
+            const devTextClass = item.pendenteAtribuicao
+                ? ' text-yellow-900 font-semibold'
+                : ' text-gray-500';
+            const horasTextClass = item.pendenteAtribuicao ? ' text-yellow-800 font-semibold' : ' text-gray-500';
+            const custoTextClass = item.pendenteAtribuicao ? ' text-yellow-900 font-bold' : ' text-gray-900';
+
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap${cellHighlightClass}">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClass}">
+                        ${item.id}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900${cellHighlightClass}">
+                    ${item.tipo === 'issue' ? 'Issue' : 'Bug'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm${devTextClass}${cellHighlightClass}">
+                    ${item.developer}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm${horasTextClass}${cellHighlightClass}">
+                    ${item.horas.toFixed(2)}h
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm${custoTextClass}${cellHighlightClass} text-right font-medium">
+                    R$ ${custoFormatado}
+                </td>
+            `;
+
+            tbody.appendChild(row);
+        });
+
+        document.getElementById('contadorItens').textContent = `${dadosFiltrados.length} itens`;
+
+        document.getElementById('tabelaTitle').textContent =
+            this.currentFilter === 'issues' ? 'Issues do Projeto' :
+            this.currentFilter === 'bugs' ? 'Bugs do Projeto' :
+            'Itens do Projeto';
+
+        document.getElementById('tabelaSubtitle').textContent =
+            this.currentFilter === 'issues' ? 'Lista completa de issues' :
+            this.currentFilter === 'bugs' ? 'Lista completa de bugs' :
+            'Todos os itens do projeto';
+
+        this.atualizarCardsComFiltro();
+    },
+
+    atualizarBotoesAtivos: function() {
+        document.querySelectorAll('[id^="btn"], [id^="tab"]').forEach(btn => {
+            btn.classList.remove('bg-blue-500', 'text-white', 'bg-red-500', 'bg-gray-200', 'text-gray-900');
+        });
+
+        const activeClass = this.currentFilter === 'issues' ? 'bg-blue-500 text-white' :
+                           this.currentFilter === 'bugs' ? 'bg-red-500 text-white' :
+                           'bg-gray-200 text-gray-900';
+
+        const btnActive = document.getElementById(`btn${this.currentFilter.charAt(0).toUpperCase() + this.currentFilter.slice(1)}`);
+        const tabActive = document.getElementById(`tab${this.currentFilter.charAt(0).toUpperCase() + this.currentFilter.slice(1)}`);
+
+        if (btnActive) {
+            btnActive.className = `px-3 py-1 text-xs font-medium rounded-full border transition-colors ${activeClass}`;
+        }
+        if (tabActive) {
+            tabActive.className = `px-3 py-1 text-sm font-medium rounded-md transition-colors ${activeClass}`;
+        }
+    },
+
+    obterDadosFiltrados: function() {
+        switch (this.currentFilter) {
+            case 'issues':
+                return this.itens.filter(item => item.tipo === 'issue');
+            case 'bugs':
+                return this.itens.filter(item => item.tipo === 'bug');
+            default:
+                return this.itens;
+        }
+    },
+
+    calcularEstatisticas: function(dados) {
+        const registros = Array.isArray(dados) ? dados : [];
+        const estaConcluido = (status) => {
+            if (!status) {
+                return false;
+            }
+            const normalized = status.toString().trim().toLowerCase();
+            return ['concluído', 'concluido', 'done', 'finalizado'].includes(normalized);
+        };
+        const issues = registros.filter(item => item.tipo === 'issue');
+        const bugs = registros.filter(item => item.tipo === 'bug');
+
+        return {
+            totalIssues: issues.length,
+            issuesAbertas: issues.filter(i => !estaConcluido(i.status)).length,
+            totalBugs: bugs.length,
+            bugsAtivos: bugs.filter(b => !estaConcluido(b.status)).length,
+            valorTotal: registros.reduce((sum, item) => sum + (item.custo || 0), 0)
+        };
+    },
+
+    agruparPorStatus: function(dados) {
+        const statusCount = {};
+
+        dados.forEach(item => {
+            statusCount[item.status] = (statusCount[item.status] || 0) + 1;
+        });
+
+        const coresStatus = {
+            'Não iniciado': '#94a3b8',
+            'Em progresso': '#f59e0b',
+            'MR': '#3b82f6',
+            'Concluído': '#10b981'
+        };
+
+        return {
+            labels: Object.keys(statusCount),
+            valores: Object.values(statusCount),
+            cores: Object.keys(statusCount).map(status => coresStatus[status] || '#6b7280')
+        };
+    }
+};
+
+document.addEventListener('projectSelected', function(event) {
+    const dashboardData = event.detail ? event.detail.issuesDashboard : null;
+    IssuesBugsDashboard.setDados(dashboardData || null);
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('graficoPizzaIssuesBugs')) {
+        IssuesBugsDashboard.init();
+    }
+});
+
+function toggleIssuesBugsFilter(tipo) {
+    IssuesBugsDashboard.toggleFilter(tipo);
+}
+</script>

@@ -15,6 +15,14 @@ def index(request):
     """Renderiza a página inicial do relatório de atividades."""
     hoje = datetime.date.today()
     anos_disponiveis = range(hoje.year - 5, hoje.year + 2)
+    projetos = AtividadeService.listar_projetos_disponiveis()
+    colaboradores = AtividadeService.listar_colaboradores_disponiveis()
+    header_context = {
+        "breadcrumb": "Relatórios",
+        "title": "Relatório Mensal de Atividades",
+        "subtitle": "Horas consolidadas por projeto, colaborador e período",
+        "show_export": True,
+    }
 
     MESES_PORTUGUES = {
         1: "Janeiro",
@@ -34,9 +42,14 @@ def index(request):
     context = {
         "ano_atual": hoje.year,
         "mes_atual": hoje.month,
+        "projeto_atual": None,
+        "colaborador_atual": None,
         "anos_disponiveis": anos_disponiveis,
         "meses": MESES_PORTUGUES,
+        "projetos": projetos,
+        "colaboradores": colaboradores,
         "cabecalho": {"titulo": "", "subtitulo": ""},
+        "header_context": header_context,
     }
 
     return render(request, "atividade/index.html", context)
@@ -53,11 +66,22 @@ def relatorio_tabela_e_cards(request):
     except (ValueError, TypeError):
         ano, mes = hoje.year, hoje.month
 
+    def _parse_param(value: str | None) -> int | None:
+        try:
+            return int(value) if value not in ("", None) else None
+        except (TypeError, ValueError):
+            return None
+
+    projeto_id = _parse_param(request.GET.get("projeto"))
+    colaborador_id = _parse_param(request.GET.get("colaborador"))
+
     mes_nome = AtividadeService.MESES_PORTUGUES.get(mes, "")
 
     context = {
         "cabecalho": {"titulo": "", "subtitulo": ""},
-        "dados": AtividadeService.gerar_dados_relatorio_atividade(ano, mes),
+        "dados": AtividadeService.gerar_dados_relatorio_atividade(
+            ano, mes, projeto_id=projeto_id, funcionario_id=colaborador_id
+        ),
         "ano": ano,
         "mes_nome": mes_nome,
     }
@@ -158,8 +182,21 @@ def exportar_pdf(request):
         mes = int(request.GET.get("mes", hoje.month))
     except (ValueError, TypeError):
         ano, mes = hoje.year, hoje.month
+    projeto_id = request.GET.get("projeto")
+    colaborador_id = request.GET.get("colaborador")
 
-    dados = AtividadeService.gerar_dados_relatorio_atividade(ano, mes)
+    def _parse_param(value: str | None) -> int | None:
+        try:
+            return int(value) if value not in ("", None) else None
+        except (TypeError, ValueError):
+            return None
+
+    projeto_id = _parse_param(projeto_id)
+    colaborador_id = _parse_param(colaborador_id)
+
+    dados = AtividadeService.gerar_dados_relatorio_atividade(
+        ano, mes, projeto_id=projeto_id, funcionario_id=colaborador_id
+    )
     pdf = AtividadeService.exportar_atividade_pdf(mes, ano, dados)
 
     MESES_PORTUGUES = {

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Gestão de Usuários{% endblock %}
+
+{% block content %}
+<div class="mx-auto px-4 py-6 space-y-6">
+    <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
+        <div class="px-6 py-6 space-y-6">
+            <nav class="flex items-center gap-2 text-sm text-gray-500">
+                <a href="{% url 'home' %}" class="inline-flex items-center gap-2 text-gray-500 transition hover:text-gray-700">
+                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-500 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <rect x="3" y="3" width="7" height="7" rx="2" stroke-width="2" />
+                            <rect x="14" y="3" width="7" height="7" rx="2" stroke-width="2" />
+                            <rect x="14" y="14" width="7" height="7" rx="2" stroke-width="2" />
+                            <rect x="3" y="14" width="7" height="7" rx="2" stroke-width="2" />
+                        </svg>
+                    </span>
+                    <span class="font-medium tracking-wide">ATHOS INSIGHT</span>
+                </a>
+                <span class="text-gray-300">›</span>
+                <span class="text-gray-500">Usuários</span>
+                <span class="hidden text-gray-300 sm:inline">›</span>
+                <span class="hidden text-gray-700 sm:inline font-semibold">Gestão</span>
+            </nav>
+
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div class="flex items-start gap-4">
+                    <button type="button"
+                            onclick="window.history.back()"
+                            class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50">
+                        ← Voltar
+                    </button>
+                    <div>
+                        <h1 class="text-3xl font-semibold text-slate-900">Gerenciamento de Usuários</h1>
+                        <p class="mt-1 text-sm text-gray-500">Cadastre, filtre e acompanhe usuários do ecossistema Athos.</p>
+                    </div>
+                </div>
+                <a href="{% url 'usuarios:criar' %}"
+                   class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:ring-offset-1">
+                    <i class="fas fa-plus text-white/90"></i>
+                    Novo Usuário
+                </a>
+            </div>
+        </div>
+    </section>
+
+    {% if messages %}
+        <div class="space-y-2">
+            {% for message in messages %}
+                <div class="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-700">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% include "usuarios/componentes/filtros.html" with filtro_form=filtro_form %}
+
+    <section class="space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-800">Lista de Usuários</h2>
+                <p class="text-xs uppercase tracking-wide text-gray-400">
+                    {{ usuarios_count }} usuário(s) encontrado(s)
+                </p>
+            </div>
+        </div>
+
+        {% include "usuarios/componentes/lista.html" with usuarios=usuarios %}
+    </section>
+</div>
+{% include "usuarios/componentes/modal_confirmacao_status.html" %}
+{% include "usuarios/componentes/modal_confirmacao_exclusao.html" %}
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    {% include "usuarios/componentes/modal_confirmacao_exclusao_script.html" %}
+    {% include "usuarios/componentes/modal_confirmacao_status_script.html" %}
+{% endblock %}

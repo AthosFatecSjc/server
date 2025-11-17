@@ -1,6 +1,6 @@
-"""Modelos para relatórios e controle de horas da equipe."""
+"""Modelos para relatórios e controle de horas."""
 
-from datetime import date, datetime
+from datetime import datetime
 from pprint import pformat
 
 from django.db import models
@@ -40,6 +40,11 @@ class Funcionario(models.Model):
         default=40.00,
         help_text="Valor/hora do desenvolvedor (R$)",
     )
+    contrato = models.CharField(
+        max_length=20,
+        choices=[("CLT", "CLT"), ("ESTAGIARIO", "Estagiário")],
+        default="CLT",
+    )
 
     class Meta:
         """Meta dados do modelo Funcionario"""
@@ -55,7 +60,7 @@ class Projeto(models.Model):
 
     id = models.AutoField(primary_key=True)
     jira_id = models.PositiveIntegerField(null=True)
-    jira_key = models.CharField(max_length=50, null=True)
+    jira_key = models.CharField(max_length=50, blank=True, default="")
     nome = models.CharField(max_length=100)
     data_criacao = models.DateField(auto_now_add=True)
     orcamento_previsto = models.DecimalField(
@@ -76,116 +81,45 @@ class Projeto(models.Model):
         return pformat(self.__dict__, indent=4, width=120)
 
 
-class ControleHorasEquipeResumo(models.Model):
-    """Modelo para resumo de controle de horas da equipe"""
+class _RemovedManager:
+    """Stub manager that raises when used."""
 
-    total_dev = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-    total_projeto = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-
-    class Meta:
-        """Meta dados do modelo ControleHorasEquipeResumo"""
-
-        db_table = "controle_horas_equipe_resumo"
-
-    def __str__(self):
-        return f"Dev: {self.total_dev}h | Projeto: {self.total_projeto}h"
+    def __getattr__(self, attr):
+        raise RuntimeError(
+            "Este recurso foi removido do modelo OLTP. "
+            "Atualize os relatórios/dashboards para usar Issue/Projeto."
+        )
 
 
-class ControleHorasEquipe(models.Model):
-    """Modelo para controle de horas da equipe"""
+class _RemovedModel:
+    """Placeholder para manter imports existentes enquanto o schema é normalizado."""
 
-    mes = models.DateField()
-    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
-    funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
-    horas = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-    resumo = models.ForeignKey(
-        ControleHorasEquipeResumo, on_delete=models.SET_NULL, null=True, blank=True
+    objects = _RemovedManager()
+
+    def __init__(self, *args, **kwargs):
+        raise RuntimeError(
+            "Este modelo foi removido do schema OLTP. "
+            "Atualize os relatórios para não dependerem dele."
+        )
+
+
+def _removed_model(name: str):
+    return type(
+        name,
+        (_RemovedModel,),
+        {
+            "__module__": __name__,
+            "__doc__": f"{name} foi removido do schema OLTP. "
+            "Atualize os relatórios/dashboards para usar Issue/Projeto.",
+        },
     )
 
-    class Meta:
-        """Meta dados do modelo ControleHorasEquipe"""
 
-        unique_together = ("mes", "projeto", "funcionario")
-        db_table = "controle_horas_equipe"
-
-    def __str__(self) -> str:
-        mes_value = self.mes
-        if isinstance(mes_value, date):
-            mes_str = mes_value.strftime("%m/%Y")
-        else:
-            mes_str = "N/A"
-        return f"""{
-            self.funcionario} - {
-            self.projeto} - {
-            mes_str} - {
-                self.horas}h"""
-
-
-class MetaTempoControle(models.Model):
-    """Modelo para metas de tempo de controle"""
-
-    objetivo_clt = models.CharField(max_length=100, blank=True)
-    objetivo_estagiario = models.CharField(max_length=100, blank=True)
-
-    class Meta:
-        """Meta dados do modelo MetaTempoControle"""
-
-        db_table = "meta_tempo_controle"
-
-    def __str__(self):
-        return f"objetivo clt: {self.objetivo_clt} | objetivo estagiario: {self.objetivo_estagiario}"
-
-
-class TempoGastoEquipe(models.Model):
-    """Modelo para tempo gasto pela equipe"""
-
-    dia_semana = models.CharField(max_length=10)
-    dia_mes = models.PositiveIntegerField()
-    mes = models.DateField()
-    funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
-    tempo_gasto = models.DecimalField(max_digits=6, decimal_places=2)
-    meta = models.ForeignKey(
-        MetaTempoControle, on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    class Meta:
-        """Meta dados do modelo TempoGastoEquipe"""
-
-        db_table = "controle_tempo_equipe"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["funcionario", "dia_mes", "mes"],
-                name="unique_funcionario_dia_mes",
-            )
-        ]
-
-    def __str__(self) -> str:
-        mes_value = self.mes
-        mes_str = mes_value.strftime("%m/%Y") if isinstance(mes_value, date) else "N/A"
-        return f"""{
-            self.funcionario} - {
-            mes_str} - {
-            self.tempo_gasto}h"""
-
-
-class TempoControleValores(models.Model):
-    """Modelo para valores de controle de tempo"""
-
-    controle_tempo_equipe = models.ForeignKey(
-        TempoGastoEquipe, on_delete=models.CASCADE
-    )
-    realizado_equipe = models.DecimalField(max_digits=6, decimal_places=2)
-    total_real = models.DecimalField(max_digits=6, decimal_places=2)
-    total_meta = models.DecimalField(max_digits=6, decimal_places=2)
-    aproveitamento = models.DecimalField(max_digits=5, decimal_places=2)  # Percentual
-
-    class Meta:
-        """Meta dados do modelo TempoControleValores"""
-
-        db_table = "controle_tempo_resumo"
-
-    def __str__(self):
-        return f"Aproveitamento: {self.aproveitamento}%"
+ControleHorasEquipe = _removed_model("ControleHorasEquipe")
+ControleHorasEquipeResumo = _removed_model("ControleHorasEquipeResumo")
+MetaTempoControle = _removed_model("MetaTempoControle")
+TempoGastoEquipe = _removed_model("TempoGastoEquipe")
+TempoControleValores = _removed_model("TempoControleValores")
 
 
 class TipoIssue(models.Model):
@@ -195,7 +129,7 @@ class TipoIssue(models.Model):
 
     id = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=255, null=False, blank=False)
-    descricao = models.CharField(max_length=1024, null=True, blank=True)
+    descricao = models.CharField(max_length=1024, blank=True, default="")
     jira_id = models.PositiveIntegerField(null=False, blank=False)
     projeto = models.ForeignKey(
         Projeto, on_delete=models.CASCADE, null=False, blank=False
@@ -236,7 +170,7 @@ class Issue(models.Model):
     tempo_estimado_seconds = models.PositiveIntegerField(default=0, null=True)
     funcionario = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True)
     atualizado_em = models.DateTimeField(null=True)
-    status = models.CharField(max_length=100, null=True)
+    status = models.CharField(max_length=100, blank=True, default="")
 
     class Meta:
         """
@@ -247,3 +181,70 @@ class Issue(models.Model):
 
     def __str__(self):
         return pformat(self.__dict__, indent=4, width=120)
+
+
+class PlanejamentoProjeto(models.Model):
+    """
+    Guarda as horas previstas por projeto e ano após a normalização do OLTP.
+    Substitui o antigo MetaTempoControle, removido do schema.
+    """
+
+    projeto = models.ForeignKey(
+        Projeto, on_delete=models.CASCADE, related_name="planejamentos"
+    )
+    ano = models.PositiveIntegerField()
+    horas_previstas = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        db_table = "planejamento_projeto"
+        unique_together = ("projeto", "ano")
+        ordering = ("projeto_id", "ano")
+
+    def __str__(self):
+        return f"{self.projeto.nome} ({self.ano}) - {self.horas_previstas}h"
+
+
+class RegistroProdutividade(models.Model):
+    """
+    Registra as horas (ou códigos especiais) lançadas por dia e funcionário.
+    Valores negativos representam códigos de ausência (ex: -1 = Férias).
+    """
+
+    funcionario = models.ForeignKey(
+        Funcionario,
+        on_delete=models.CASCADE,
+        related_name="registros_produtividade",
+    )
+    dia = models.DateField()
+    valor = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "registro_produtividade"
+        ordering = ("dia",)
+        unique_together = ("funcionario", "dia")
+
+    def __str__(self):
+        return f"{self.funcionario.nome} - {self.dia} => {self.valor}"
+
+
+class MetaProdutividade(models.Model):
+    """Meta de horas mensais por funcionário."""
+
+    funcionario = models.ForeignKey(
+        Funcionario,
+        on_delete=models.CASCADE,
+        related_name="metas_produtividade",
+    )
+    ano = models.PositiveIntegerField()
+    mes = models.PositiveIntegerField()
+    meta_horas = models.DecimalField(max_digits=6, decimal_places=2, default=154.0)
+
+    class Meta:
+        db_table = "meta_produtividade"
+        ordering = ("funcionario_id", "ano", "mes")
+        unique_together = ("funcionario", "ano", "mes")
+
+    def __str__(self):
+        return f"{self.funcionario.nome} {self.mes:02d}/{self.ano} - {self.meta_horas}h"

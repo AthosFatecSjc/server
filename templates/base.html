@@ -188,11 +188,11 @@
             <div class="sidebar-header">
                 <div class="sidebar-logo">
                     <div class="logo-compact">
-                        <img src="/static/logo.png" alt="Athos" class="logo-img" onerror="this.style.display='none'">
+                        <img src="/static/logo.png" alt="Athos" class="logo-img">
                     </div>
 
                     <div class="logo-full">
-                        <img src="/static/logo.png" alt="Athos" class="logo-img" onerror="this.style.display='none'">
+                        <img src="/static/logo.png" alt="Athos" class="logo-img">
                         <span>ATHOS</span>
                     </div>
                 </div>
@@ -200,7 +200,7 @@
 
             <ul class="sidebar-menu">
                 <li class="sidebar-menu-item">
-                    <a href="/" class="sidebar-menu-button {% if request.path == '/' %}active{% endif %}">
+                    <a href="{% url 'home' %}" class="sidebar-menu-button {% if request.path == '/home/' %}active{% endif %}">
                         <i class="fas fa-home"></i>
                         <span>Home</span>
                     </a>
@@ -227,9 +227,11 @@
                     </a>
                 </li>
             </ul>
-            {% if request.session.fake_user %}
+            {% if request.user.is_authenticated %}
             <div class="px-4 py-3 mt-auto text-xs text-gray-500 border-t border-gray-200">
-                <p class="font-semibold text-gray-700 text-sm mb-2">Olá, {{ request.session.fake_user.username }}</p>
+                <p class="font-semibold text-gray-700 text-sm mb-2">
+                    Olá, {{ request.user.nome_completo|default:request.user.get_username }}
+                </p>
                 <a href="{% url 'logout' %}"
                    class="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-gray-700 text-sm hover:bg-gray-100 transition">
                     <i class="fas fa-sign-out-alt"></i>
@@ -244,27 +246,6 @@
         {% block content %}
         {% endblock %}
     </main>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const logoImages = document.querySelectorAll('.logo-img');
-
-            for (const img of logoImages) {
-            img.onerror = () => {
-                const compact = document.querySelector('.logo-compact');
-                const full = document.querySelector('.logo-full');
-
-                if (compact) {
-                compact.innerHTML = '<span style="font-weight: bold; color: #374151;">A</span>';
-                }
-
-                if (full) {
-                full.innerHTML = '<span style="font-weight: bold; color: #374151;">ATHOS</span>';
-                }
-            };
-            }
-        });
-    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

@@ -1,6 +1,7 @@
 """Unit tests for CustoPorDesenvolvedorService."""
 
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.test import TestCase
 
@@ -153,3 +154,14 @@ class CustoPorDesenvolvedorServiceTest(TestCase):
         self.assertEqual(len(resultado["labels"]), 1)
         self.assertEqual(len(resultado["values"]), 1)
         self.assertAlmostEqual(resultado["max_value"], 1100.00, places=2)
+
+    def test_obter_custo_trata_excecoes(self):
+        service = CustoPorDesenvolvedorService()
+
+        with patch(
+            "apps.dashboards.projetos.services.FatoRegistroHoras.objects.using",
+            side_effect=RuntimeError("fail"),
+        ):
+            resultado = service.obter_custo_por_desenvolvedor()
+
+        self.assertEqual(resultado, [])

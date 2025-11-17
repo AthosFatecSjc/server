@@ -1,18 +1,12 @@
 """Testes do relatório de comparação anual."""
 
-from datetime import date
+from datetime import datetime
 
 from django.test import TestCase
+from django.utils import timezone
 
 from apps.relatorios.comparacao.services import ComparacaoService
-from apps.relatorios.models import (
-    Cargo,
-    ControleHorasEquipe,
-    Funcionario,
-    Projeto,
-    TempoControleValores,
-    TempoGastoEquipe,
-)
+from apps.relatorios.models import Cargo, Funcionario, Issue, Projeto
 
 
 class SomaHorasTest(TestCase):
@@ -25,54 +19,38 @@ class SomaHorasTest(TestCase):
         self.func2 = Funcionario.objects.create(nome="Maria", cargo=self.cargo)
         self.projeto = Projeto.objects.create(nome="Projeto X")
 
-        # realizado: Renato mês 1 = 10, somar mais 5 -> total 15
-        ControleHorasEquipe.objects.create(
-            mes=date(2025, 1, 1), projeto=self.projeto, funcionario=self.func1, horas=10
-        )
-        obj = ControleHorasEquipe.objects.get(
-            mes=date(2025, 1, 1), projeto=self.projeto, funcionario=self.func1
-        )
-        obj.horas = obj.horas + 5
-        obj.save()
-
-        # realizado: Maria mês 2 = 8
-        ControleHorasEquipe.objects.create(
-            mes=date(2025, 2, 1), projeto=self.projeto, funcionario=self.func2, horas=8
-        )
-
-        # previstas: usaremos TempoGastoEquipe + TempoControleValores.total_meta
-        # Renato mês 1 previsto 20
-        tge1 = TempoGastoEquipe.objects.create(
-            dia_semana="Seg",
-            dia_mes=1,
-            mes=date(2025, 1, 1),
+        # Issues de janeiro para Renato: 10h + 5h realizados, 20h estimados
+        Issue.objects.create(
+            jira_id=1,
+            jira_key="PRJ-1",
+            titulo="Planejar sprint",
+            projeto=self.projeto,
             funcionario=self.func1,
-            tempo_gasto=15,  # campo opcional para fonte alternativa
-            meta=None,
+            criado_em=datetime(2025, 1, 10, 10, 0, 0),
+            tempo_gasto_seconds=10 * 3600,
+            tempo_estimado_seconds=20 * 3600,
         )
-        TempoControleValores.objects.create(
-            controle_tempo_equipe=tge1,
-            realizado_equipe=15,
-            total_real=15,
-            total_meta=20,
-            aproveitamento=75,
+        Issue.objects.create(
+            jira_id=2,
+            jira_key="PRJ-2",
+            titulo="Revisar arquitetura",
+            projeto=self.projeto,
+            funcionario=self.func1,
+            criado_em=datetime(2025, 1, 20, 9, 0, 0),
+            tempo_gasto_seconds=5 * 3600,
+            tempo_estimado_seconds=0,
         )
 
-        # Maria mês 2 previsto 8
-        tge2 = TempoGastoEquipe.objects.create(
-            dia_semana="Ter",
-            dia_mes=1,
-            mes=date(2025, 2, 1),
+        # Issue de fevereiro para Maria: 8h realizados/estimados
+        Issue.objects.create(
+            jira_id=3,
+            jira_key="PRJ-3",
+            titulo="Configurar pipelines",
+            projeto=self.projeto,
             funcionario=self.func2,
-            tempo_gasto=8,
-            meta=None,
-        )
-        TempoControleValores.objects.create(
-            controle_tempo_equipe=tge2,
-            realizado_equipe=8,
-            total_real=8,
-            total_meta=8,
-            aproveitamento=100,
+            criado_em=datetime(2025, 2, 5, 14, 0, 0),
+            tempo_gasto_seconds=8 * 3600,
+            tempo_estimado_seconds=8 * 3600,
         )
 
     def test_soma_horas_realizadas(self):
@@ -85,9 +63,7 @@ class SomaHorasTest(TestCase):
 
     def test_soma_horas_previstas(self):
         """Testa a soma das horas previstas por desenvolvedor e mês."""
-        previsto = ComparacaoService.soma_horas_previstas_por_dev_mes(
-            2025
-        )  # usa TempoControleValores por padrão
+        previsto = ComparacaoService.soma_horas_previstas_por_dev_mes(2025)
         self.assertIn("Renato", previsto)
         self.assertIn("Maria", previsto)
         self.assertEqual(previsto["Renato"][1], 20.0)

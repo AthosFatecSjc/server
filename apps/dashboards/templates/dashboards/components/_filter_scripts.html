@@ -157,6 +157,7 @@
     const realized = safeFloat(option.dataset.projectCustoRealizado);
     const remaining = safeFloat(option.dataset.projectSaldoRemanescente);
     const utilization = safeFloat(option.dataset.projectPercentualUtilizado);
+    const issuesDashboard = parseJSON(option.dataset.projectIssuesDashboard);
 
     const safeBudget = Number.isFinite(budget) ? budget : 0;
     const safeRealized = Number.isFinite(realized) ? realized : 0;
@@ -186,6 +187,7 @@
         orcamentoPrevisto: safeBudget,
         saldoRemanescente: saldo,
         percentualUtilizado: percentual,
+        issuesDashboard,
     };
     }
 
@@ -364,39 +366,45 @@
         }
     }
 
-    function switchDashboardTab(tabKey) {
-        currentDashboardTab = tabKey;
+    function switchDashboardTab(tab) {
+        document.querySelectorAll('#dashboard-tabs .filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
 
-        const tabButtons = document.querySelectorAll('#dashboard-tabs .filter-btn');
-        for (const button of tabButtons) {
-            button.classList.toggle('active', button.dataset.dashboard === tabKey);
+        const activeBtn = document.querySelector(`[data-dashboard="${tab}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
         }
 
-        const panels = {
-            custos: document.getElementById('dashboard-custos'),
-            issues: document.getElementById('dashboard-issues'),
-            bugs: document.getElementById('dashboard-bugs')
-        };
-
-        for (const [key, panel] of Object.entries(panels)) {
-            if (!panel) continue;
-
-            if (key === tabKey) {
-                panel.classList.remove('hidden');
-            } else {
-                panel.classList.add('hidden');
-            }
+        const indicator = document.getElementById('tab-indicator');
+        if (indicator) {
+            const buttonWidth = 100 / 2; // 2 botões = 50% cada
+            const translateX = tab === 'custos' ? 0 : 100;
+            indicator.style.transform = `translateX(${translateX}%)`;
         }
 
+        document.querySelectorAll('.dashboard-panel').forEach(panel => {
+            panel.classList.remove('active');
+            panel.style.display = 'none';
+        });
 
-        const chartWrapper = document.getElementById('dashboard-chart-wrapper');
-        if (chartWrapper) {
-            chartWrapper.classList.toggle('hidden', tabKey !== 'custos');
+        const activePanel = document.getElementById(`dashboard-${tab}`);
+        if (activePanel) {
+            activePanel.classList.add('active');
+            activePanel.style.display = 'block';
         }
 
-        toggleTypeFilterVisibility(tabKey);
-        applyFilters();
+        if (tab === 'issues' && typeof IssuesBugsDashboard !== 'undefined') {
+            IssuesBugsDashboard.init();
+        }
+
+        console.log(`Dashboard alterado para: ${tab}`);
     }
+
+    // Inicializar tab padrão
+    document.addEventListener('DOMContentLoaded', function() {
+        switchDashboardTab('custos');
+    });
 
     function updateExportModalProject(projectData) {
         const nameElement = document.getElementById('exportModalProjectName');

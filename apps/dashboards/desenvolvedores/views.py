@@ -67,10 +67,11 @@ def atualizar_valor_hora(request):
         desenvolvedor_id = data.get("desenvolvedor_id")
         desenvolvedor_nome = data.get("desenvolvedor_nome")
         novo_valor_hora = data.get("valor_hora")
+        contrato = data.get("contrato")
 
         print(f"DEBUG API Update: {desenvolvedor_nome} -> R$ {novo_valor_hora}")
 
-        if not all([desenvolvedor_id, desenvolvedor_nome, novo_valor_hora]):
+        if not all([desenvolvedor_id, desenvolvedor_nome, novo_valor_hora, contrato]):
             return JsonResponse(
                 {"success": False, "error": "Dados incompletos"}, status=400
             )
@@ -83,7 +84,7 @@ def atualizar_valor_hora(request):
             )
 
         sucesso = DesenvolvedoresService.atualizar_valor_hora_oltp(
-            desenvolvedor_id, desenvolvedor_nome, novo_valor_hora
+            desenvolvedor_id, desenvolvedor_nome, novo_valor_hora, contrato
         )
 
         if sucesso:

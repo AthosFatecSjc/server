@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}{{ usuario.nome_completo }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto px-4 py-6 space-y-6">
+    <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
+        <div class="px-6 py-6 space-y-6">
+            <nav class="flex items-center gap-2 text-sm text-gray-500">
+                <a href="/" class="inline-flex items-center gap-2 text-gray-500 transition hover:text-gray-700">
+                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-500 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <rect x="3" y="3" width="7" height="7" rx="2" stroke-width="2" />
+                            <rect x="14" y="3" width="7" height="7" rx="2" stroke-width="2" />
+                            <rect x="14" y="14" width="7" height="7" rx="2" stroke-width="2" />
+                            <rect x="3" y="14" width="7" height="7" rx="2" stroke-width="2" />
+                        </svg>
+                    </span>
+                    <span class="font-medium tracking-wide">ATHOS INSIGHT</span>
+                </a>
+                <span class="text-gray-300">›</span>
+                <a href="{% url 'usuarios:lista' %}" class="text-gray-500 transition hover:text-gray-700">Usuários</a>
+                <span class="hidden text-gray-300 sm:inline">›</span>
+                <span class="hidden text-gray-700 sm:inline font-semibold">{{ usuario.nome_completo }}</span>
+            </nav>
+
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div class="flex items-start gap-3">
+                    <a href="{% url 'usuarios:lista' %}"
+                       class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50">
+                        ← Voltar
+                    </a>
+                    <div>
+                        <h1 class="text-3xl font-semibold text-slate-900">{{ usuario.nome_completo }}</h1>
+                        <p class="mt-1 text-sm text-gray-500">Detalhes completos do usuário e seu perfil de acesso.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 md:justify-end">
+                    <a href="{% url 'usuarios:editar' usuario.pk %}"
+                       class="inline-flex items-center gap-2 rounded-xl border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 transition hover:border-indigo-300 hover:bg-indigo-50">
+                        <i class="fas fa-pen"></i>
+                        Editar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% if messages %}
+        <div class="space-y-2">
+            {% for message in messages %}
+                <div class="rounded-xl border-l-4 border-indigo-400 bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-700">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="grid gap-6 md:grid-cols-3">
+        <div class="space-y-6 md:col-span-2">
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+                <h2 class="text-lg font-semibold text-slate-800">Informações Gerais</h2>
+                <dl class="grid grid-cols-1 gap-x-6 gap-y-4 text-sm text-gray-700 md:grid-cols-2">
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Nome completo</dt>
+                        <dd class="mt-1 text-gray-900">{{ usuario.nome_completo }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Username</dt>
+                        <dd class="mt-1 text-gray-900">{{ usuario.username }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">E-mail</dt>
+                        <dd class="mt-1 text-gray-900">{{ usuario.email }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Contrato</dt>
+                        <dd class="mt-1 text-gray-900">{{ usuario.get_contrato_display }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Cargo</dt>
+                        <dd class="mt-1 text-gray-900">{{ usuario.cargo }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Perfil de Acesso</dt>
+                        <dd class="mt-1 text-gray-900">{{ usuario.get_perfil_acesso_display }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Ativo desde</dt>
+                        <dd class="mt-1 text-gray-900">{{ usuario.date_joined|date:"d/m/Y H:i" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Último login</dt>
+                        <dd class="mt-1 text-gray-900">
+                            {% if usuario.last_login %}
+                                {{ usuario.last_login|date:"d/m/Y H:i" }}
+                            {% else %}
+                                Nunca acessou
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h2 class="mb-4 text-lg font-semibold text-slate-800">Status</h2>
+                <div class="flex items-center gap-3">
+                    {% if usuario.ativo %}
+                        <span class="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                            <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                            Ativo
+                        </span>
+                        <button type="button"
+                                class="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:border-red-300 hover:bg-red-50"
+                                data-status-modal
+                                data-url="{% url 'usuarios:status' usuario.pk %}"
+                                data-acao="desativar"
+                                data-nome="{{ usuario.nome_completo|escape }}"
+                                data-next="{% url 'usuarios:detalhe' usuario.pk %}">
+                            <i class="fas fa-user-slash"></i>
+                            Desativar
+                        </button>
+                    {% else %}
+                        <span class="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                            <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                            Inativo
+                        </span>
+                        <button type="button"
+                                class="inline-flex items-center gap-2 rounded-xl border border-green-200 px-3 py-1.5 text-xs font-medium text-green-600 transition hover:border-green-300 hover:bg-green-50"
+                                data-status-modal
+                                data-url="{% url 'usuarios:status' usuario.pk %}"
+                                data-acao="ativar"
+                                data-nome="{{ usuario.nome_completo|escape }}"
+                                data-next="{% url 'usuarios:detalhe' usuario.pk %}">
+                            <i class="fas fa-user-check"></i>
+                            Reativar
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-600 shadow-sm space-y-3">
+                <h2 class="text-lg font-semibold text-slate-800">Regras de Acesso</h2>
+                <p><strong>Perfil:</strong> {{ usuario.get_perfil_acesso_display }}</p>
+                <p>
+                    Use esta visualização para auditar os dados cadastrados do usuário
+                    e garantir que o perfil esteja alinhado com as responsabilidades do cargo.
+                </p>
+            </div>
+            <div class="rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
+                <h2 class="mb-2 text-lg font-semibold text-slate-800">Excluir usuário</h2>
+                <p class="text-sm text-gray-600 mb-4">
+                    Esta ação remove definitivamente o usuário do sistema. Ela não pode ser desfeita.
+                </p>
+                <button type="button"
+                        class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:border-red-300 hover:bg-red-100"
+                        data-delete-modal
+                        data-url="{% url 'usuarios:excluir' usuario.pk %}"
+                        data-nome="{{ usuario.nome_completo|escape }}"
+                        data-next="{% url 'usuarios:lista' %}">
+                    <i class="fas fa-trash-alt"></i>
+                    Excluir usuário
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% include "usuarios/componentes/modal_confirmacao_exclusao.html" %}
+{% include "usuarios/componentes/modal_confirmacao_status.html" %}
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    {% include "usuarios/componentes/modal_confirmacao_exclusao_script.html" %}
+    {% include "usuarios/componentes/modal_confirmacao_status_script.html" %}
+{% endblock %}

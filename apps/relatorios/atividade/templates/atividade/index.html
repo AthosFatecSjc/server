@@ -23,10 +23,11 @@
         }
 
         .filters {
-            background: #fff;
-            padding: 16px;
-            border-radius: 10px;
-            border-left: 4px solid #2563EB;
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+            padding: 20px;
         }
 
         .chart-container {
@@ -109,53 +110,75 @@
 </head>
 
 <body>
-    <div class="container">
+    {% include "dashboards/_header.html" with header=header_context show_export=True %}
+    <div class="atividade-wrapper mt-6">
         <div class="space-y-6">
 
-            <div class="flex justify-between items-center">
-                <div>
-                    <h2 class="text-2xl font-semibold text-primary">Controle de Horas - Projeto / Equipe</h2>
-                    <p class="subtitle text-gray-600">
-                        Visão geral das horas lançadas por projeto e por membro da equipe.
-                    </p>
-                </div>
-                <div class="ml-auto">
-                    <button id="exportPdfButton"
-                            class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center shadow-md">
-                        <svg class="icon w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        Exportar PDF
-                    </button>
-                </div>
-            </div>
-
             <div class="filters">
-                <div class="mb-3">
-                    <h3 class="text-primary font-semibold text-sm uppercase">Filtros</h3>
-                    <p class="text-gray-600 text-xs">Selecione o mês e o ano</p>
+                <div class="flex items-center gap-2 mb-4">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+                    </svg>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Filtros</h3>
+                        <p class="text-gray-500 text-sm">Defina o mês e refine por projeto ou colaborador.</p>
+                    </div>
                 </div>
 
-                <form class="filter-form flex gap-3"
+                <form class="filter-form grid gap-4 md:grid-cols-2 lg:grid-cols-4"
                       hx-get="{% url 'relatorio_tabela_e_cards' %}"
                       hx-target="#controle_horas_projeto_equipe"
                       hx-trigger="load, change"
                       hx-indicator="#loading">
 
-                    <select name="mes" aria-label="Mês" class="border border-gray-300 rounded p-1">
-                        {% for numero, nome in meses.items %}
-                            <option value="{{ numero }}" {% if mes_atual == numero %}selected{% endif %}>
-                                {{ nome }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-sm font-medium text-gray-600" for="filtro-mes">Mês</label>
+                        <select id="filtro-mes" name="mes"
+                                class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 filter-select">
+                            {% for numero, nome in meses.items %}
+                                <option value="{{ numero }}" {% if mes_atual == numero %}selected{% endif %}>
+                                    {{ nome }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                    <select name="ano" aria-label="Ano" class="border border-gray-300 rounded p-1">
-                        {% for ano in anos_disponiveis %}
-                            <option value="{{ ano }}" {% if ano == ano_atual %}selected{% endif %}>{{ ano }}</option>
-                        {% endfor %}
-                    </select>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-sm font-medium text-gray-600" for="filtro-ano">Ano</label>
+                        <select id="filtro-ano" name="ano"
+                                class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 filter-select">
+                            {% for ano in anos_disponiveis %}
+                                <option value="{{ ano }}" {% if ano == ano_atual %}selected{% endif %}>{{ ano }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-sm font-medium text-gray-600" for="filtro-projeto">Projeto</label>
+                        <select id="filtro-projeto" name="projeto"
+                                class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 filter-select">
+                            <option value="">Todos os projetos</option>
+                            {% for projeto in projetos %}
+                                <option value="{{ projeto.id }}" {% if projeto_atual == projeto.id %}selected{% endif %}>
+                                    {{ projeto.nome }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-sm font-medium text-gray-600" for="filtro-colaborador">Colaborador</label>
+                        <select id="filtro-colaborador" name="colaborador"
+                                class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 filter-select">
+                            <option value="">Todos os colaboradores</option>
+                            {% for colaborador in colaboradores %}
+                                <option value="{{ colaborador.id }}" {% if colaborador_atual == colaborador.id %}selected{% endif %}>
+                                    {{ colaborador.nome }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </form>
             </div>
 
@@ -190,16 +213,19 @@
 
     <script src="{% static 'js/htmx.min.js' %}"></script>
     <script>
-        let currentMonth = Number.parseInt("{{ mes_atual|default:0 }}");
-        let currentYear = Number.parseInt("{{ ano_atual|default:0 }}");
-
-        document.querySelector('select[name="mes"]').addEventListener('change', e => currentMonth = Number.parseIntparseInt(e.target.value));
-        document.querySelector('select[name="ano"]').addEventListener('change', e => currentYear = Number.parseIntparseInt(e.target.value));
-
+        const filterForm = document.querySelector('.filter-form');
         const pdfModal = document.getElementById('pdfModal');
-        const exportButton = document.getElementById('exportPdfButton');
+        const exportButton = document.getElementById('openExportPdfButton');
         const confirmButton = document.getElementById('confirmExport');
         const cancelButton = document.getElementById('cancelExport');
+
+        function buildFilterQuery() {
+            if (!filterForm) {
+                return "";
+            }
+            const params = new URLSearchParams(new FormData(filterForm));
+            return params.toString();
+        }
 
         function openModal(modal) {
             modal.classList.add('active');
@@ -211,12 +237,16 @@
             document.body.classList.remove('modal-open');
         }
 
-        exportButton.addEventListener('click', () => openModal(pdfModal));
+        if (exportButton) {
+            exportButton.addEventListener('click', () => openModal(pdfModal));
+        }
         cancelButton.addEventListener('click', closePdfModal);
 
         confirmButton.addEventListener('click', function() {
             closePdfModal();
-            globalThis.location.href = "{% url 'exportar_atividade_pdf' %}?mes=" + currentMonth + "&ano=" + currentYear;
+            const query = buildFilterQuery();
+            const baseUrl = "{% url 'exportar_atividade_pdf' %}";
+            globalThis.location.href = query ? `${baseUrl}?${query}` : baseUrl;
         });
 
         pdfModal.addEventListener('click', function(e) {
