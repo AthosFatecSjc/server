@@ -27,6 +27,27 @@ class DimProjeto(models.Model):
         return pformat(self.__dict__, indent=4, width=120)
 
 
+class DimModulo(models.Model):
+    """Dimensão responsável por representar módulo/epic das issues."""
+
+    id = models.AutoField(primary_key=True)
+    nome = models.CharField(max_length=255)
+    jira_id = models.PositiveIntegerField(null=True, blank=True)
+    projeto = models.ForeignKey(
+        "DimProjeto", on_delete=models.CASCADE, null=True, blank=True
+    )
+    source_tipo_issue_id = models.PositiveIntegerField(
+        null=True, blank=True, unique=True
+    )
+
+    class Meta:
+        db_table = "dim_modulo"
+        indexes = [models.Index(fields=["jira_id"])]
+
+    def __str__(self):
+        return pformat(self.__dict__, indent=4, width=120)
+
+
 class DimCargo(models.Model):
     nome_cargo = models.CharField(max_length=20, unique=True)
 
@@ -162,6 +183,13 @@ class DimIssue(models.Model):
     issue_type = models.CharField(max_length=30, blank=True)
     issue_title = models.CharField(max_length=200, blank=True)
     created_date = models.DateField(null=True, blank=True)
+    modulo = models.ForeignKey(
+        DimModulo,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="issues",
+    )
 
     class Meta:
         db_table = "dim_issue"
@@ -178,6 +206,13 @@ class FatoRegistroHoras(models.Model):
     funcionario = models.ForeignKey(DimFuncionario, on_delete=models.CASCADE, null=True)
     projeto = models.ForeignKey(DimProjeto, on_delete=models.CASCADE, null=True)
     data = models.ForeignKey(DimTempo, on_delete=models.CASCADE, null=True)
+    modulo = models.ForeignKey(
+        DimModulo,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="registros",
+    )
     horas_trabalhadas = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     custo = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     # referencia para a dimensão de issues (somente FK aqui)
@@ -202,8 +237,8 @@ class FatoRegistroHoras(models.Model):
                 check=Q(custo__gte=0), name="custo_total_non_negative"
             ),
             models.UniqueConstraint(
-                fields=["funcionario_id", "projeto_id", "data_id"],
-                name="unique_fato_per_day",
+                fields=["funcionario_id", "projeto_id", "data_id", "modulo_id"],
+                name="unique_fato_por_modulo",
             ),
         ]
 

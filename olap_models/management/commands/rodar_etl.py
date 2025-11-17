@@ -7,13 +7,14 @@ from django.db.utils import OperationalError, ProgrammingError
 
 # Modelos OLTP
 # usado para granularidade diária
-from apps.relatorios.models import Cargo, Funcionario, Issue, Projeto
+from apps.relatorios.models import Cargo, Funcionario, Issue, Projeto, TipoIssue
 
 # Modelos OLAP
 from olap_models.models import (
     DimCargo,
     DimFuncionario,
     DimIssue,
+    DimModulo,
     DimProjeto,
     DimTempo,
     FatoRegistroHoras,
@@ -44,6 +45,7 @@ class Command(BaseCommand):
         self.limpar_tabelas_olap()
         self.popular_dim_tempo()
         self.popular_dimensoes_simples()
+        self.popular_dim_modulo()
         self.popular_dim_funcionario()
         self.popular_dim_issue()
         self.popular_fato_registro_horas()
@@ -60,6 +62,8 @@ class Command(BaseCommand):
         """
         self.stdout.write(" Limpando tabelas OLAP...")
         FatoRegistroHoras.objects.using("olap").all().delete()
+        DimIssue.objects.using("olap").all().delete()
+        DimModulo.objects.using("olap").all().delete()
         DimFuncionario.objects.using("olap").all().delete()
         DimCargo.objects.using("olap").all().delete()
         DimProjeto.objects.using("olap").all().delete()
@@ -81,10 +85,18 @@ class Command(BaseCommand):
         if DimIssue._meta.db_table not in existing_tables:
             self._criar_tabela_dim_issue(connection)
 
+        if DimModulo._meta.db_table not in existing_tables:
+            self._criar_tabela_dim_modulo(connection)
+
         if not self._tabela_possui_coluna(
             connection, FatoRegistroHoras._meta.db_table, "issue_id"
         ):
             self._adicionar_fk_issue_em_fato(connection)
+
+        if not self._tabela_possui_coluna(
+            connection, FatoRegistroHoras._meta.db_table, "modulo_id"
+        ):
+            self._adicionar_fk_modulo_em_fato(connection)
 
     def _criar_tabela_dim_issue(self, connection):
         self.stdout.write(" Criando tabela DimIssue no banco OLAP...")
@@ -107,6 +119,29 @@ class Command(BaseCommand):
         except Exception as exc:
             raise CommandError(
                 f"Falha ao adicionar a coluna issue_id em {FatoRegistroHoras._meta.db_table}: {exc}"
+            ) from exc
+
+    def _criar_tabela_dim_modulo(self, connection):
+        self.stdout.write(" Criando tabela DimModulo no banco OLAP...")
+        try:
+            with connection.schema_editor() as schema_editor:
+                schema_editor.create_model(DimModulo)
+        except Exception as exc:
+            raise CommandError(
+                f"Falha ao criar a tabela {DimModulo._meta.db_table}: {exc}"
+            ) from exc
+
+    def _adicionar_fk_modulo_em_fato(self, connection):
+        self.stdout.write(
+            " Adicionando coluna de relacionamento Módulo em FatoRegistroHoras..."
+        )
+        modulo_field = FatoRegistroHoras._meta.get_field("modulo")
+        try:
+            with connection.schema_editor() as schema_editor:
+                schema_editor.add_field(FatoRegistroHoras, modulo_field)
+        except Exception as exc:
+            raise CommandError(
+                f"Falha ao adicionar a coluna modulo_id em {FatoRegistroHoras._meta.db_table}: {exc}"
             ) from exc
 
     def _tabela_possui_coluna(self, connection, table_name, column_name):
@@ -199,6 +234,46 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(" DimCargo e DimProjeto populadas."))
 
+    def popular_dim_modulo(self):
+        """Popula DimModulo a partir dos tipos de issue do OLTP."""
+
+        self.stdout.write(" Populando Dimensão Módulo/Epic...")
+
+        criados = 0
+        atualizados = 0
+
+        DimModulo.objects.using("olap").update_or_create(
+            source_tipo_issue_id=None,
+            defaults={"nome": "Não mapeado", "jira_id": None, "projeto": None},
+        )
+
+        for tipo in (
+            TipoIssue.objects.select_related("projeto")
+            .order_by("projeto_id", "nome")
+            .all()
+        ):
+            projeto_dim = (
+                DimProjeto.objects.using("olap").filter(id=tipo.projeto_id).first()
+            )
+            _, created = DimModulo.objects.using("olap").update_or_create(
+                source_tipo_issue_id=tipo.id,
+                defaults={
+                    "nome": tipo.nome,
+                    "jira_id": tipo.jira_id,
+                    "projeto": projeto_dim,
+                },
+            )
+            if created:
+                criados += 1
+            else:
+                atualizados += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f" DimModulo populada ({criados} criados, {atualizados} atualizados)."
+            )
+        )
+
     def popular_dim_funcionario(self):
         """
         Popula DimFuncionario, corrigindo campos texto e relacionamentos.
@@ -252,13 +327,27 @@ class Command(BaseCommand):
             issue_key = issue.jira_key if issue.jira_key else str(issue.jira_id)
             created_date = issue.criado_em.date() if issue.criado_em else None
             issue_type = issue.tipo_issue.nome if issue.tipo_issue else None
+            modulo_dim = None
+            if issue.tipo_issue_id:
+                modulo_dim = (
+                    DimModulo.objects.using("olap")
+                    .filter(source_tipo_issue_id=issue.tipo_issue_id)
+                    .first()
+                )
+            if not modulo_dim:
+                modulo_dim = (
+                    DimModulo.objects.using("olap")
+                    .filter(source_tipo_issue_id=None)
+                    .first()
+                )
 
             DimIssue.objects.using("olap").update_or_create(
                 issue_id=issue_key,
                 defaults={
-                    "issue_type": issue_type,
+                    "issue_type": issue_type or (modulo_dim.nome if modulo_dim else ""),
                     "issue_title": issue.titulo,
                     "created_date": created_date,
+                    "modulo": modulo_dim,
                 },
             )
             count += 1
@@ -286,6 +375,11 @@ class Command(BaseCommand):
         issues_dim = {
             issue.issue_id: issue for issue in DimIssue.objects.using("olap").all()
         }
+        modulos_dim = {
+            modulo.source_tipo_issue_id: modulo
+            for modulo in DimModulo.objects.using("olap").all()
+        }
+        modulo_default = modulos_dim.get(None)
 
         acumulado = {}
 
@@ -303,12 +397,17 @@ class Command(BaseCommand):
             func_dim = funcionarios_dim.get(funcionario_id)
             projeto_dim = projetos_dim.get(issue.projeto_id)
             data_dim = tempos_dim.get(data_completa)
+            modulo_dim = None
+            if issue.tipo_issue_id:
+                modulo_dim = modulos_dim.get(issue.tipo_issue_id)
+            modulo_dim = modulo_dim or modulo_default
             if not (func_dim and projeto_dim and data_dim):
                 registros_ignorados += 1
                 continue
 
             horas_issue = Decimal(issue.tempo_gasto_seconds or 0) / Decimal("3600")
-            key = (funcionario_id, issue.projeto_id, data_completa)
+            modulo_key = modulo_dim.id if modulo_dim else None
+            key = (funcionario_id, issue.projeto_id, data_completa, modulo_key)
 
             entry = acumulado.setdefault(
                 key,
@@ -318,6 +417,7 @@ class Command(BaseCommand):
                     "data": data_dim,
                     "horas": Decimal("0"),
                     "custo": Decimal("0"),
+                    "modulo": modulo_dim,
                     "issue": None,
                 },
             )
@@ -339,6 +439,7 @@ class Command(BaseCommand):
                     "custo": entry["custo"].quantize(
                         duas_casas, rounding=ROUND_HALF_UP
                     ),
+                    "modulo": entry["modulo"],
                     "issue": entry["issue"],
                 },
             )
