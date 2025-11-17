@@ -58,6 +58,7 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor/Hora (R$)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contrato</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                             </tr>
                         </thead>
@@ -77,8 +78,11 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="font-medium text-gray-900">R$ {{ dev.valor_hora|floatformat:2 }}</span>
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-gray-800 font-medium">{{ dev.contrato_label }}</span>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <button onclick="openEditModal('{{ dev.id }}', '{{ dev.valor_hora }}', '{{ dev.nome|escapejs }}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
+                                    <button onclick="openEditModal('{{ dev.id }}', '{{ dev.valor_hora }}', '{{ dev.nome|escapejs }}', '{{ dev.contrato }}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                 </td>
@@ -176,6 +180,15 @@
                         <p class="text-xs text-gray-500 mt-1">Digite o valor sem o símbolo R$</p>
                     </div>
 
+                    <div>
+                        <label for="contractType" class="block text-sm font-medium text-gray-700 mb-2">Tipo de Contrato</label>
+                        <select id="contractType" class="block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                            <option value="CLT">CLT · 8h/dia (padrão)</option>
+                            <option value="ESTAGIARIO">Estagiário · 6h/dia</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1" id="metaSuggestion">Meta sugerida (mês atual): --</p>
+                    </div>
+
                     <div class="flex justify-end space-x-3 pt-4">
                         <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">Cancelar</button>
                         <button type="button" onclick="saveDeveloperRate()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
@@ -198,12 +211,47 @@
 
     <script>
         let currentDeveloper = null;
+        const HOURS_PER_CONTRACT = { CLT: 8, ESTAGIARIO: 6 };
+        const contractSelect = document.getElementById('contractType');
+        const metaSuggestion = document.getElementById('metaSuggestion');
 
-        function openEditModal(developerId, currentRate, developerName) {
+        function obterDiasUteisMesAtual() {
+            const hoje = new Date();
+            const ano = hoje.getFullYear();
+            const mes = hoje.getMonth();
+            const totalDias = new Date(ano, mes + 1, 0).getDate();
+            let diasUteis = 0;
+            for (let dia = 1; dia <= totalDias; dia += 1) {
+                const data = new Date(ano, mes, dia);
+                const weekday = data.getDay();
+                if (weekday !== 0 && weekday !== 6) {
+                    diasUteis += 1;
+                }
+            }
+            return diasUteis;
+        }
+        const diasUteisMesAtual = obterDiasUteisMesAtual();
+
+        function atualizarMetaSugerida() {
+            if (!contractSelect || !metaSuggestion) {
+                return;
+            }
+            const tipo = contractSelect.value || "CLT";
+            const horasDia = HOURS_PER_CONTRACT[tipo] || HOURS_PER_CONTRACT.CLT;
+            const meta = horasDia * diasUteisMesAtual;
+            metaSuggestion.textContent = `Meta sugerida (mês atual): ${meta.toFixed(1)} horas`;
+        }
+        if (contractSelect) {
+            contractSelect.addEventListener('change', atualizarMetaSugerida);
+            atualizarMetaSugerida();
+        }
+
+        function openEditModal(developerId, currentRate, developerName, contractType) {
             currentDeveloper = {
                 id: developerId,
                 name: developerName,
-                currentRate: currentRate
+                currentRate: currentRate,
+                contract: contractType || "CLT"
             };
 
             document.getElementById('developerId').value = developerId;
@@ -212,6 +260,10 @@
 
             document.getElementById('hourlyRate').value = formattedRate;
             document.getElementById('developerName').textContent = developerName;
+            if (contractSelect) {
+                contractSelect.value = (contractType || "CLT").toUpperCase();
+                atualizarMetaSugerida();
+            }
 
             const modal = document.getElementById('editModal');
             const modalContent = document.getElementById('modalContent');
@@ -253,6 +305,7 @@
             const hourlyRate = document.getElementById('hourlyRate').value;
             const developerId = document.getElementById('developerId').value;
             const developerName = currentDeveloper.name;
+            const contractType = contractSelect ? contractSelect.value : "CLT";
 
             if (!hourlyRate) {
                 alert('Por favor, insira um valor para a hora.');
@@ -268,6 +321,7 @@
                 }
 
                 console.log('Enviando requisição para atualizar valor...');
+                currentDeveloper.contract = contractType;
 
                 const response = await fetch('/dashboards/desenvolvedores/atualizar-valor/', {
                     method: 'POST',
@@ -278,7 +332,8 @@
                     body: JSON.stringify({
                         desenvolvedor_id: developerId,
                         desenvolvedor_nome: developerName,
-                        valor_hora: valorHoraDecimal
+                        valor_hora: valorHoraDecimal,
+                        contrato: contractType
                     })
                 });
 
@@ -368,8 +423,11 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="font-medium text-gray-900">R$ ${formatarValorParaExibicao(dev.valor_hora)}</span>
                     </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-gray-800 font-medium">${dev.contrato_label || 'CLT'}</span>
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <button onclick="openEditModal('${dev.id}', '${dev.valor_hora}', '${dev.nome.replaceAll("'", String.raw`\'`)}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
+                        <button onclick="openEditModal('${dev.id}', '${dev.valor_hora}', '${dev.nome.replaceAll("'", String.raw`\'`)}', '${(dev.contrato || 'CLT')}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
                             <i class="fas fa-edit"></i>
                         </button>
                     </td>

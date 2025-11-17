@@ -3,17 +3,18 @@
 import json
 from datetime import datetime
 
-from django.db.models.functions import ExtractMonth, ExtractYear
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 
-from apps.relatorios.models import TempoGastoEquipe
 from apps.relatorios.produtividade.services import (
+    MESES_PORTUGUES,
     atualizar_meta_funcionario,
     atualizar_multiplos_dias,
     calcular_spends_por_dev_com_legendas,
     exportar_produtividade_pdf,
+    listar_equipes_disponiveis,
+    listar_meses_disponiveis,
 )
 
 
@@ -21,65 +22,49 @@ from apps.relatorios.produtividade.services import (
 def index(request):
     mes_param = request.GET.get("mes")
     ano_param = request.GET.get("ano")
+    mes_ano_param = request.GET.get("mes_ano")
+    equipe = request.GET.get("equipe") or None
 
+    if mes_ano_param and "-" in mes_ano_param:
+        try:
+            mes_param, ano_param = mes_ano_param.split("-", 1)
+        except ValueError:
+            mes_param = ano_param = None
+
+    meses_disponiveis = listar_meses_disponiveis()
     if mes_param and ano_param:
-        mes = int(mes_param)
-        ano = int(ano_param)
+        try:
+            mes = int(mes_param)
+            ano = int(ano_param)
+        except (TypeError, ValueError):
+            mes = meses_disponiveis[0]["mes"]
+            ano = meses_disponiveis[0]["ano"]
     else:
-        hoje = datetime.now()
-        mes = hoje.month
-        ano = hoje.year
+        mes = meses_disponiveis[0]["mes"]
+        ano = meses_disponiveis[0]["ano"]
 
-    MESES_PORTUGUES = {
-        1: "Janeiro",
-        2: "Fevereiro",
-        3: "Março",
-        4: "Abril",
-        5: "Maio",
-        6: "Junho",
-        7: "Julho",
-        8: "Agosto",
-        9: "Setembro",
-        10: "Outubro",
-        11: "Novembro",
-        12: "Dezembro",
+    dados = calcular_spends_por_dev_com_legendas(mes, ano, equipe)
+    equipes = listar_equipes_disponiveis()
+    header_context = {
+        "breadcrumb": "Relatórios",
+        "title": "Gestão à Vista - Operacional",
+        "subtitle": "Calendário diário de produtividade, metas e ausências",
+        "show_export": True,
     }
-
-    meses_disponiveis_query = (
-        TempoGastoEquipe.objects.annotate(
-            ano=ExtractYear("mes"),
-            mes_num=ExtractMonth("mes"),
-        )
-        .values("ano", "mes_num")
-        .distinct()
-    )
-
-    meses_disponiveis = []
-    for item in meses_disponiveis_query:
-        mes_num = int(item["mes_num"])
-        meses_disponiveis.append(
-            {
-                "mes": mes_num,
-                "ano": int(item["ano"]),
-                "mes_nome": MESES_PORTUGUES.get(mes_num, f"Mês {mes_num}"),
-            }
-        )
-
-    meses_disponiveis.sort(key=lambda x: (x["ano"], x["mes"]), reverse=True)
-
-    resultados = calcular_spends_por_dev_com_legendas(mes, ano)
-    dias = list(range(1, 32))
 
     return render(
         request,
         "produtividade/index.html",
         {
-            "resultados": resultados,
+            "resultados": dados["resultados"],
             "mes": mes,
             "ano": ano,
-            "dias": dias,
+            "dias": dados["dias"],
             "meses_disponiveis": meses_disponiveis,
+            "equipes": equipes,
+            "equipe_selecionada": equipe,
             "mes_nome": MESES_PORTUGUES.get(mes, f"Mês {mes}"),
+            "header_context": header_context,
         },
     )
 
@@ -88,6 +73,7 @@ def index(request):
 def exportar_pdf(request):
     mes_param = request.GET.get("mes")
     ano_param = request.GET.get("ano")
+    equipe = request.GET.get("equipe") or None
 
     if mes_param and ano_param:
         mes = int(mes_param)
@@ -97,23 +83,8 @@ def exportar_pdf(request):
         mes = hoje.month
         ano = hoje.year
 
-    resultados = calcular_spends_por_dev_com_legendas(mes, ano)
-    pdf = exportar_produtividade_pdf(mes, ano, resultados)
-
-    MESES_PORTUGUES = {
-        1: "Janeiro",
-        2: "Fevereiro",
-        3: "Março",
-        4: "Abril",
-        5: "Maio",
-        6: "Junho",
-        7: "Julho",
-        8: "Agosto",
-        9: "Setembro",
-        10: "Outubro",
-        11: "Novembro",
-        12: "Dezembro",
-    }
+    dados = calcular_spends_por_dev_com_legendas(mes, ano, equipe)
+    pdf = exportar_produtividade_pdf(mes, ano, dados["resultados"])
 
     filename = f"produtividade_{MESES_PORTUGUES.get(mes)}_{ano}.pdf"
 
@@ -138,9 +109,11 @@ def atualizar_legenda(request):
             f"Recebendo requisição: funcionario_id={funcionario_id}, mes={mes}, ano={ano}, dias={dias}, codigo={codigo}"
         )
 
-        success = atualizar_multiplos_dias(funcionario_id, mes, ano, dias, codigo)
+        success, error = atualizar_multiplos_dias(
+            funcionario_id, mes, ano, dias, codigo
+        )
 
-        return JsonResponse({"success": success})
+        return JsonResponse({"success": success, "error": error})
     except Exception as e:
         print(f"Erro na view atualizar_legenda: {e}")
         return JsonResponse({"success": False, "error": str(e)})
