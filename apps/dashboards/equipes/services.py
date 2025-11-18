@@ -108,12 +108,10 @@ class DashboardEquipesService:
         )
 
         datas_unicas = sorted(
-            set(
-                [
-                    item["data__data_completa"].strftime("%d/%m")
-                    for item in horas_por_dia_dev
-                ]
-            )
+            {
+                item["data__data_completa"].strftime("%d/%m")
+                for item in horas_por_dia_dev
+            }
         )
         desenvolvedores_unicos = DimFuncionario.objects.all()
 
