@@ -1,0 +1,98 @@
+<!-- templates/equipes/components/grafico_modulos_epics.html -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-200">
+    <div class="p-6 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900">Distribuição de Horas por Módulo/Epic</h2>
+        <p class="text-gray-500">Visualize como cada desenvolvedor distribuiu as horas entre os módulos do projeto</p>
+    </div>
+    <div class="p-6">
+        <div class="h-[850px]">
+            <canvas id="moduleHoursLineChart" style="height: 850px !important; width: 100% !important;"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    function initModuleHoursLineChart() {
+        const moduleLineCtx = document.getElementById('moduleHoursLineChart').getContext('2d');
+        window.moduleLineChart = new Chart(moduleLineCtx, {
+            type: 'line',
+            data: getModuleLineChartData(),
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y}h`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Módulos/Epics'
+                        },
+                        grid: {
+                            display: true,
+                            drawBorder: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Horas Trabalhadas'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + 'h';
+                            }
+                        },
+                        grid: {
+                            drawBorder: false
+                        }
+                    }
+                },
+                elements: {
+                    line: {
+                        tension: 0.4
+                    },
+                    point: {
+                        radius: 6,
+                        hoverRadius: 8
+                    }
+                }
+            }
+        });
+    }
+
+    function getModuleLineChartData() {
+        const modules = ["Autenticação", "Dashboard", "API Gateway", "Mobile", "Infraestrutura"];
+
+        return {
+            labels: modules,
+            datasets: window.ALL_DEVS.map(dev => {
+                const devData = window.horasPorDevPorModuloData.find(d => d.desenvolvedor === dev);
+                return {
+                    label: dev,
+                    data: modules.map(module => devData ? devData[module] : 0),
+                    borderColor: window.DEV_COLORS[dev],
+                    backgroundColor: window.DEV_COLORS[dev] + '20',
+                    pointBackgroundColor: window.DEV_COLORS[dev],
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                };
+            })
+        };
+    }
+</script>

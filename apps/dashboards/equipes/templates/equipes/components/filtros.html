@@ -1,0 +1,85 @@
+<div class="bg-white rounded-2xl shadow-lg border border-gray-200">
+    <div class="p-6 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+            </svg>
+            Filtros
+        </h2>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="text-xs text-gray-500 mb-2 block">Projeto</label>
+                <select id="projectSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos os projetos</option>
+                    {% for projeto in projetos %}
+                    <option value="{{ projeto.id }}" {% if request.GET.projeto == projeto.id|stringformat:"s" %}selected{% endif %}>
+                        {{ projeto.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="text-xs text-gray-500 mb-2 block">Período</label>
+                <div class="flex gap-2">
+                    <input type="date" id="dateFrom" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           value="{{ request.GET.data_inicio|default:data_inicio_default }}">
+                    <input type="date" id="dateTo" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           value="{{ request.GET.data_fim|default:data_fim_default }}">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-gray-500 mb-2 block">Desenvolvedores (<span id="selectedDevsCount">{{ devs_selected_count }}</span> selecionados)</label>
+                <div class="relative">
+                    <button onclick="toggleDevsDropdown()" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span id="devsDisplay" class="truncate">
+                            {% with selected_devs=devs|dictsort:"selected" %}
+                                {% for dev in selected_devs %}
+                                    {% if dev.selected %}
+                                        {{ dev.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endif %}
+                                {% empty %}
+                                    Selecione desenvolvedores
+                                {% endfor %}
+                            {% endwith %}
+                        </span>
+                    </button>
+                    <div id="devsDropdown" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                        <div class="p-3 space-y-2">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-semibold text-sm">Selecione os Desenvolvedores</span>
+                                <button type="button" onclick="toggleAllDevs()" class="text-xs text-blue-600 hover:text-blue-800">
+                                    <span id="toggleAllText">Limpar</span>
+                                </button>
+                            </div>
+                            {% for dev in devs %}
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" id="dev{{ forloop.counter }}" value="{{ dev.name }}"
+                                       class="dev-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                       {% if dev.selected %}checked{% endif %}>
+                                <label for="dev{{ forloop.counter }}" class="flex items-center gap-2 cursor-pointer text-sm">
+                                    <div class="w-3 h-3 rounded-full" style="background-color: {{ dev.color }}"></div>
+                                    {{ dev.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3 text-sm text-gray-500">
+            <span class="font-medium">Período selecionado: </span>
+            <span id="periodDisplay">
+                {% if request.GET.data_inicio and request.GET.data_fim %}
+                    {{ request.GET.data_inicio }} até {{ request.GET.data_fim }}
+                {% else %}
+                    {{ data_inicio_default }} até {{ data_fim_default }}
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</div>

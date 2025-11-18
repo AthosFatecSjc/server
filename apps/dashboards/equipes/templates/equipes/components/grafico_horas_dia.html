@@ -1,0 +1,89 @@
+<div class="bg-white rounded-2xl shadow-lg border border-gray-200">
+    <div class="p-6 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900">Horas Trabalhadas por Dia</h2>
+        <p class="text-gray-500">Comparação diária de horas trabalhadas - <span id="selectedDevsChartCount">{{ devs_selected_count }}</span> desenvolvedor(es) selecionado(s)</p>
+    </div>
+    <div class="p-6">
+        <div class="h-[450px]">
+            <canvas id="dailyHoursChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    function initDailyHoursChart() {
+        const dailyCtx = document.getElementById('dailyHoursChart').getContext('2d');
+        window.dailyChart = new Chart(dailyCtx, {
+            type: 'bar',
+            data: getDailyChartData(),
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y}h`;
+                            },
+                            afterBody: function(context) {
+                                const total = context.reduce((acc, curr) => acc + curr.parsed.y, 0);
+                                return `Total do dia: ${total}h`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: true,
+                            drawBorder: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value + 'h';
+                            }
+                        },
+                        grid: {
+                            drawBorder: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function getDailyChartData() {
+        const filteredData = filterDataByDateRange().map(day => {
+            const filtered = { data: day.data };
+            window.selectedDevs.forEach(dev => {
+                filtered[dev] = day[dev];
+            });
+            return filtered;
+        });
+
+        return {
+            labels: filteredData.map(d => d.data),
+            datasets: window.selectedDevs.map(dev => ({
+                label: dev,
+                data: filteredData.map(d => d[dev]),
+                backgroundColor: window.DEV_COLORS[dev],
+                borderRadius: 4
+            }))
+        };
+    }
+
+    function updateDailyChart() {
+        if (window.dailyChart) {
+            window.dailyChart.data = getDailyChartData();
+            window.dailyChart.update();
+        }
+    }
+</script>

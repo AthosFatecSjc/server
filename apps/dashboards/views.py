@@ -17,5 +17,11 @@ def index(request):
             "descricao": "Análise completa de custos, issues e bugs do projeto",
             "categoria": "Análise",
         },
+        {
+            "nome": "Dashboard de Produtividade da Equipe",
+            "url": "equipes/",
+            "descricao": "Análise completa de Productividade da Equipe",
+            "categoria": "Análise",
+        },
     ]
     return render(request, "dashboards/index.html", {"dashboards": dashboards})

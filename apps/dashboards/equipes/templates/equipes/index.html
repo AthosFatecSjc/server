@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+{% include "dashboards/_header.html" with header=header_context %}
+
+<div class="h-6"></div>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Equipes</title>
+    <link
+        href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+        rel="stylesheet"
+        integrity="sha384-HtMZLkYo+pR5/u7zCzXxMJP6QoNnQJt1qkHM0EaOPvGDIzaVZbmYr/TlvUZ/sKAg"
+        crossorigin="anonymous"
+    />
+    <script src="{% static 'libs/chartjs/chart.umd.min.js' %}" crossorigin="anonymous"></script>
+    <script src="{% static 'libs/chartjs/chartjs-plugin-datalabels.min.js' %}" crossorigin="anonymous"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+        integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H"
+        crossorigin="anonymous"
+    ></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+        integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk"
+        crossorigin="anonymous"
+    ></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+    <div class="space-y-6 mx-auto">
+
+        {% include "equipes/components/filtros.html" %}
+
+        <div class="grid grid-cols-1 gap-6">
+            {% include "equipes/components/grafico_horas_dia.html" %}
+
+            {% include "equipes/components/grafico_modulos_epics.html" %}
+
+        </div>
+    </div>
+
+    {{ daily_data|json_script:"daily-data-json" }}
+    {{ module_data|json_script:"module-data-json" }}
+    {{ devs|json_script:"devs-json" }}
+
+    <script>
+        window.horasPorDevPorDiaData = JSON.parse(
+            document.getElementById("daily-data-json").textContent
+        );
+        window.horasPorDevPorModuloData = JSON.parse(
+            document.getElementById("module-data-json").textContent
+        );
+        const devsData = JSON.parse(
+            document.getElementById("devs-json").textContent
+        );
+
+        window.DEV_COLORS = devsData.reduce((acc, dev) => {
+            acc[dev.name] = dev.color;
+            return acc;
+        }, {});
+
+        window.MODULO_COLORS = {
+            "Autenticação": "#0057B8",
+            "Dashboard": "#3b82f6",
+            "API Gateway": "#60a5fa",
+            "Mobile": "#93c5fd",
+            "Infraestrutura": "#bfdbfe"
+        };
+
+        window.ALL_DEVS = devsData.map(dev => dev.name);
+        window.selectedDevs = devsData
+            .filter(dev => dev.selected)
+            .map(dev => dev.name);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDevsDisplay();
+            updatePeriodDisplay();
+            initCharts();
+            setupEventListeners();
+        });
+
+        function initCharts() {
+            initDailyHoursChart();
+            initModuleHoursLineChart();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('projectSelect').addEventListener('change', aplicarFiltros);
+            document.getElementById('dateFrom').addEventListener('change', aplicarFiltros);
+            document.getElementById('dateTo').addEventListener('change', aplicarFiltros);
+
+            document.querySelectorAll('.dev-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateSelectedDevs();
+                    aplicarFiltros();
+                });
+            });
+        }
+
+        function aplicarFiltros() {
+            const projetoId = document.getElementById('projectSelect').value;
+            const dataInicio = document.getElementById('dateFrom').value;
+            const dataFim = document.getElementById('dateTo').value;
+            const desenvolvedoresSelecionados = Array.from(document.querySelectorAll('.dev-checkbox:checked'))
+                .map(cb => cb.value);
+
+            const params = new URLSearchParams();
+
+            if (projetoId) params.append('projeto', projetoId);
+            if (dataInicio) params.append('data_inicio', dataInicio);
+            if (dataFim) params.append('data_fim', dataFim);
+            desenvolvedoresSelecionados.forEach(dev => params.append('desenvolvedores', dev));
+
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        }
+
+        function updateSelectedDevs() {
+            window.selectedDevs = Array.from(document.querySelectorAll('.dev-checkbox:checked'))
+                .map(cb => cb.value);
+
+            updateDevsDisplay();
+            updateDailyChart();
+        }
+
+        function updateDevsDisplay() {
+            const count = window.selectedDevs.length;
+            document.getElementById('selectedDevsCount').textContent = count;
+            document.getElementById('selectedDevsChartCount').textContent = count;
+
+            let displayText;
+            if (count === 0) {
+                displayText = "Selecione desenvolvedores";
+            } else if (count === window.ALL_DEVS.length) {
+                displayText = "Todos selecionados";
+            } else {
+                displayText = window.selectedDevs.join(", ");
+            }
+            document.getElementById('devsDisplay').textContent = displayText;
+        }
+
+        function toggleDevsDropdown() {
+            const dropdown = document.getElementById('devsDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function toggleAllDevs() {
+            const checkboxes = document.querySelectorAll('.dev-checkbox');
+            const allChecked = window.selectedDevs.length === window.ALL_DEVS.length;
+
+            checkboxes.forEach(cb => {
+                cb.checked = !allChecked;
+            });
+
+            updateSelectedDevs();
+        }
+
+        function updatePeriodDisplay() {
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+
+            if (from && to) {
+                const fromDate = new Date(from + 'T00:00:00');
+                const toDate = new Date(to + 'T23:59:59');
+                const days = Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+
+                const fromStr = formatDateForDisplay(fromDate);
+                const toStr = formatDateForDisplay(toDate);
+
+                document.getElementById('periodDisplay').textContent =
+                    `${fromStr} até ${toStr} (${days} dias)`;
+            } else {
+                document.getElementById('periodDisplay').textContent = "Nenhum período selecionado";
+            }
+        }
+
+        function formatDateForDisplay(date) {
+            const options = {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            };
+            return date.toLocaleDateString('pt-BR', options);
+        }
+
+        function filterDataByDateRange() {
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+
+            if (!from || !to) {
+                return window.horasPorDevPorDiaData;
+            }
+
+            const fromDate = new Date(from + 'T00:00:00');
+            const toDate = new Date(to + 'T23:59:59');
+
+            return window.horasPorDevPorDiaData.filter(day => {
+                const [dayStr, monthStr] = day.data.split('/');
+                const dayDate = new Date(2025, parseInt(monthStr) - 1, parseInt(dayStr));
+
+                return dayDate >= fromDate && dayDate <= toDate;
+            });
+        }
+
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('devsDropdown');
+            const trigger = document.querySelector('[onclick="toggleDevsDropdown()"]');
+
+            if (dropdown && trigger && !trigger.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
+{% endblock %}
