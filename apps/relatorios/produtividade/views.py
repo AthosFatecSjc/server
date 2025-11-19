@@ -16,8 +16,10 @@ from apps.relatorios.produtividade.services import (
     listar_equipes_disponiveis,
     listar_meses_disponiveis,
 )
+from apps.usuarios.decorators import perfil_gerente_required
 
 
+@perfil_gerente_required
 @require_GET
 def index(request):
     mes_param = request.GET.get("mes")
@@ -69,6 +71,7 @@ def index(request):
     )
 
 
+@perfil_gerente_required
 @require_GET
 def exportar_pdf(request):
     mes_param = request.GET.get("mes")
@@ -95,6 +98,7 @@ def exportar_pdf(request):
     return response
 
 
+@perfil_gerente_required
 @require_POST
 def atualizar_legenda(request):
     try:
@@ -119,6 +123,7 @@ def atualizar_legenda(request):
         return JsonResponse({"success": False, "error": str(e)})
 
 
+@perfil_gerente_required
 @require_POST
 def atualizar_meta(request):
     try:
