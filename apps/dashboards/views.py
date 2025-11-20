@@ -1,7 +1,10 @@
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
-from apps.usuarios.decorators import perfil_lider_required
+from apps.usuarios.decorators import (
+    perfil_lider_required,
+    perfil_membro_or_above_required,
+)
 from apps.usuarios.models import PerfilAcessoChoices
 
 ACESSO_PRIORITY = [
@@ -29,7 +32,11 @@ DASHBOARDS_DEFINITIONS = [
         "categoria": "Análise",
         "categoria_badge": "Análise",
         "funcionalidades": "Três dashboards integrados: custos, issues abertas e bugs",
-        "perfis": {PerfilAcessoChoices.GERENTE, PerfilAcessoChoices.LIDER},
+        "perfis": {
+            PerfilAcessoChoices.GERENTE,
+            PerfilAcessoChoices.LIDER,
+            PerfilAcessoChoices.MEMBRO,
+        },
         "icon": "icon-activity",
         "icon_container_class": "icon-container--orange",
     },
@@ -71,7 +78,7 @@ def _dashboards_visiveis(perfil_usuario: str) -> list[dict]:
     return visiveis
 
 
-@perfil_lider_required
+@perfil_membro_or_above_required
 @require_http_methods(["GET"])
 def index(request):
     perfil_usuario = getattr(request.user, "perfil_acesso", None)

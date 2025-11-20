@@ -4,10 +4,11 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ImproperlyConfigured
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
 from apps.usuarios.models import ContratoChoices, PerfilAcessoChoices
+from apps.usuarios.views import UsuarioListView
 
 
 def _ensure_secret_key():
@@ -76,6 +77,7 @@ class UsuarioViewsTests(TestCase):
 
     def setUp(self):
         self.client.force_login(self.gerente)
+        self.factory = RequestFactory()
 
     def test_list_view_aplica_filtros(self):
         url = reverse("usuarios:lista")
@@ -131,9 +133,9 @@ class UsuarioViewsTests(TestCase):
     def test_lider_recebe_403_na_gestao(self):
         self.lider.ativo = True
         self.lider.save(update_fields=["ativo"])
-        self.client.logout()
-        self.client.force_login(self.lider)
-        response = self.client.get(reverse("usuarios:lista"))
+        request = self.factory.get(reverse("usuarios:lista"))
+        request.user = self.lider
+        response = UsuarioListView.as_view()(request)
         self.assertEqual(response.status_code, 403)
         self.assertIn("Acesso não autorizado", response.content.decode())
 

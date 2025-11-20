@@ -32,6 +32,13 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         )
         return request
 
+    @staticmethod
+    def _as_membro(request):
+        request.user = MagicMock(
+            is_authenticated=True, perfil_acesso=PerfilAcessoChoices.MEMBRO
+        )
+        return request
+
     @patch("apps.dashboards.projetos.views.render")
     @patch(
         "apps.dashboards.projetos.views.DashboardProjetoService.montar_contexto_dashboard"
@@ -65,6 +72,32 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         )
         self.assertIn("header_context", context)
         self.assertTrue(context["pode_editar_orcamento"])
+        self.assertTrue(context["pode_ver_custos"])
+        self.assertTrue(context["mostrar_custos_issues"])
+        self.assertTrue(context["mostrar_export"])
+
+    @patch("apps.dashboards.projetos.views.render")
+    @patch(
+        "apps.dashboards.projetos.views.DashboardProjetoService.montar_contexto_dashboard"
+    )
+    def test_index_membro_sem_custos(self, mock_montar_contexto, mock_render):
+        mock_render.return_value = HttpResponse("ok")
+        contexto = SimpleNamespace(
+            projetos_dimensao=[{"id": 9, "nome": "Projeto M"}],
+            dados_grafico={"labels": [], "values": [], "max_value": 0},
+            projeto_selecionado_id=9,
+            projeto_selecionado_nome="Projeto M",
+        )
+        mock_montar_contexto.return_value = contexto
+
+        request = self._as_membro(self.factory.get("/dashboard"))
+        response = views.index(request)
+
+        self.assertEqual(response.status_code, 200)
+        _, _, context = mock_render.call_args[0]
+        self.assertFalse(context["pode_ver_custos"])
+        self.assertFalse(context["mostrar_custos_issues"])
+        self.assertFalse(context["mostrar_export"])
 
     @patch("apps.dashboards.projetos.views.render")
     @patch(

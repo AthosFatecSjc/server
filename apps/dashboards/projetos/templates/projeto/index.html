@@ -14,7 +14,7 @@
 
 {% block content %}
 
-{% include "dashboards/_header.html" with header=header_context show_export=True %}
+{% include "dashboards/_header.html" with header=header_context show_export=mostrar_export %}
 
 <div class="mx-auto px-6 py-3">
   <div class="filters-container space-y-4">
@@ -23,12 +23,15 @@
         {% include "dashboards/components/_filter_project.html" %}
       </div>
     </div>
-    <div class="filters-bottom-row w-full">
-      {% include "dashboards/components/_filter_dashboard_tabs.html" %}
-    </div>
+    {% if pode_ver_custos %}
+      <div class="filters-bottom-row w-full">
+        {% include "dashboards/components/_filter_dashboard_tabs.html" with mostrar_custos=True %}
+      </div>
+    {% endif %}
   </div>
 
   <div class="dashboard-panels">
+    {% if pode_ver_custos %}
     <section id="dashboard-custos" class="dashboard-panel active">
       {% include "dashboards/_cards.html" with pode_editar_orcamento=pode_editar_orcamento %}
 
@@ -36,9 +39,10 @@
         {% include "projeto/components/_grafico_barras.html" with titulo="Custo por Desenvolvedor" subtitulo="Para onde o dinheiro está indo? Distribuição de custos por recurso" dados=dados_grafico id_grafico="grafico-custo-desenvolvedor" altura=400 %}
       </div>
     </section>
+    {% endif %}
 
-    <section id="dashboard-issues" class="dashboard-panel">
-      {% include "dashboards/components/_issues_bugs_dashboard.html" %}
+    <section id="dashboard-issues" class="dashboard-panel {% if not pode_ver_custos %}active{% endif %}">
+      {% include "dashboards/components/_issues_bugs_dashboard.html" with mostrar_custos_issues=mostrar_custos_issues %}
     </section>
   </div>
 
