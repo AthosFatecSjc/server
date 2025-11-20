@@ -372,25 +372,19 @@
             const toggle = document.getElementById('themeToggle');
             const STORAGE_KEY = 'athos-theme';
 
-            function applyTheme(theme) {
-                if (!theme || theme === 'light') {
-                    root.removeAttribute('data-theme');
-                    if (toggle) toggle.innerHTML = '<i class="fas fa-moon"></i><span>Modo escuro</span>';
-                } else {
-                    root.setAttribute('data-theme', 'dark');
-                    if (toggle) toggle.innerHTML = '<i class="fas fa-sun"></i><span>Modo claro</span>';
-                }
+            function applyTheme() {
+                // Tema fixo claro
+                root.removeAttribute('data-theme');
+                localStorage.removeItem(STORAGE_KEY);
+                if (toggle) toggle.innerHTML = '<i class="fas fa-sun"></i><span>Tema padrão</span>';
             }
 
-            const storedTheme = localStorage.getItem(STORAGE_KEY);
-            const initial = storedTheme || "dark";
-            applyTheme(initial);
+            applyTheme();
 
             if (toggle) {
-                toggle.addEventListener('click', () => {
-                    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                    localStorage.setItem(STORAGE_KEY, next);
-                    applyTheme(next);
+                toggle.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    applyTheme();
                 });
             }
         })();
