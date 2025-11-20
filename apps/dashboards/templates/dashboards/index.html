@@ -3,6 +3,19 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'dashboards/css/dashboards.css' %}">
+<style>
+  /* Garantir o gradiente do botão igual ao Relatórios (sobrepõe cache antigo) */
+  .card .btn {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 12px 24px rgba(99, 102, 241, 0.28) !important;
+    border: none !important;
+  }
+
+  .card .btn:hover {
+    filter: brightness(1.05);
+  }
+</style>
 {% endblock %}
 
 {% block content %}
