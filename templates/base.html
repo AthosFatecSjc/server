@@ -222,6 +222,15 @@
                     </a>
                 </li>
 
+                {% if request.user.is_authenticated and request.user.perfil_acesso == 'GERENTE' %}
+                <li class="sidebar-menu-item">
+                    <a href="/usuarios/" class="sidebar-menu-button {% if '/usuarios/' in request.path %}active{% endif %}">
+                        <i class="fas fa-users-cog"></i>
+                        <span>Gestão de Acesso</span>
+                    </a>
+                </li>
+                {% endif %}
+
             </ul>
             {% if request.user.is_authenticated %}
             <div class="px-4 py-3 mt-auto text-xs text-gray-500 border-t border-gray-200">
