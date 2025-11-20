@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ "develop", "release" ]
   push:
-    branches: ["develop"]  
+    branches: ["develop"]
 
 jobs:
   build:
@@ -41,7 +41,18 @@ jobs:
           pip install bandit
           bandit -r . -f json -o bandit-report.json || echo "Bandit encontrou problemas"
 
-      - name: Executar Testes e Gerar Cobertura
+      - name: Executar Testes Unitários
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          TEST_DB_ENGINE: django.db.backends.sqlite3
+          TEST_DB_NAME: ":memory:"
+        run: |
+          pip install coverage
+          coverage run --source='.' manage.py test tests/unit/
+          coverage xml -o coverage-unit.xml
+
+      - name: Executar Testes de Integração
         env:
           DJANGO_SETTINGS_MODULE: config.settings
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -51,9 +62,8 @@ jobs:
           JIRA_USER: ${{ secrets.JIRA_USER }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
-          pip install coverage
-          coverage run --source='.' manage.py test
-          coverage xml
+          coverage run --append --source='.' manage.py test tests/integration/
+          coverage xml -o coverage-integration.xml
 
       - name: Análise no SonarCloud
         uses: SonarSource/sonarqube-scan-action@v6
