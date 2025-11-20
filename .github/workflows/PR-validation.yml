@@ -62,7 +62,8 @@ jobs:
           JIRA_USER: ${{ secrets.JIRA_USER }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
-          coverage run --append --source='.' -m pytest tests/integration/ -v --ds=config.settings
+          # REMOVER --append para cobertura separada
+          coverage run --source='.' -m pytest tests/integration/ -v --ds=config.settings
           coverage xml -o coverage-integration.xml
 
       - name: Análise no SonarCloud
