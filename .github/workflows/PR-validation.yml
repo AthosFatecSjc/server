@@ -56,13 +56,15 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: config.settings
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          # Usar PostgreSQL ou manter SQLite
           TEST_DB_ENGINE: django.db.backends.sqlite3
           TEST_DB_NAME: ":memory:"
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER: ${{ secrets.JIRA_USER }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
-          # REMOVER --append para cobertura separada
+          pip install coverage pytest pytest-django
+          python manage.py migrate
           coverage run --source='.' -m pytest tests/integration/ -v --ds=config.settings
           coverage xml -o coverage-integration.xml
 
