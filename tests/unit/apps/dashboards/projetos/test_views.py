@@ -11,11 +11,26 @@ from apps.dashboards.projetos.services import (
     OrcamentoInvalidoError,
     ProjetoNaoEncontradoError,
 )
+from apps.usuarios.models import PerfilAcessoChoices
 
 
 class DashboardProjetosViewsTests(SimpleTestCase):
     def setUp(self):
         self.factory = RequestFactory()
+
+    @staticmethod
+    def _as_gerente(request):
+        request.user = MagicMock(
+            is_authenticated=True, perfil_acesso=PerfilAcessoChoices.GERENTE
+        )
+        return request
+
+    @staticmethod
+    def _as_lider(request):
+        request.user = MagicMock(
+            is_authenticated=True, perfil_acesso=PerfilAcessoChoices.LIDER
+        )
+        return request
 
     @patch("apps.dashboards.projetos.views.render")
     @patch(
@@ -33,7 +48,7 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         )
         mock_montar_contexto.return_value = contexto
 
-        request = self.factory.get("/dashboard?projeto_id=10")
+        request = self._as_gerente(self.factory.get("/dashboard?projeto_id=10"))
         response = views.index(request)
 
         self.assertEqual(response.status_code, 200)
@@ -49,6 +64,28 @@ class DashboardProjetosViewsTests(SimpleTestCase):
             context["projeto_selecionado_nome"], contexto.projeto_selecionado_nome
         )
         self.assertIn("header_context", context)
+        self.assertTrue(context["pode_editar_orcamento"])
+
+    @patch("apps.dashboards.projetos.views.render")
+    @patch(
+        "apps.dashboards.projetos.views.DashboardProjetoService.montar_contexto_dashboard"
+    )
+    def test_index_lider_nao_pode_editar(self, mock_montar_contexto, mock_render):
+        mock_render.return_value = HttpResponse("ok")
+        contexto = SimpleNamespace(
+            projetos_dimensao=[{"id": 11, "nome": "Projeto Y"}],
+            dados_grafico={"labels": [], "values": [], "max_value": 0},
+            projeto_selecionado_id=11,
+            projeto_selecionado_nome="Projeto Y",
+        )
+        mock_montar_contexto.return_value = contexto
+
+        request = self._as_lider(self.factory.get("/dashboard?projeto_id=11"))
+        response = views.index(request)
+
+        self.assertEqual(response.status_code, 200)
+        _, _, context = mock_render.call_args[0]
+        self.assertFalse(context["pode_editar_orcamento"])
 
     @patch("apps.dashboards.projetos.views.render")
     @patch(
@@ -65,7 +102,7 @@ class DashboardProjetosViewsTests(SimpleTestCase):
             projeto_selecionado_nome=None,
         )
 
-        request = self.factory.get("/dashboard?projeto_id=foobar")
+        request = self._as_gerente(self.factory.get("/dashboard?projeto_id=foobar"))
         views.index(request)
 
         mock_montar_contexto.assert_called_once_with(None)
@@ -76,10 +113,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
     def test_atualizar_orcamento_previsto_sucesso(self, mock_atualizar):
         mock_atualizar.return_value = {"status": "ok"}
         payload = json.dumps({"valor": 123})
-        request = self.factory.post(
-            "/projetos/1/orcamento",
-            data=payload,
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/1/orcamento",
+                data=payload,
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
 
@@ -90,10 +129,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         mock_atualizar.assert_called_once_with(1, 123)
 
     def test_atualizar_orcamento_previsto_json_invalido(self):
-        request = self.factory.post(
-            "/projetos/1/orcamento",
-            data=b"{invalid-json",
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/1/orcamento",
+                data=b"{invalid-json",
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
 
@@ -115,10 +156,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         payload = json.dumps({"valor": 100})
 
         # Projeto não encontrado
-        request = self.factory.post(
-            "/projetos/1/orcamento",
-            data=payload,
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/1/orcamento",
+                data=payload,
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
         response = views.atualizar_orcamento_previsto(request, 1)
@@ -126,10 +169,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         self.assertJSONEqual(response.content, {"message": "Projeto não encontrado"})
 
         # Orcamento inválido
-        request = self.factory.post(
-            "/projetos/1/orcamento",
-            data=payload,
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/1/orcamento",
+                data=payload,
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
         response = views.atualizar_orcamento_previsto(request, 1)
@@ -137,10 +182,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         self.assertJSONEqual(response.content, {"message": "Valor inválido"})
 
         # Erro genérico do dashboard
-        request = self.factory.post(
-            "/projetos/1/orcamento",
-            data=payload,
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/1/orcamento",
+                data=payload,
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
         response = views.atualizar_orcamento_previsto(request, 1)
@@ -158,10 +205,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         mock_timezone.now.return_value = MagicMock(strftime=lambda fmt: "20240102")
 
         payload = json.dumps({"projeto_id": 5})
-        request = self.factory.post(
-            "/projetos/exportar",
-            data=payload,
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/exportar",
+                data=payload,
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
 
@@ -178,10 +227,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         mock_gerar_pdf.assert_called_once_with({"nome_projeto": "Projeto Especial"})
 
     def test_exportar_relatorio_pdf_json_invalido(self):
-        request = self.factory.post(
-            "/projetos/exportar",
-            data=b"{invalid-json",
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/exportar",
+                data=b"{invalid-json",
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
 
@@ -191,10 +242,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
 
     def test_exportar_relatorio_pdf_sem_projeto_id(self):
         payload = json.dumps({})
-        request = self.factory.post(
-            "/projetos/exportar",
-            data=payload,
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/exportar",
+                data=payload,
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
 
@@ -206,10 +259,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
 
     def test_exportar_relatorio_pdf_projeto_id_invalido(self):
         payload = json.dumps({"projeto_id": "abc"})
-        request = self.factory.post(
-            "/projetos/exportar",
-            data=payload,
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/exportar",
+                data=payload,
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
 
@@ -221,10 +276,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
     def test_exportar_relatorio_pdf_trata_excecoes_especificas(self, mock_obter_pdf):
         mock_obter_pdf.side_effect = ProjetoNaoEncontradoError("Projeto não encontrado")
         payload = json.dumps({"projeto_id": 1})
-        request = self.factory.post(
-            "/projetos/exportar",
-            data=payload,
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/exportar",
+                data=payload,
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
 
@@ -233,10 +290,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         self.assertJSONEqual(response.content, {"message": "Projeto não encontrado"})
 
         mock_obter_pdf.side_effect = DashboardProjetoError("Erro no dashboard")
-        request = self.factory.post(
-            "/projetos/exportar",
-            data=payload,
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/exportar",
+                data=payload,
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
 
@@ -253,10 +312,12 @@ class DashboardProjetosViewsTests(SimpleTestCase):
         mock_gerar_pdf.side_effect = RuntimeError("Falha inesperada")
 
         payload = json.dumps({"projeto_id": 3})
-        request = self.factory.post(
-            "/projetos/exportar",
-            data=payload,
-            content_type="application/json",
+        request = self._as_gerente(
+            self.factory.post(
+                "/projetos/exportar",
+                data=payload,
+                content_type="application/json",
+            )
         )
         request.csrf_processing_done = True
 

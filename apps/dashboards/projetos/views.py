@@ -7,7 +7,8 @@ from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 
-from apps.usuarios.decorators import perfil_gerente_required
+from apps.usuarios.decorators import perfil_gerente_required, perfil_lider_required
+from apps.usuarios.models import PerfilAcessoChoices
 
 from .services import (
     DashboardProjetoError,
@@ -30,7 +31,7 @@ def _handle_pdf_exception(exc: Exception) -> JsonResponse:
     return _json_error("Não foi possível gerar o PDF solicitado.", status=500)
 
 
-@perfil_gerente_required
+@perfil_lider_required
 @require_http_methods(["GET"])
 def index(request):
     """View principal do dashboard de saúde do projeto."""
@@ -55,6 +56,8 @@ def index(request):
         "dados_grafico": contexto.dados_grafico,
         "projeto_selecionado_id": contexto.projeto_selecionado_id,
         "projeto_selecionado_nome": contexto.projeto_selecionado_nome,
+        "pode_editar_orcamento": getattr(request.user, "perfil_acesso", None)
+        == PerfilAcessoChoices.GERENTE,
     }
 
     return render(request, "projeto/index.html", context)
@@ -84,7 +87,7 @@ def atualizar_orcamento_previsto(request, projeto_id: int):
     return JsonResponse(resultado)
 
 
-@perfil_gerente_required
+@perfil_lider_required
 @csrf_protect
 @require_http_methods(["POST"])
 def exportar_relatorio_pdf(request):

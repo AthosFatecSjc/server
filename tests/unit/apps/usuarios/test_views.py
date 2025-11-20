@@ -62,6 +62,21 @@ class UsuarioViewsTests(TestCase):
             },
         )
 
+        cls.gerente, _ = Usuario.objects.update_or_create(
+            username="gerente",
+            defaults={
+                "nome_completo": "Gerente Master",
+                "email": "gerente@example.com",
+                "contrato": ContratoChoices.CLT,
+                "cargo": "Manager",
+                "perfil_acesso": PerfilAcessoChoices.GERENTE,
+                "password": make_password("Str0ng@123"),
+            },
+        )
+
+    def setUp(self):
+        self.client.force_login(self.gerente)
+
     def test_list_view_aplica_filtros(self):
         url = reverse("usuarios:lista")
         response = self.client.get(
@@ -112,6 +127,15 @@ class UsuarioViewsTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["form"].errors)
+
+    def test_lider_recebe_403_na_gestao(self):
+        self.lider.ativo = True
+        self.lider.save(update_fields=["ativo"])
+        self.client.logout()
+        self.client.force_login(self.lider)
+        response = self.client.get(reverse("usuarios:lista"))
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("Acesso não autorizado", response.content.decode())
 
     def test_update_view_get_renderiza_formulario(self):
         response = self.client.get(reverse("usuarios:editar", args=[self.membro.pk]))
@@ -198,10 +222,10 @@ class UsuarioViewsTests(TestCase):
         self.assertEqual(response.url, next_url)
 
     def test_delete_view_nao_permite_auto_exclusao(self):
-        self.client.force_login(self.membro)
+        self.client.force_login(self.gerente)
 
-        response = self.client.post(reverse("usuarios:excluir", args=[self.membro.pk]))
+        response = self.client.post(reverse("usuarios:excluir", args=[self.gerente.pk]))
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("usuarios:lista"))
-        self.assertTrue(Usuario.objects.filter(pk=self.membro.pk).exists())
+        self.assertTrue(Usuario.objects.filter(pk=self.gerente.pk).exists())

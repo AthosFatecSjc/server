@@ -206,12 +206,14 @@
                     </a>
                 </li>
 
+                {% if request.user.is_authenticated and request.user.perfil_acesso == 'GERENTE' %}
                 <li class="sidebar-menu-item">
-                    <a href="/relatorios/" class="sidebar-menu-button {% if '/relatorios/' in request.path %}active{% endif %}">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Relatórios</span>
-                    </a>
+                        <a href="/relatorios/" class="sidebar-menu-button {% if '/relatorios/' in request.path %}active{% endif %}">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Relatórios</span>
+                        </a>
                 </li>
+                {% endif %}
 
                 <li class="sidebar-menu-item">
                     <a href="/dashboards/" class="sidebar-menu-button {% if '/dashboards/' in request.path %}active{% endif %}">
@@ -220,12 +222,6 @@
                     </a>
                 </li>
 
-                <li class="sidebar-menu-item">
-                    <a href="/usuarios/" class="sidebar-menu-button {% if '/usuarios/' in request.path %}active{% endif %}">
-                        <i class="fas fa-users"></i>
-                        <span>Usuários</span>
-                    </a>
-                </li>
             </ul>
             {% if request.user.is_authenticated %}
             <div class="px-4 py-3 mt-auto text-xs text-gray-500 border-t border-gray-200">

@@ -30,7 +30,7 @@
 
   <div class="dashboard-panels">
     <section id="dashboard-custos" class="dashboard-panel active">
-      {% include "dashboards/_cards.html" %}
+      {% include "dashboards/_cards.html" with pode_editar_orcamento=pode_editar_orcamento %}
 
       <div id="dashboard-chart-wrapper" class="mb-6">
         {% include "projeto/components/_grafico_barras.html" with titulo="Custo por Desenvolvedor" subtitulo="Para onde o dinheiro está indo? Distribuição de custos por recurso" dados=dados_grafico id_grafico="grafico-custo-desenvolvedor" altura=400 %}

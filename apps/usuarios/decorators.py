@@ -4,7 +4,8 @@ from functools import wraps
 from typing import Callable, Iterable
 
 from django.contrib.auth.views import redirect_to_login
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render
 
 from .models import PerfilAcessoChoices
 
@@ -23,7 +24,12 @@ def _perfil_required(allowed_perfis: Iterable[str]) -> Callable:
 
             user_perfil = getattr(user, "perfil_acesso", None)
             if user_perfil not in allowed:
-                return HttpResponseForbidden(FORBIDDEN_MESSAGE)
+                return render(
+                    request,
+                    "auth/forbidden.html",
+                    {"message": FORBIDDEN_MESSAGE},
+                    status=403,
+                )
 
             return view_func(request, *args, **kwargs)
 
