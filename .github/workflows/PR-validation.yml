@@ -48,8 +48,8 @@ jobs:
           TEST_DB_ENGINE: django.db.backends.sqlite3
           TEST_DB_NAME: ":memory:"
         run: |
-          pip install coverage
-          coverage run --source='.' manage.py test tests/unit/
+          pip install coverage pytest pytest-django
+          coverage run --source='.' -m pytest tests/unit/ -v --ds=config.settings
           coverage xml -o coverage-unit.xml
 
       - name: Executar Testes de Integração
@@ -62,7 +62,7 @@ jobs:
           JIRA_USER: ${{ secrets.JIRA_USER }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
-          coverage run --append --source='.' manage.py test tests/integration/
+          coverage run --append --source='.' -m pytest tests/integration/ -v --ds=config.settings
           coverage xml -o coverage-integration.xml
 
       - name: Análise no SonarCloud
