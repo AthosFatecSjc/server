@@ -28,7 +28,7 @@ DASHBOARDS_DEFINITIONS = [
     {
         "nome": "Dashboard de Saúde do Projeto",
         "url_name": "projetos_index",
-        "descricao": "Análise completa de custos, issues e bugs do projeto",
+        "descricao": "Análise completa quantitativa de issues, bugs e custos por projeto e desenvolvedor",
         "categoria": "Análise",
         "categoria_badge": "Análise",
         "funcionalidades": "Três dashboards integrados: custos, issues abertas e bugs",
@@ -42,7 +42,7 @@ DASHBOARDS_DEFINITIONS = [
     },
     {
         "nome": "Dashboard de Produtividade da Equipe",
-        "url_name": "produtividade_index",
+        "url_name": "equipes_index",
         "descricao": "Acompanhe horas por atividade, módulo e desenvolvedor",
         "categoria": "Produtividade",
         "categoria_badge": "Produtividade",

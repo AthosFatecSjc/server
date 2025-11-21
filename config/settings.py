@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "apps.dashboards",
     "apps.dashboards.desenvolvedores",
     "apps.dashboards.projetos",
+    "apps.dashboards.equipes",
     "apps.utils",
     "config",
     "olap_models",

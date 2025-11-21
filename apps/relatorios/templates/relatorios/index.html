@@ -24,6 +24,8 @@
             --card-background: #ffffff;
             --background: #f8fafc;
             --card-text: #1f2937;
+            --hover-accent: #8b5cf6;
+            --hover-shadow: rgba(139, 92, 246, 0.3);
         }
 
         body {
@@ -77,8 +79,8 @@
         }
 
         .card:hover {
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-            border-color: var(--primary);
+            box-shadow: 0 10px 25px var(--hover-shadow);
+            border-color: var(--hover-accent);
             transform: translateY(-2px);
         }
         .card-header {

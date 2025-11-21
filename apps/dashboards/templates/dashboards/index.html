@@ -2,24 +2,318 @@
 {% load static %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dashboards/css/dashboards.css' %}">
 <style>
-  /* Garantir o gradiente do botão igual ao Relatórios (sobrepõe cache antigo) */
-  .card .btn {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%) !important;
-    color: #ffffff !important;
-    box-shadow: 0 12px 24px rgba(99, 102, 241, 0.28) !important;
-    border: none !important;
-  }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
 
-  .card .btn:hover {
-    filter: brightness(1.05);
-  }
+    :root {
+        --primary: #3b82f6;
+        --primary-foreground: #ffffff;
+        --muted-foreground: #6b7280;
+        --border: #e5e7eb;
+        --card-background: #ffffff;
+        --background: #f8fafc;
+        --card-text: #1f2937;
+        --hover-accent: #8b5cf6;
+        --hover-shadow: rgba(139, 92, 246, 0.3);
+    }
+
+    body {
+        background: var(--background);
+        min-height: 100vh;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+    }
+
+    .header-content h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--card-text);
+        margin-bottom: 8px;
+    }
+
+    .header-content p {
+        font-size: 1.1rem;
+        color: var(--muted-foreground);
+    }
+    .grid {
+        display: grid;
+        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        margin-bottom: 32px;
+    }
+
+    .card {
+        background: var(--card-background);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        text-align: left;
+    }
+
+    .card:hover {
+        box-shadow: 0 10px 25px var(--hover-shadow);
+        border-color: var(--hover-accent);
+        transform: translateY(-2px);
+    }
+    .card-header {
+        padding: 24px 24px 16px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .card-header-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .icon-container {
+        padding: 8px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 8px;
+    }
+
+    .icon-container--orange {
+        background: rgba(251, 146, 60, 0.12);
+        color: #fb923c;
+    }
+
+    .icon-container--green {
+        background: rgba(74, 222, 128, 0.12);
+        color: #4ade80;
+    }
+
+    .icon {
+        width: 24px;
+        height: 24px;
+        display: inline-block;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+        color: var(--primary);
+    }
+
+    .icon-container .icon {
+        color: inherit;
+    }
+
+    .badge {
+        background: transparent;
+        color: var(--muted-foreground);
+        padding: 4px 12px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--card-text);
+        line-height: 1.4;
+        margin-bottom: 8px;
+    }
+
+    .card-description {
+        color: var(--muted-foreground);
+        line-height: 1.5;
+    }
+
+    .card-content {
+        padding: 16px 24px 24px;
+    }
+
+    .info-grid {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.875rem;
+    }
+
+    .info-label {
+        color: var(--muted-foreground);
+    }
+
+    .text-sm {
+        font-size: 0.875rem;
+    }
+
+    .badge-secondary {
+        background: #f3f4f6;
+        color: #374151;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .btn {
+        width: 100%;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+        color: var(--primary-foreground);
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.1s ease;
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25);
+        text-align: left;
+        display: block;
+    }
+
+    .btn:hover {
+        background: linear-gradient(135deg, #5b5ff0 0%, #7c4deb 50%, #e24593 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(99, 102, 241, 0.3);
+    }
+
+    .info-card {
+        background: var(--card-background);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-top: 32px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        color: var(--card-text);
+    }
+
+    .info-card-header {
+        margin-bottom: 20px;
+    }
+
+    .info-card-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--card-text);
+        margin-bottom: 8px;
+    }
+
+    .info-card-description {
+        color: var(--muted-foreground);
+    }
+
+    .info-grid-cols {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .info-item {
+        text-align: center;
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--card-background);
+        color: var(--card-text);
+        box-shadow: 0 1px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .info-icon {
+        width: 32px;
+        height: 32px;
+        color: var(--primary);
+        margin: 0 auto 12px;
+    }
+
+    .info-item .icon-users.info-icon {
+        color: #3b82f6;
+        background-color: transparent;
+    }
+    .info-item .icon-activity.info-icon {
+        color: #fb923c;
+        background-color: transparent;
+    }
+    .info-item .icon-trending-up.info-icon {
+        color: #4ade80;
+        background-color: transparent;
+    }
+
+    .info-item h4 {
+        font-weight: 500;
+        color: var(--card-text);
+        margin-bottom: 8px;
+    }
+
+    .info-item p {
+        font-size: 0.875rem;
+        color: var(--muted-foreground);
+        line-height: 1.4;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding: 16px;
+        }
+
+        .header {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .header-content h1 {
+            font-size: 2rem;
+        }
+
+        .grid {
+            grid-template-columns: 1fr;
+        }
+
+        .info-grid-cols {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .icon-users {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M17 20v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M23 20v-2a4 4 0 0 0-3-3.87'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M16 3.13a4 4 0 0 1 0 7.75'/%3E%3C/svg%3E");
+        color: #3b82f6;
+    }
+
+    .icon-activity {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'%3E%3Cpolyline points='22 12 18 12 15 21 9 3 6 12 2 12'/%3E%3C/svg%3E");
+        color: #fb923c;
+    }
+
+    .icon-trending-up {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'%3E%3Cpolyline points='23 6 13.5 15.5 8.5 10.5 1 18'/%3E%3Cpolyline points='17 6 23 6 23 12'/%3E%3C/svg%3E");
+        color: #4ade80;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
+<div class="container">
+
   <div class="header">
     <div class="header-content">
       <h1>Dashboards</h1>
@@ -28,9 +322,9 @@
   </div>
 
   <div class="grid">
+
     {% for dashboard in dashboards %}
-      <button type="button" class="card w-full text-left"
-              onclick="location.href='{% url dashboard.url_name %}'">
+      <a href="{% url dashboard.url_name %}" class="card">
         <div class="card-header">
           <div class="card-header-top">
             <div class="icon-container {{ dashboard.icon_container_class }}">
@@ -38,11 +332,13 @@
             </div>
             <span class="badge">{{ dashboard.categoria_badge }}</span>
           </div>
+
           <div>
             <h3 class="card-title">{{ dashboard.nome }}</h3>
             <p class="card-description">{{ dashboard.descricao }}</p>
           </div>
         </div>
+
         <div class="card-content">
           <div class="info-grid">
             <div class="info-row">
@@ -54,12 +350,11 @@
               <span class="badge-secondary">{{ dashboard.acesso_label }}</span>
             </div>
           </div>
-          <span class="btn">
-            Acessar Dashboard
-            <div class="icon icon-arrow-right"></div>
-          </span>
+
+          <div class="btn">Acessar Dashboard</div>
         </div>
-      </button>
+      </a>
+
     {% empty %}
       <div class="col-span-3">
         <div class="bg-white border border-gray-200 rounded-xl p-6 text-gray-600 shadow-sm">
@@ -67,7 +362,9 @@
         </div>
       </div>
     {% endfor %}
+
   </div>
+
 
   <div class="info-card">
     <div class="info-card-header">
@@ -76,6 +373,7 @@
         Detalhes sobre as funcionalidades disponíveis no sistema
       </p>
     </div>
+
     <div class="info-grid-cols">
       {% for dashboard in dashboards %}
         <div class="info-item">
