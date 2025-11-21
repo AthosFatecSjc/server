@@ -23,6 +23,7 @@
             --border: #e5e7eb;
             --card-background: #ffffff;
             --background: #f8fafc;
+            --card-text: #1f2937;
         }
 
         body {
@@ -47,7 +48,7 @@
         .header-content h1 {
             font-size: 2.5rem;
             font-weight: 700;
-            color: #1f2937;
+            color: var(--card-text);
             margin-bottom: 8px;
         }
 
@@ -55,7 +56,6 @@
             font-size: 1.1rem;
             color: var(--muted-foreground);
         }
-
         .grid {
             display: grid;
             gap: 24px;
@@ -81,7 +81,6 @@
             border-color: var(--primary);
             transform: translateY(-2px);
         }
-
         .card-header {
             padding: 24px 24px 16px;
             border-bottom: 1px solid var(--border);
@@ -119,7 +118,7 @@
         .card-title {
             font-size: 1.25rem;
             font-weight: 600;
-            color: #1f2937;
+            color: var(--card-text);
             line-height: 1.4;
             margin-bottom: 8px;
         }
@@ -161,18 +160,21 @@
 
         .btn {
             width: 100%;
-            background: var(--primary);
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
             color: var(--primary-foreground);
             border: none;
             padding: 12px 20px;
             border-radius: 8px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.1s ease;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25);
         }
 
         .btn:hover {
-            background: #2563eb;
+            background: linear-gradient(135deg, #5b5ff0 0%, #7c4deb 50%, #e24593 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(99, 102, 241, 0.3);
         }
 
         .info-card {
@@ -181,6 +183,8 @@
             border-radius: 12px;
             padding: 24px;
             margin-top: 32px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            color: var(--card-text);
         }
 
         .info-card-header {
@@ -190,7 +194,7 @@
         .info-card-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #1f2937;
+            color: var(--card-text);
             margin-bottom: 8px;
         }
 
@@ -209,6 +213,9 @@
             padding: 20px;
             border: 1px solid var(--border);
             border-radius: 8px;
+            background: var(--card-background);
+            color: var(--card-text);
+            box-shadow: 0 1px 12px rgba(0, 0, 0, 0.08);
         }
 
         .info-icon {
@@ -220,7 +227,7 @@
 
         .info-item h4 {
             font-weight: 500;
-            color: #1f2937;
+            color: var(--card-text);
             margin-bottom: 8px;
         }
 

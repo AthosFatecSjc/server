@@ -7,9 +7,12 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 
+from apps.usuarios.decorators import perfil_gerente_required
+
 from .services import ComparacaoService
 
 
+@perfil_gerente_required
 @require_GET
 def index(request):
     """Renderiza a página inicial do relatório de comparação anual."""
@@ -32,6 +35,7 @@ def index(request):
     return render(request, "comparacao/index.html", context)
 
 
+@perfil_gerente_required
 @require_GET
 def relatorio_anual_comparacao(request: any):
     """
@@ -79,6 +83,7 @@ def relatorio_anual_comparacao(request: any):
     return JsonResponse(payload, safe=True)
 
 
+@perfil_gerente_required
 @require_POST
 def exportar_pdf(request):
     """Exporta o relatório de comparação anual em PDF."""
@@ -97,6 +102,7 @@ def exportar_pdf(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+@perfil_gerente_required
 @require_POST
 def set_horas_previstas_projeto(
     request: any,

@@ -3,11 +3,13 @@
         <div class="tabs-list">
             <div class="tabs-indicator" id="tab-indicator"></div>
 
-            <button class="tabs-trigger active" data-value="custos" data-dashboard="custos">
-                Custos
-            </button>
+            {% if mostrar_custos %}
+                <button class="tabs-trigger active" data-value="custos" data-dashboard="custos">
+                    Custos
+                </button>
+            {% endif %}
 
-            <button class="tabs-trigger" data-value="issues" data-dashboard="issues">
+            <button class="tabs-trigger {% if not mostrar_custos %}active{% endif %}" data-value="issues" data-dashboard="issues">
                 Issues & Bugs
             </button>
         </div>
@@ -45,7 +47,7 @@
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease-in-out;
-    width: calc(50% - 0.25rem);
+    width: {{ mostrar_custos|yesno:"calc(50% - 0.25rem),calc(100% - 0.5rem)" }};
     z-index: 0;
 }
 
@@ -90,12 +92,13 @@ function switchDashboardTab(tab) {
 
     const indicator = document.getElementById('tab-indicator');
     if (indicator) {
-        const newLeft = tab === 'custos' ? '0.25rem' : 'calc(50% + 0.125rem)';
-        indicator.style.left = newLeft;
-
-
-    } else {
-        console.log(' Indicador NÃO encontrado!');
+        if (tab === 'custos') {
+            indicator.style.left = '0.25rem';
+        } else if (tab === 'issues' && {{ mostrar_custos|yesno:"true,false" }}) {
+            indicator.style.left = 'calc(50% + 0.125rem)';
+        } else {
+            indicator.style.left = '0.25rem';
+        }
     }
 
     document.querySelectorAll('.dashboard-panel').forEach(panel => {
@@ -124,7 +127,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const activeTrigger = document.querySelector('.tabs-trigger.active');
     if (activeTrigger) {
-        console.log('📍 Tab ativa inicial:', activeTrigger.dataset.value);
         switchDashboardTab(activeTrigger.dataset.value);
     }
 });

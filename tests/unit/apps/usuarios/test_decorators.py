@@ -67,7 +67,9 @@ class PerfilDecoratorsTests(TestCase):
         response = sample_view(request)
 
         self.assertEqual(response.status_code, 403)
-        self.assertIn(FORBIDDEN_MESSAGE, response.content.decode())
+        content = response.content.decode()
+        self.assertIn("Acesso não autorizado", content)
+        self.assertIn(FORBIDDEN_MESSAGE, content)
 
     def test_perfil_gerente_required_allows_gerente(self):
         @perfil_gerente_required
@@ -107,6 +109,7 @@ class PerfilDecoratorsTests(TestCase):
         response = sample_view(request)
 
         self.assertEqual(response.status_code, 403)
+        self.assertIn("Acesso não autorizado", response.content.decode())
 
     def test_perfil_membro_or_above_required_allows_all_perfis(self):
         @perfil_membro_or_above_required

@@ -18,6 +18,31 @@ PROFILE_REDIRECTS = {
     PerfilAcessoChoices.MEMBRO: "home",
 }
 
+HOME_CARDS = [
+    {
+        "id": "relatorios",
+        "titulo": "Relatórios",
+        "descricao": "Gestão à Vista, Controle de Horas e análises comparativas em tempo real.",
+        "perfis": {PerfilAcessoChoices.GERENTE},
+    },
+    {
+        "id": "dashboards",
+        "titulo": "Dashboards",
+        "descricao": "Visualização interativa de dados e métricas de desempenho empresarial.",
+        "perfis": {
+            PerfilAcessoChoices.GERENTE,
+            PerfilAcessoChoices.LIDER,
+            PerfilAcessoChoices.MEMBRO,
+        },
+    },
+    {
+        "id": "usuarios",
+        "titulo": "Gestão de Acesso",
+        "descricao": "Controle de usuários e permissões baseado em níveis hierárquicos.",
+        "perfis": {PerfilAcessoChoices.GERENTE},
+    },
+]
+
 
 def _get_redirect_for_user(user) -> str:
     url_name = PROFILE_REDIRECTS.get(user.perfil_acesso, "home")
@@ -40,10 +65,16 @@ def index(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
+    perfil_usuario = getattr(request.user, "perfil_acesso", None)
+    cards = [card for card in HOME_CARDS if perfil_usuario in card["perfis"]]
+
     return render(
         request,
         "config/index.html",
-        {"usuario": request.user},
+        {
+            "usuario": request.user,
+            "home_cards": cards,
+        },
     )
 
 

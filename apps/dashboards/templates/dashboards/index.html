@@ -3,6 +3,19 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'dashboards/css/dashboards.css' %}">
+<style>
+  /* Garantir o gradiente do botão igual ao Relatórios (sobrepõe cache antigo) */
+  .card .btn {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 12px 24px rgba(99, 102, 241, 0.28) !important;
+    border: none !important;
+  }
+
+  .card .btn:hover {
+    filter: brightness(1.05);
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -15,101 +28,45 @@
   </div>
 
   <div class="grid">
-    <button type="button" class="card w-full text-left"
-            onclick="location.href='{% url 'desenvolvedores_index' %}'">
-      <div class="card-header">
-        <div class="card-header-top">
-          <div class="icon-container">
-            <div class="icon icon-users"></div>
+    {% for dashboard in dashboards %}
+      <button type="button" class="card w-full text-left"
+              onclick="location.href='{% url dashboard.url_name %}'">
+        <div class="card-header">
+          <div class="card-header-top">
+            <div class="icon-container {{ dashboard.icon_container_class }}">
+              <div class="icon {{ dashboard.icon }}"></div>
+            </div>
+            <span class="badge">{{ dashboard.categoria_badge }}</span>
           </div>
-          <span class="badge">Gestão</span>
-        </div>
-        <div>
-          <h3 class="card-title">Gerenciamento de Desenvolvedores</h3>
-          <p class="card-description">Configure valores por hora e visualize estatísticas da equipe</p>
-        </div>
-      </div>
-      <div class="card-content">
-        <div class="info-grid">
-          <div class="info-row">
-            <span class="info-label">Funcionalidades:</span>
-            <span class="text-sm">Tabela de desenvolvedores, valores por hora e estatísticas de custos</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Acesso:</span>
-            <span class="badge-secondary">Gerente</span>
+          <div>
+            <h3 class="card-title">{{ dashboard.nome }}</h3>
+            <p class="card-description">{{ dashboard.descricao }}</p>
           </div>
         </div>
-        <span class="btn">
-          Acessar Dashboard
-          <div class="icon icon-arrow-right"></div>
-        </span>
-      </div>
-    </button>
-
-    <button type="button" class="card w-full text-left"
-            onclick="location.href='{% url 'projetos_index' %}'">
-      <div class="card-header">
-        <div class="card-header-top">
-          <div class="icon-container icon-container--orange">
-            <div class="icon icon-activity"></div>
+        <div class="card-content">
+          <div class="info-grid">
+            <div class="info-row">
+              <span class="info-label">Funcionalidades:</span>
+              <span class="text-sm">{{ dashboard.funcionalidades }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Acesso:</span>
+              <span class="badge-secondary">{{ dashboard.acesso_label }}</span>
+            </div>
           </div>
-          <span class="badge">Análise</span>
+          <span class="btn">
+            Acessar Dashboard
+            <div class="icon icon-arrow-right"></div>
+          </span>
         </div>
-        <div>
-          <h3 class="card-title">Dashboard de Saúde do Projeto</h3>
-          <p class="card-description">Análise completa de custos, issues e bugs por projeto e desenvolvedor</p>
+      </button>
+    {% empty %}
+      <div class="col-span-3">
+        <div class="bg-white border border-gray-200 rounded-xl p-6 text-gray-600 shadow-sm">
+          Nenhum dashboard disponível para o seu perfil no momento.
         </div>
       </div>
-      <div class="card-content">
-        <div class="info-grid">
-          <div class="info-row">
-            <span class="info-label">Funcionalidades:</span>
-            <span class="text-sm">Três dashboards integrados: custos, issues abertas e bugs</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Acesso:</span>
-            <span class="badge-secondary">Gerente, Líder e Membro</span>
-          </div>
-        </div>
-        <span class="btn">
-          Acessar Dashboard
-          <div class="icon icon-arrow-right"></div>
-        </span>
-      </div>
-    </button>
-
-    <button type="button" class="card w-full text-left"
-            onclick="location.href='{% url 'produtividade_index' %}'">
-      <div class="card-header">
-        <div class="card-header-top">
-          <div class="icon-container icon-container--green">
-            <div class="icon icon-trending-up"></div>
-          </div>
-          <span class="badge">Produtividade</span>
-        </div>
-        <div>
-          <h3 class="card-title">Dashboard de Produtividade da Equipe</h3>
-          <p class="card-description">Acompanhe horas por atividade, módulo e desenvolvedor</p>
-        </div>
-      </div>
-      <div class="card-content">
-        <div class="info-grid">
-          <div class="info-row">
-            <span class="info-label">Funcionalidades:</span>
-            <span class="text-sm">Análise de horas por módulo/epic e desenvolvedor</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Acesso:</span>
-            <span class="badge-secondary">Gerente, Líder e Membro</span>
-          </div>
-        </div>
-        <span class="btn">
-          Acessar Dashboard
-          <div class="icon icon-arrow-right"></div>
-        </span>
-      </div>
-    </button>
+    {% endfor %}
   </div>
 
   <div class="info-card">
@@ -120,21 +77,19 @@
       </p>
     </div>
     <div class="info-grid-cols">
-      <div class="info-item">
-        <div class="icon icon-users info-icon"></div>
-        <h4>Gerenciamento de Desenvolvedores</h4>
-        <p>Configure valores por hora, visualize estatísticas e gerencie custos da equipe de desenvolvimento</p>
-      </div>
-      <div class="info-item">
-        <div class="icon icon-activity info-icon"></div>
-        <h4>Saúde do Projeto</h4>
-        <p>Acompanhe orçamento vs realizado, issues abertas e bugs com gráficos e tabelas detalhadas</p>
-      </div>
-      <div class="info-item">
-        <div class="icon icon-trending-up info-icon"></div>
-        <h4>Produtividade da Equipe</h4>
-        <p>Análise detalhada de horas por módulo/epic e desenvolvedor com gráficos evolutivos</p>
-      </div>
+      {% for dashboard in dashboards %}
+        <div class="info-item">
+          <div class="icon {{ dashboard.icon }} info-icon"></div>
+          <h4>{{ dashboard.nome }}</h4>
+          <p>{{ dashboard.descricao }}</p>
+        </div>
+      {% empty %}
+        <div class="info-item">
+          <div class="icon icon-users info-icon"></div>
+          <h4>Sem dashboards</h4>
+          <p>Entre em contato com um gerente para liberar os dashboards adequados ao seu perfil.</p>
+        </div>
+      {% endfor %}
     </div>
   </div>
 </div>

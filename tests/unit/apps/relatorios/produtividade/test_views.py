@@ -5,11 +5,19 @@ from django.http import HttpRequest
 from django.test import RequestFactory, SimpleTestCase
 
 from apps.relatorios.produtividade import views
+from apps.usuarios.models import PerfilAcessoChoices
 
 
 class ProdutividadeViewsTests(SimpleTestCase):
     def setUp(self):
         self.factory = RequestFactory()
+
+    @staticmethod
+    def _as_lider(request):
+        request.user = mock.MagicMock(
+            is_authenticated=True, perfil_acesso=PerfilAcessoChoices.LIDER
+        )
+        return request
 
     @mock.patch("apps.relatorios.produtividade.views.render")
     @mock.patch(
@@ -25,7 +33,7 @@ class ProdutividadeViewsTests(SimpleTestCase):
         mock_equipes.return_value = ["Equipe Azul"]
         mock_spends.return_value = {"dias": [1], "resultados": []}
 
-        request = self.factory.get("/relatorios/produtividade/")
+        request = self._as_lider(self.factory.get("/relatorios/produtividade/"))
         views.index(request)
 
         mock_render.assert_called_once()
@@ -40,8 +48,8 @@ class ProdutividadeViewsTests(SimpleTestCase):
     def test_exportar_pdf(self, mock_spends, mock_pdf):
         mock_spends.return_value = {"resultados": []}
         mock_pdf.return_value = b"pdf"
-        request = self.factory.get(
-            "/relatorios/produtividade/exportar-pdf/?mes=7&ano=2025"
+        request = self._as_lider(
+            self.factory.get("/relatorios/produtividade/exportar-pdf/?mes=7&ano=2025")
         )
 
         response = views.exportar_pdf(request)
@@ -58,10 +66,12 @@ class ProdutividadeViewsTests(SimpleTestCase):
             "dias": [1],
             "codigo": "FE",
         }
-        request = self.factory.post(
-            "/relatorios/produtividade/atualizar-legenda/",
-            data=json.dumps(payload),
-            content_type="application/json",
+        request = self._as_lider(
+            self.factory.post(
+                "/relatorios/produtividade/atualizar-legenda/",
+                data=json.dumps(payload),
+                content_type="application/json",
+            )
         )
 
         response = views.atualizar_legenda(request)
@@ -77,10 +87,12 @@ class ProdutividadeViewsTests(SimpleTestCase):
             "dias": [1],
             "codigo": "FE",
         }
-        request = self.factory.post(
-            "/relatorios/produtividade/atualizar-legenda/",
-            data=json.dumps(payload),
-            content_type="application/json",
+        request = self._as_lider(
+            self.factory.post(
+                "/relatorios/produtividade/atualizar-legenda/",
+                data=json.dumps(payload),
+                content_type="application/json",
+            )
         )
 
         response = views.atualizar_legenda(request)
@@ -91,10 +103,12 @@ class ProdutividadeViewsTests(SimpleTestCase):
     def test_atualizar_meta(self, mock_meta):
         mock_meta.return_value = True
         payload = {"funcionario_id": 1, "mes": 7, "ano": 2025, "meta": 150}
-        request = self.factory.post(
-            "/relatorios/produtividade/atualizar-meta/",
-            data=json.dumps(payload),
-            content_type="application/json",
+        request = self._as_lider(
+            self.factory.post(
+                "/relatorios/produtividade/atualizar-meta/",
+                data=json.dumps(payload),
+                content_type="application/json",
+            )
         )
         response = views.atualizar_meta(request)
         self.assertJSONEqual(response.content, {"success": True})
@@ -103,10 +117,12 @@ class ProdutividadeViewsTests(SimpleTestCase):
     def test_atualizar_meta_erro(self, mock_meta):
         mock_meta.side_effect = RuntimeError("erro")
         payload = {"funcionario_id": 1, "mes": 7, "ano": 2025, "meta": 150}
-        request = self.factory.post(
-            "/relatorios/produtividade/atualizar-meta/",
-            data=json.dumps(payload),
-            content_type="application/json",
+        request = self._as_lider(
+            self.factory.post(
+                "/relatorios/produtividade/atualizar-meta/",
+                data=json.dumps(payload),
+                content_type="application/json",
+            )
         )
         response = views.atualizar_meta(request)
         self.assertEqual(response.status_code, 200)
