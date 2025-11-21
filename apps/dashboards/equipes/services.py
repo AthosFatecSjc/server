@@ -10,7 +10,7 @@ class DashboardEquipesService:
 
     @staticmethod
     def get_dev_color(index):
-        """Retorna cores consistentes para os desenvolvedores"""
+        """Retorna cores consistentes para os desenvolvedores (pelo índice)."""
         colors = [
             "#0057B8",
             "#f59e0b",
@@ -24,20 +24,56 @@ class DashboardEquipesService:
         return colors[index % len(colors)]
 
     @staticmethod
-    def get_desenvolvedores_dropdown(desenvolvedores_ids=None):
-        """Retorna lista de desenvolvedores para o dropdown"""
-        desenvolvedores_unicos = DimFuncionario.objects.all()
+    def get_colors_by_dev():
+        """Mapa determinístico nome -> cor, usando ordenação estável por nome."""
+        devs = list(
+            DimFuncionario.objects.order_by("nome").values_list("nome", flat=True)
+        )
+        return {
+            name: DashboardEquipesService.get_dev_color(idx)
+            for idx, name in enumerate(devs)
+        }
 
-        return [
-            {
-                "name": dev.nome,
-                "color": DashboardEquipesService.get_dev_color(i),
-                "selected": (
-                    dev.nome in desenvolvedores_ids if desenvolvedores_ids else True
-                ),
-            }
-            for i, dev in enumerate(desenvolvedores_unicos)
-        ]
+    @staticmethod
+    def get_desenvolvedores_dropdown(
+        projeto_id=None, data_inicio_dt=None, data_fim_dt=None, desenvolvedores_ids=None
+    ):
+        """
+        Retorna desenvolvedores filtrados por projeto (quando informado) e marca selecionados:
+        - Se o usuário enviou a lista, respeita apenas esses nomes.
+        - Caso contrário, seleciona todos do projeto (com horas registradas alguma vez naquele projeto).
+        """
+        registros_base = FatoRegistroHoras.objects.all()
+        if projeto_id:
+            registros_base = registros_base.filter(projeto_id=projeto_id)
+
+        ids_devs_projeto = registros_base.values_list("funcionario_id", flat=True)
+        base_devs = (
+            DimFuncionario.objects.filter(id__in=ids_devs_projeto).distinct()
+            if projeto_id
+            else DimFuncionario.objects.all()
+        )
+        if not base_devs.exists():
+            base_devs = DimFuncionario.objects.all()
+
+        color_map = DashboardEquipesService.get_colors_by_dev()
+
+        desenvolvedores_dropdown = []
+        for dev in base_devs.order_by("nome"):
+            selecionado = (
+                True if not desenvolvedores_ids else dev.nome in desenvolvedores_ids
+            )
+            desenvolvedores_dropdown.append(
+                {
+                    "name": dev.nome,
+                    "color": color_map.get(
+                        dev.nome, DashboardEquipesService.get_dev_color(0)
+                    ),
+                    "selected": selecionado,
+                }
+            )
+
+        return desenvolvedores_dropdown
 
     @staticmethod
     def get_projetos():
@@ -62,6 +98,16 @@ class DashboardEquipesService:
         return projeto_id, data_inicio, data_fim, desenvolvedores_ids
 
     @staticmethod
+    def _parse_date(date_str):
+        """Tenta converter datas nos formatos ISO (YYYY-MM-DD) ou BR (DD/MM/YYYY)."""
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+            try:
+                return datetime.strptime(date_str, fmt)
+            except ValueError:
+                continue
+        return None
+
+    @staticmethod
     def aplicar_filtros_horas(projeto_id, data_inicio, data_fim, desenvolvedores_ids):
         """Aplica filtros na query de horas trabalhadas"""
         registros_horas = FatoRegistroHoras.objects.select_related(
@@ -72,13 +118,14 @@ class DashboardEquipesService:
             registros_horas = registros_horas.filter(projeto_id=projeto_id)
 
         if data_inicio and data_fim:
-            try:
-                data_inicio_dt = datetime.strptime(data_inicio, "%Y-%m-%d")
-                data_fim_dt = datetime.strptime(data_fim, "%Y-%m-%d")
+            data_inicio_dt = DashboardEquipesService._parse_date(data_inicio)
+            data_fim_dt = DashboardEquipesService._parse_date(data_fim)
+
+            if data_inicio_dt and data_fim_dt:
                 registros_horas = registros_horas.filter(
                     data__data_completa__range=[data_inicio_dt, data_fim_dt]
                 )
-            except ValueError:
+            else:
                 data_inicio_dt, data_fim_dt = DashboardEquipesService.get_datas_padrao()
                 registros_horas = registros_horas.filter(
                     data__data_completa__range=[data_inicio_dt, data_fim_dt]
@@ -108,23 +155,23 @@ class DashboardEquipesService:
         )
 
         datas_unicas = sorted(
-            {
-                item["data__data_completa"].strftime("%d/%m")
-                for item in horas_por_dia_dev
-            }
+            {item["data__data_completa"] for item in horas_por_dia_dev}
         )
         desenvolvedores_unicos = DimFuncionario.objects.all()
 
         dados_grafico = []
-        for data_str in datas_unicas:
-            dados_dia = {"data": data_str}
+        for data_dt in datas_unicas:
+            data_str = data_dt.strftime("%d/%m")
+            data_iso = data_dt.strftime("%Y-%m-%d")
+
+            dados_dia = {"data": data_str, "data_iso": data_iso}
 
             for dev in desenvolvedores_unicos:
                 horas_dev = next(
                     (
                         item["total_horas"]
                         for item in horas_por_dia_dev
-                        if item["data__data_completa"].strftime("%d/%m") == data_str
+                        if item["data__data_completa"] == data_dt
                         and item["funcionario__nome"] == dev.nome
                     ),
                     0,

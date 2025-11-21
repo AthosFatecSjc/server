@@ -33,18 +33,7 @@
     ></script>
 </head>
 <body class="bg-gray-50 min-h-screen p-6">
-    <div class="space-y-6 max-w-7xl mx-auto">
-
-        {% include "equipes/components/filtros.html" %}
-
-        <div class="grid grid-cols-1 gap-6">
-            {% include "equipes/components/grafico_horas_dia.html" %}
-
-        </div>
-    </div>
-
-    {{ daily_data|json_script:"daily-data-json" }}
-    {{ module_data|json_script:"module-data-json" }}
+    {% include "equipes/partials/_dashboard_content.html" %}
 
     <script>
         window.horasPorDevPorDiaData = JSON.parse(
@@ -74,14 +63,9 @@
             {% endfor %}
         ];
 
-        window.selectedDevs = [
-            {% for dev in devs %}
-                {% if dev.selected %}"{{ dev.name }}"{% if not forloop.last %},{% endif %}{% endif %}
-            {% endfor %}
-        ];
+        window.selectedDevs = window.ALL_DEVS.slice();
 
         document.addEventListener('DOMContentLoaded', function() {
-            updateDevsDisplay();
             updatePeriodDisplay();
             initCharts();
             setupEventListeners();
@@ -93,73 +77,25 @@
         }
 
         function setupEventListeners() {
-            document.getElementById('projectSelect').addEventListener('change', aplicarFiltros);
-            document.getElementById('dateFrom').addEventListener('change', aplicarFiltros);
-            document.getElementById('dateTo').addEventListener('change', aplicarFiltros);
-
-            document.querySelectorAll('.dev-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    updateSelectedDevs();
-                    aplicarFiltros();
-                });
-            });
+            document.getElementById('projectSelect').addEventListener('change', () => {});
+            document.getElementById('dateFrom').addEventListener('change', updatePeriodDisplay);
+            document.getElementById('dateTo').addEventListener('change', updatePeriodDisplay);
         }
 
         function aplicarFiltros() {
-            const projetoId = document.getElementById('projectSelect').value;
-            const dataInicio = document.getElementById('dateFrom').value;
-            const dataFim = document.getElementById('dateTo').value;
-            const desenvolvedoresSelecionados = Array.from(document.querySelectorAll('.dev-checkbox:checked'))
-                .map(cb => cb.value);
-
-            const params = new URLSearchParams();
-
-            if (projetoId) params.append('projeto', projetoId);
-            if (dataInicio) params.append('data_inicio', dataInicio);
-            if (dataFim) params.append('data_fim', dataFim);
-            desenvolvedoresSelecionados.forEach(dev => params.append('desenvolvedores', dev));
-
-            window.location.href = `${window.location.pathname}?${params.toString()}`;
+            document.getElementById('filtersForm').submit();
         }
 
-        function updateSelectedDevs() {
-            window.selectedDevs = Array.from(document.querySelectorAll('.dev-checkbox:checked'))
-                .map(cb => cb.value);
+        function clearFilters() {
+            const projectSelect = document.getElementById('projectSelect');
+            const dateFrom = document.getElementById('dateFrom');
+            const dateTo = document.getElementById('dateTo');
 
-            updateDevsDisplay();
-            updateDailyChart();
-        }
+            projectSelect.value = '';
+            dateFrom.value = '';
+            dateTo.value = '';
 
-        function updateDevsDisplay() {
-            const count = window.selectedDevs.length;
-            document.getElementById('selectedDevsCount').textContent = count;
-            document.getElementById('selectedDevsChartCount').textContent = count;
-
-            let displayText;
-            if (count === 0) {
-                displayText = "Selecione desenvolvedores";
-            } else if (count === window.ALL_DEVS.length) {
-                displayText = "Todos selecionados";
-            } else {
-                displayText = window.selectedDevs.join(", ");
-            }
-            document.getElementById('devsDisplay').textContent = displayText;
-        }
-
-        function toggleDevsDropdown() {
-            const dropdown = document.getElementById('devsDropdown');
-            dropdown.classList.toggle('hidden');
-        }
-
-        function toggleAllDevs() {
-            const checkboxes = document.querySelectorAll('.dev-checkbox');
-            const allChecked = window.selectedDevs.length === window.ALL_DEVS.length;
-
-            checkboxes.forEach(cb => {
-                cb.checked = !allChecked;
-            });
-
-            updateSelectedDevs();
+            document.getElementById('filtersForm').submit();
         }
 
         function updatePeriodDisplay() {
@@ -202,21 +138,14 @@
             const toDate = new Date(to + 'T23:59:59');
 
             return window.horasPorDevPorDiaData.filter(day => {
-                const [dayStr, monthStr] = day.data.split('/');
-                const dayDate = new Date(2025, parseInt(monthStr) - 1, parseInt(dayStr));
+                const dayDate = day.data_iso
+                    ? new Date(day.data_iso + 'T00:00:00')
+                    : new Date(fromDate.getFullYear(), parseInt(day.data.split('/')[1]) - 1, parseInt(day.data.split('/')[0]));
 
                 return dayDate >= fromDate && dayDate <= toDate;
             });
         }
 
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('devsDropdown');
-            const trigger = document.querySelector('[onclick="toggleDevsDropdown()"]');
-
-            if (dropdown && trigger && !trigger.contains(event.target) && !dropdown.contains(event.target)) {
-                dropdown.classList.add('hidden');
-            }
-        });
     </script>
 </body>
 </html>

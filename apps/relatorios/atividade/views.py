@@ -7,9 +7,12 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_safe
 
+from apps.usuarios.decorators import perfil_gerente_required
+
 from .services import AtividadeService
 
 
+@perfil_gerente_required
 @require_safe
 def index(request):
     """Renderiza a página inicial do relatório de atividades."""
@@ -55,6 +58,7 @@ def index(request):
     return render(request, "atividade/index.html", context)
 
 
+@perfil_gerente_required
 @require_GET
 def relatorio_tabela_e_cards(request):
     """Renderiza o relatório de atividades em formato de tabela e cards."""
@@ -172,6 +176,7 @@ def get_grafico_horas_por_dev(context, request):
     )
 
 
+@perfil_gerente_required
 @require_GET
 def exportar_pdf(request):
     """Exporta o relatório de atividades em PDF."""

@@ -4,9 +4,12 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
+from apps.usuarios.decorators import perfil_gerente_required
+
 from .services import DesenvolvedoresService
 
 
+@perfil_gerente_required
 @require_http_methods(["GET"])
 def index(request):
     header_context = {
@@ -41,6 +44,7 @@ def index(request):
     return render(request, "desenvolvedores/index.html", context)
 
 
+@perfil_gerente_required
 @require_http_methods(["GET"])
 def get_dados_desenvolvedores(request):
     """API para buscar dados atualizados (AJAX)"""
@@ -59,6 +63,7 @@ def get_dados_desenvolvedores(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+@perfil_gerente_required
 @require_http_methods(["POST"])
 def atualizar_valor_hora(request):
     """API para atualizar valor/hora no OLTP"""

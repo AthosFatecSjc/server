@@ -5,7 +5,10 @@
     </div>
     <div class="p-6">
         <div class="h-[450px]">
-            <canvas id="dailyHoursChart"></canvas>
+            <canvas id="dailyHoursChart" class="hidden"></canvas>
+            <div id="noDataMessage" class="hidden h-full flex items-center justify-center text-gray-500 text-sm">
+                Nenhum dado disponível para o período e filtros selecionados.
+            </div>
         </div>
     </div>
 </div>
@@ -81,8 +84,22 @@
     }
 
     function updateDailyChart() {
+        const data = getDailyChartData();
+        const hasData = data.datasets.some(ds => ds.data.some(v => v && Number(v) !== 0));
+        const chartEl = document.getElementById('dailyHoursChart');
+        const noDataEl = document.getElementById('noDataMessage');
+
+        if (!hasData) {
+            chartEl.classList.add('hidden');
+            noDataEl.classList.remove('hidden');
+            return;
+        }
+
+        chartEl.classList.remove('hidden');
+        noDataEl.classList.add('hidden');
+
         if (window.dailyChart) {
-            window.dailyChart.data = getDailyChartData();
+            window.dailyChart.data = data;
             window.dailyChart.update();
         }
     }
