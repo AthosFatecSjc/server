@@ -7,6 +7,13 @@ from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 
+from apps.usuarios.decorators import (
+    perfil_gerente_required,
+    perfil_lider_required,
+    perfil_membro_or_above_required,
+)
+from apps.usuarios.models import PerfilAcessoChoices
+
 from .services import (
     DashboardProjetoError,
     DashboardProjetoPdfService,
@@ -28,6 +35,7 @@ def _handle_pdf_exception(exc: Exception) -> JsonResponse:
     return _json_error("Não foi possível gerar o PDF solicitado.", status=500)
 
 
+@perfil_membro_or_above_required
 @require_http_methods(["GET"])
 def index(request):
     """View principal do dashboard de saúde do projeto."""
@@ -46,17 +54,28 @@ def index(request):
 
     contexto = DashboardProjetoService.montar_contexto_dashboard(projeto_id)
 
+    perfil_usuario = getattr(request.user, "perfil_acesso", None)
+    pode_ver_custos = perfil_usuario in {
+        PerfilAcessoChoices.LIDER,
+        PerfilAcessoChoices.GERENTE,
+    }
+
     context = {
         "header_context": header_context,
         "projetos_dimensao": contexto.projetos_dimensao,
         "dados_grafico": contexto.dados_grafico,
         "projeto_selecionado_id": contexto.projeto_selecionado_id,
         "projeto_selecionado_nome": contexto.projeto_selecionado_nome,
+        "pode_editar_orcamento": perfil_usuario == PerfilAcessoChoices.GERENTE,
+        "pode_ver_custos": pode_ver_custos,
+        "mostrar_custos_issues": pode_ver_custos,
+        "mostrar_export": pode_ver_custos,
     }
 
     return render(request, "projeto/index.html", context)
 
 
+@perfil_gerente_required
 @csrf_protect
 @require_http_methods(["POST"])
 def atualizar_orcamento_previsto(request, projeto_id: int):
@@ -80,6 +99,7 @@ def atualizar_orcamento_previsto(request, projeto_id: int):
     return JsonResponse(resultado)
 
 
+@perfil_lider_required
 @csrf_protect
 @require_http_methods(["POST"])
 def exportar_relatorio_pdf(request):

@@ -6,15 +6,25 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
+from apps.usuarios.decorators import perfil_gerente_required
 from apps.usuarios.models import Usuario
 
 from .forms import UsuarioCreateForm, UsuarioFiltroForm, UsuarioUpdateForm
 from .services import alterar_status_usuario, listar_usuarios
 
 LISTA_URL_NAME = "usuarios:lista"
+
+
+class GerenteRequiredMixin(View):
+    """Restringe acesso a perfis de gerente."""
+
+    @method_decorator(perfil_gerente_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
 
 
 def _resolve_redirect_url(request: HttpRequest, fallback: str) -> str:
@@ -29,7 +39,7 @@ def _resolve_redirect_url(request: HttpRequest, fallback: str) -> str:
     return fallback
 
 
-class UsuarioListView(View):
+class UsuarioListView(GerenteRequiredMixin, View):
     """Lista de usuários com filtros combinados."""
 
     template_name = "usuarios/index.html"
@@ -48,7 +58,7 @@ class UsuarioListView(View):
         return render(request, self.template_name, contexto)
 
 
-class UsuarioCreateView(View):
+class UsuarioCreateView(GerenteRequiredMixin, View):
     """Tela de criação de usuário."""
 
     template_name = "usuarios/formulario.html"
@@ -87,7 +97,7 @@ class UsuarioCreateView(View):
         )
 
 
-class UsuarioUpdateView(View):
+class UsuarioUpdateView(GerenteRequiredMixin, View):
     """Tela de edição de usuário."""
 
     template_name = "usuarios/formulario.html"
@@ -128,7 +138,7 @@ class UsuarioUpdateView(View):
         )
 
 
-class UsuarioDetailView(View):
+class UsuarioDetailView(GerenteRequiredMixin, View):
     """Página de detalhes de um usuário específico."""
 
     template_name = "usuarios/detalhe.html"
@@ -142,7 +152,7 @@ class UsuarioDetailView(View):
         )
 
 
-class UsuarioStatusToggleView(View):
+class UsuarioStatusToggleView(GerenteRequiredMixin, View):
     """Ativa ou desativa um usuário conforme o status atual."""
 
     def post(self, request: HttpRequest, pk: int) -> HttpResponse:
@@ -167,7 +177,7 @@ class UsuarioStatusToggleView(View):
         return redirect(redirect_url)
 
 
-class UsuarioDeleteView(View):
+class UsuarioDeleteView(GerenteRequiredMixin, View):
     """Exclui um usuário do sistema."""
 
     http_method_names = ["post"]

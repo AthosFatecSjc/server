@@ -1,0 +1,11 @@
+<div id="dashboard-content" class="space-y-6 mx-auto">
+
+    {% include "equipes/components/filtros.html" %}
+
+    <div class="grid grid-cols-1 gap-6">
+        {% include "equipes/components/grafico_horas_dia.html" %}
+    </div>
+
+    {{ daily_data|json_script:"daily-data-json" }}
+    {{ module_data|json_script:"module-data-json" }}
+</div>

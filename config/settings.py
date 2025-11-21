@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "apps.dashboards",
     "apps.dashboards.desenvolvedores",
     "apps.dashboards.projetos",
+    "apps.dashboards.equipes",
     "apps.utils",
     "config",
     "olap_models",
@@ -253,6 +254,11 @@ CACHE_JIRA = {
     "timestamp": None,
     "validade": datetime.timedelta(minutes=10),
 }
+
+# Defaults used when criando usuários placeholder para desenvolvedores importados
+DEFAULT_DEV_USER_PASSWORD = get_env("DEFAULT_DEV_USER_PASSWORD", "ChangeMe123!")
+DEFAULT_DEV_USER_EMAIL_DOMAIN = get_env("DEFAULT_DEV_USER_EMAIL_DOMAIN", "devs.local")
+DEFAULT_DEV_USER_CARGO = get_env("DEFAULT_DEV_USER_CARGO", "NAO_DEFINIDO")
 
 # Session management
 SESSION_COOKIE_AGE = env.int("SESSION_COOKIE_AGE", default=2 * 60 * 60)  # 2 hours

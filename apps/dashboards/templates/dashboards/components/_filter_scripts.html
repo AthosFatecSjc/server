@@ -1,7 +1,8 @@
 <script>
+    const podeVerCustosDashboard = {{ pode_ver_custos|default_if_none:False|yesno:"true,false" }};
     let currentProjectFilter = 'all';
     let currentTypeFilter = 'all';
-    let currentDashboardTab = 'custos';
+    let currentDashboardTab = podeVerCustosDashboard ? 'custos' : 'issues';
 
     function formatCurrency(value) {
         const numericValue = Number.parseFloat(value);
@@ -378,9 +379,14 @@
 
         const indicator = document.getElementById('tab-indicator');
         if (indicator) {
-            const buttonWidth = 100 / 2; // 2 botões = 50% cada
-            const translateX = tab === 'custos' ? 0 : 100;
-            indicator.style.transform = `translateX(${translateX}%)`;
+            if (podeVerCustosDashboard) {
+                const translateX = tab === 'custos' ? 0 : 100;
+                indicator.style.transform = `translateX(${translateX}%)`;
+            } else {
+                indicator.style.width = 'calc(100% - 0.5rem)';
+                indicator.style.left = '0.25rem';
+                indicator.style.transform = 'translateX(0)';
+            }
         }
 
         document.querySelectorAll('.dashboard-panel').forEach(panel => {
@@ -403,7 +409,7 @@
 
     // Inicializar tab padrão
     document.addEventListener('DOMContentLoaded', function() {
-        switchDashboardTab('custos');
+        switchDashboardTab(currentDashboardTab);
     });
 
     function updateExportModalProject(projectData) {

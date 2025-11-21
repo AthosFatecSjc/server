@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+{% include "dashboards/_header.html" with header=header_context %}
+
+<div class="h-6"></div>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Equipes</title>
+    <link
+        href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+        rel="stylesheet"
+        integrity="sha384-HtMZLkYo+pR5/u7zCzXxMJP6QoNnQJt1qkHM0EaOPvGDIzaVZbmYr/TlvUZ/sKAg"
+        crossorigin="anonymous"
+    />
+    <script src="{% static 'libs/chartjs/chart.umd.min.js' %}" crossorigin="anonymous"></script>
+    <script src="{% static 'libs/chartjs/chartjs-plugin-datalabels.min.js' %}" crossorigin="anonymous"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+        integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H"
+        crossorigin="anonymous"
+    ></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+        integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk"
+        crossorigin="anonymous"
+    ></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+    {% include "equipes/partials/_dashboard_content.html" %}
+
+    <script>
+        window.horasPorDevPorDiaData = JSON.parse(
+            document.getElementById("daily-data-json").textContent
+        );
+        window.horasPorDevPorModuloData = JSON.parse(
+            document.getElementById("module-data-json").textContent
+        );
+        //erros causados por django
+        window.DEV_COLORS = {
+            {% for dev in devs %}
+            "{{ dev.name }}": "{{ dev.color }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+
+        window.MODULO_COLORS = {
+            "Autenticação": "#0057B8",
+            "Dashboard": "#3b82f6",
+            "API Gateway": "#60a5fa",
+            "Mobile": "#93c5fd",
+            "Infraestrutura": "#bfdbfe"
+        };
+
+        window.ALL_DEVS = [
+            {% for dev in devs %}
+            "{{ dev.name }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        window.selectedDevs = window.ALL_DEVS.slice();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePeriodDisplay();
+            initCharts();
+            setupEventListeners();
+        });
+
+        function initCharts() {
+            initDailyHoursChart();
+            initModuleHoursLineChart();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('projectSelect').addEventListener('change', () => {});
+            document.getElementById('dateFrom').addEventListener('change', updatePeriodDisplay);
+            document.getElementById('dateTo').addEventListener('change', updatePeriodDisplay);
+        }
+
+        function aplicarFiltros() {
+            document.getElementById('filtersForm').submit();
+        }
+
+        function clearFilters() {
+            const projectSelect = document.getElementById('projectSelect');
+            const dateFrom = document.getElementById('dateFrom');
+            const dateTo = document.getElementById('dateTo');
+
+            projectSelect.value = '';
+            dateFrom.value = '';
+            dateTo.value = '';
+
+            document.getElementById('filtersForm').submit();
+        }
+
+        function updatePeriodDisplay() {
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+
+            if (from && to) {
+                const fromDate = new Date(from + 'T00:00:00');
+                const toDate = new Date(to + 'T23:59:59');
+                const days = Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+
+                const fromStr = formatDateForDisplay(fromDate);
+                const toStr = formatDateForDisplay(toDate);
+
+                document.getElementById('periodDisplay').textContent =
+                    `${fromStr} até ${toStr} (${days} dias)`;
+            } else {
+                document.getElementById('periodDisplay').textContent = "Nenhum período selecionado";
+            }
+        }
+
+        function formatDateForDisplay(date) {
+            const options = {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            };
+            return date.toLocaleDateString('pt-BR', options);
+        }
+
+        function filterDataByDateRange() {
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+
+            if (!from || !to) {
+                return window.horasPorDevPorDiaData;
+            }
+
+            const fromDate = new Date(from + 'T00:00:00');
+            const toDate = new Date(to + 'T23:59:59');
+
+            return window.horasPorDevPorDiaData.filter(day => {
+                const dayDate = day.data_iso
+                    ? new Date(day.data_iso + 'T00:00:00')
+                    : new Date(fromDate.getFullYear(), parseInt(day.data.split('/')[1]) - 1, parseInt(day.data.split('/')[0]));
+
+                return dayDate >= fromDate && dayDate <= toDate;
+            });
+        }
+
+    </script>
+</body>
+</html>
+{% endblock %}
