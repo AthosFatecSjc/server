@@ -1,13 +1,9 @@
 name: Deploy to Azure VM
 
 on:
-  pull_request:
+  push:
     branches:
       - release
-    types:
-      - opened
-      - reopened
-      - synchronize
 
 jobs:
   deploy:
