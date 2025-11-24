@@ -1,5 +1,6 @@
 import datetime
 import os
+import sys
 from pathlib import Path
 
 import environ
@@ -171,6 +172,18 @@ if get_env("TEST_DB_ENGINE"):
         "ENGINE": get_env("TEST_DB_ENGINE"),
         "NAME": get_env("TEST_DB_NAME", ":memory:"),
     }
+
+RUNNING_TESTS = bool(os.getenv("PYTEST_CURRENT_TEST")) or any(
+    arg in {"pytest", "py.test", "test"} or arg.endswith("pytest") for arg in sys.argv
+)
+
+if (
+    RUNNING_TESTS
+    and not get_bool_env("USE_DB_ENV_IN_TESTS", False)
+    and not get_env("TEST_DB_ENGINE")
+):
+    DATABASES["default"] = {"ENGINE": SQLITE_ENGINE, "NAME": ":memory:"}
+    DATABASES["olap"] = {"ENGINE": SQLITE_ENGINE, "NAME": ":memory:"}
 
 JIRA_BASE_URL = get_env("JIRA_BASE_URL") or get_env(
     "JIRA_URL",

@@ -6,7 +6,8 @@ services:
       - .env
     command: >
       sh -c "
-        python manage.py migrate --noinput &&
+        python manage.py migrate --database=default --noinput &&
+        python manage.py migrate --database=olap --noinput &&
         python manage.py collectstatic --noinput &&
         gunicorn config.wsgi:application --workers 4 --bind 0.0.0.0:8000
       "
