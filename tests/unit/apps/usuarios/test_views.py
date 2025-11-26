@@ -3,6 +3,7 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from django.contrib.messages import get_messages
 from django.core.exceptions import ImproperlyConfigured
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
@@ -106,6 +107,18 @@ class UsuarioViewsTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.membro.refresh_from_db()
         self.assertTrue(self.membro.ativo)
+
+    def test_status_toggle_view_nao_permite_alterar_proprio_status(self):
+        url = reverse("usuarios:status", args=[self.gerente.pk])
+
+        response = self.client.post(url, {"acao": "desativar"})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("usuarios:lista"))
+        self.gerente.refresh_from_db()
+        self.assertTrue(self.gerente.ativo)
+        mensagens = [msg.message for msg in get_messages(response.wsgi_request)]
+        self.assertIn("status do próprio usuário", " ".join(mensagens))
 
     def test_create_view_get_renderiza_formulario(self):
         response = self.client.get(reverse("usuarios:criar"))

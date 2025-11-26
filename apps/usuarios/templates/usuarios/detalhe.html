@@ -106,37 +106,49 @@
         <div class="space-y-6">
             <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 class="mb-4 text-lg font-semibold text-slate-800">Status</h2>
-                <div class="flex items-center gap-3">
-                    {% if usuario.ativo %}
-                        <span class="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                            <span class="h-2 w-2 rounded-full bg-green-500"></span>
-                            Ativo
-                        </span>
-                        <button type="button"
-                                class="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:border-red-300 hover:bg-red-50"
-                                data-status-modal
-                                data-url="{% url 'usuarios:status' usuario.pk %}"
-                                data-acao="desativar"
-                                data-nome="{{ usuario.nome_completo|escape }}"
-                                data-next="{% url 'usuarios:detalhe' usuario.pk %}">
-                            <i class="fas fa-user-slash"></i>
-                            Desativar
-                        </button>
-                    {% else %}
-                        <span class="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
-                            <span class="h-2 w-2 rounded-full bg-red-500"></span>
-                            Inativo
-                        </span>
-                        <button type="button"
-                                class="inline-flex items-center gap-2 rounded-xl border border-green-200 px-3 py-1.5 text-xs font-medium text-green-600 transition hover:border-green-300 hover:bg-green-50"
-                                data-status-modal
-                                data-url="{% url 'usuarios:status' usuario.pk %}"
-                                data-acao="ativar"
-                                data-nome="{{ usuario.nome_completo|escape }}"
-                                data-next="{% url 'usuarios:detalhe' usuario.pk %}">
-                            <i class="fas fa-user-check"></i>
-                            Reativar
-                        </button>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        {% if usuario.ativo %}
+                            <span class="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                                <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                                Ativo
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                                <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                                Inativo
+                            </span>
+                        {% endif %}
+                        {% if not is_self %}
+                            {% if usuario.ativo %}
+                                <button type="button"
+                                        class="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:border-red-300 hover:bg-red-50"
+                                        data-status-modal
+                                        data-url="{% url 'usuarios:status' usuario.pk %}"
+                                        data-acao="desativar"
+                                        data-nome="{{ usuario.nome_completo|escape }}"
+                                        data-next="{% url 'usuarios:detalhe' usuario.pk %}">
+                                    <i class="fas fa-user-slash"></i>
+                                    Desativar
+                                </button>
+                            {% else %}
+                                <button type="button"
+                                        class="inline-flex items-center gap-2 rounded-xl border border-green-200 px-3 py-1.5 text-xs font-medium text-green-600 transition hover:border-green-300 hover:bg-green-50"
+                                        data-status-modal
+                                        data-url="{% url 'usuarios:status' usuario.pk %}"
+                                        data-acao="ativar"
+                                        data-nome="{{ usuario.nome_completo|escape }}"
+                                        data-next="{% url 'usuarios:detalhe' usuario.pk %}">
+                                    <i class="fas fa-user-check"></i>
+                                    Reativar
+                                </button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    {% if is_self %}
+                        <p class="text-xs text-gray-500">
+                            Você não pode alterar o status do próprio usuário. Solicite a outro administrador.
+                        </p>
                     {% endif %}
                 </div>
             </div>
@@ -154,15 +166,21 @@
                 <p class="text-sm text-gray-600 mb-4">
                     Esta ação remove definitivamente o usuário do sistema. Ela não pode ser desfeita.
                 </p>
-                <button type="button"
-                        class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:border-red-300 hover:bg-red-100"
-                        data-delete-modal
-                        data-url="{% url 'usuarios:excluir' usuario.pk %}"
-                        data-nome="{{ usuario.nome_completo|escape }}"
-                        data-next="{% url 'usuarios:lista' %}">
-                    <i class="fas fa-trash-alt"></i>
-                    Excluir usuário
-                </button>
+                {% if is_self %}
+                    <div class="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                        Você não pode excluir o próprio usuário. Solicite a outro administrador.
+                    </div>
+                {% else %}
+                    <button type="button"
+                            class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:border-red-300 hover:bg-red-100"
+                            data-delete-modal
+                            data-url="{% url 'usuarios:excluir' usuario.pk %}"
+                            data-nome="{{ usuario.nome_completo|escape }}"
+                            data-next="{% url 'usuarios:lista' %}">
+                        <i class="fas fa-trash-alt"></i>
+                        Excluir usuário
+                    </button>
+                {% endif %}
             </div>
         </div>
     </div>
