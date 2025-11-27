@@ -10,6 +10,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SQLITE_ENGINE = "django.db.backends.sqlite3"
+SQLITE_MEMORY_NAME = ":memory:"
 
 env = environ.Env()
 env_path = BASE_DIR / ".env"
@@ -170,7 +171,7 @@ if not DATABASES["olap"]["NAME"]:
 if get_env("TEST_DB_ENGINE"):
     DATABASES["default"] = {
         "ENGINE": get_env("TEST_DB_ENGINE"),
-        "NAME": get_env("TEST_DB_NAME", ":memory:"),
+        "NAME": get_env("TEST_DB_NAME", SQLITE_MEMORY_NAME),
     }
 
 RUNNING_TESTS = bool(os.getenv("PYTEST_CURRENT_TEST")) or any(
@@ -182,8 +183,8 @@ if (
     and not get_bool_env("USE_DB_ENV_IN_TESTS", False)
     and not get_env("TEST_DB_ENGINE")
 ):
-    DATABASES["default"] = {"ENGINE": SQLITE_ENGINE, "NAME": ":memory:"}
-    DATABASES["olap"] = {"ENGINE": SQLITE_ENGINE, "NAME": ":memory:"}
+    DATABASES["default"] = {"ENGINE": SQLITE_ENGINE, "NAME": SQLITE_MEMORY_NAME}
+    DATABASES["olap"] = {"ENGINE": SQLITE_ENGINE, "NAME": SQLITE_MEMORY_NAME}
 
 JIRA_BASE_URL = get_env("JIRA_BASE_URL") or get_env(
     "JIRA_URL",

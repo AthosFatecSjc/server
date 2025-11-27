@@ -195,7 +195,7 @@ def _consolidar_resultados_por_nome(resultados: list[dict], dias: Iterable[int])
             {
                 "funcionario": nome,
                 "funcionario_id": res.get("funcionario_id"),
-                "dias": {dia: 0.0 for dia in dias},
+                "dias": dict.fromkeys(dias, 0.0),
                 "real": 0.0,
                 "meta": 0.0,
                 "percentual": 0.0,
@@ -227,22 +227,29 @@ def _mesclar_valor_dia(atual, novo):
     if novo is None:
         return atual
 
-    atual_num = atual if isinstance(atual, (int, float, Decimal)) else None
-    novo_num = novo if isinstance(novo, (int, float, Decimal)) else None
+    atual_num = _as_decimal(atual)
+    novo_num = _as_decimal(novo)
 
     if atual_num is not None and novo_num is not None:
-        return round(float(Decimal(str(atual_num)) + Decimal(str(novo_num))), 1)
+        return round(float(atual_num + novo_num), 1)
 
-    if isinstance(atual, dict) and isinstance(novo, dict):
+    if isinstance(atual, dict):
+        if isinstance(novo, dict):
+            return atual
+        if novo_num is not None:
+            return novo if novo_num > 0 else atual
         return atual
-
-    if isinstance(atual, dict) and novo_num is not None:
-        return novo if novo_num > 0 else atual
 
     if isinstance(novo, dict) and atual_num is not None:
         return atual if atual_num > 0 else novo
 
     return novo
+
+
+def _as_decimal(value):
+    if isinstance(value, (int, float, Decimal)):
+        return Decimal(str(value))
+    return None
 
 
 def _buscar_funcionarios(equipe: str | None) -> list[Funcionario]:
