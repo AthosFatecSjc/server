@@ -10,13 +10,23 @@ class DesenvolvedoresService:
         """
         try:
             with connections["default"].cursor() as cursor:
+                # Dedupe por nome (case-insensitive), priorizando o registro mais antigo.
                 query = """
-                    SELECT
-                        id,
-                        nome,
-                        COALESCE(valor_hora, 40.00) AS valor_hora,
-                        COALESCE(contrato, 'CLT') AS contrato
-                    FROM funcionario
+                    WITH dedup AS (
+                        SELECT
+                            id,
+                            nome,
+                            COALESCE(valor_hora, 40.00) AS valor_hora,
+                            COALESCE(contrato, 'CLT') AS contrato,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY LOWER(nome)
+                                ORDER BY data_criacao, id
+                            ) AS rn
+                        FROM funcionario
+                    )
+                    SELECT id, nome, valor_hora, contrato
+                    FROM dedup
+                    WHERE rn = 1
                     ORDER BY nome
                 """
                 cursor.execute(query)

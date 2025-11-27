@@ -26,9 +26,12 @@ class DashboardEquipesService:
     @staticmethod
     def get_colors_by_dev():
         """Mapa determinístico nome -> cor, usando ordenação estável por nome."""
-        devs = list(
-            DimFuncionario.objects.order_by("nome").values_list("nome", flat=True)
-        )
+        devs = [
+            dev.nome
+            for dev in DashboardEquipesService._devs_unicos(
+                DimFuncionario.objects.order_by("nome")
+            )
+        ]
         return {
             name: DashboardEquipesService.get_dev_color(idx)
             for idx, name in enumerate(devs)
@@ -59,7 +62,7 @@ class DashboardEquipesService:
         color_map = DashboardEquipesService.get_colors_by_dev()
 
         desenvolvedores_dropdown = []
-        for dev in base_devs.order_by("nome"):
+        for dev in DashboardEquipesService._devs_unicos(base_devs.order_by("nome")):
             selecionado = (
                 True if not desenvolvedores_ids else dev.nome in desenvolvedores_ids
             )
@@ -157,7 +160,9 @@ class DashboardEquipesService:
         datas_unicas = sorted(
             {item["data__data_completa"] for item in horas_por_dia_dev}
         )
-        desenvolvedores_unicos = DimFuncionario.objects.all()
+        desenvolvedores_unicos = DashboardEquipesService._devs_unicos(
+            DimFuncionario.objects.order_by("nome")
+        )
 
         dados_grafico = []
         for data_dt in datas_unicas:
@@ -182,6 +187,19 @@ class DashboardEquipesService:
             dados_grafico.append(dados_dia)
 
         return dados_grafico
+
+    @staticmethod
+    def _devs_unicos(queryset):
+        """Remove duplicados por nome preservando ordenação."""
+        vistos = set()
+        unicos = []
+        for dev in queryset:
+            chave = (dev.nome or "").strip().lower()
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+            unicos.append(dev)
+        return unicos
 
     @staticmethod
     def contar_desenvolvedores_selecionados(desenvolvedores_dropdown):

@@ -133,10 +133,7 @@ def _calcular_spends_por_dev(
 
     registros, horas_issue, horas_fato = _buscar_fontes_horas(funcionarios, mes, ano)
 
-    resultados = []
-    soma_diaria_total = {dia: Decimal("0") for dia in dias}
-    total_real = Decimal("0")
-    total_meta = Decimal("0")
+    resultados_brutos = []
 
     for func in funcionarios:
         dias_por_func, horas_normais = _montar_grade_funcionario(
@@ -146,7 +143,7 @@ def _calcular_spends_por_dev(
         meta = Decimal(str(meta_valor))
         percentual = _percentual(horas_normais, meta)
 
-        resultados.append(
+        resultados_brutos.append(
             {
                 "funcionario": func.nome,
                 "funcionario_id": func.id,
@@ -156,11 +153,16 @@ def _calcular_spends_por_dev(
                 "percentual": percentual,
             }
         )
-        total_real += horas_normais
-        total_meta += meta
+    resultados = _consolidar_resultados_por_nome(resultados_brutos, dias)
+    soma_diaria_total = {dia: Decimal("0") for dia in dias}
+    total_real = Decimal("0")
+    total_meta = Decimal("0")
 
-        for dia, valor in dias_por_func.items():
-            if isinstance(valor, (int, float, Decimal)):
+    for resultado in resultados:
+        total_real += Decimal(str(resultado["real"]))
+        total_meta += Decimal(str(resultado["meta"]))
+        for dia, valor in resultado["dias"].items():
+            if isinstance(valor, (int, float, Decimal)) and valor > 0:
                 soma_diaria_total[dia] += Decimal(str(valor))
 
     resultados.append(
@@ -177,6 +179,70 @@ def _calcular_spends_por_dev(
         }
     )
     return resultados
+
+
+def _consolidar_resultados_por_nome(resultados: list[dict], dias: Iterable[int]):
+    """Agrupa linhas duplicadas pelo mesmo nome de funcionário."""
+    agrupado: dict[str, dict] = {}
+
+    for res in resultados:
+        nome = res.get("funcionario") or ""
+        if not nome:
+            continue
+
+        destino = agrupado.setdefault(
+            nome,
+            {
+                "funcionario": nome,
+                "funcionario_id": res.get("funcionario_id"),
+                "dias": {dia: 0.0 for dia in dias},
+                "real": 0.0,
+                "meta": 0.0,
+                "percentual": 0.0,
+            },
+        )
+
+        for dia, valor in res.get("dias", {}).items():
+            destino["dias"][dia] = _mesclar_valor_dia(destino["dias"].get(dia), valor)
+
+        destino["meta"] = max(destino["meta"], res.get("meta", 0.0))
+
+    for destino in agrupado.values():
+        horas_totais = Decimal("0")
+        for valor in destino["dias"].values():
+            if isinstance(valor, (int, float, Decimal)) and valor > 0:
+                horas_totais += Decimal(str(valor))
+        destino["real"] = round(float(horas_totais), 1)
+        destino["percentual"] = _percentual(
+            Decimal(str(destino["real"])), Decimal(str(destino["meta"]))
+        )
+
+    return sorted(agrupado.values(), key=lambda item: item["funcionario"].lower())
+
+
+def _mesclar_valor_dia(atual, novo):
+    """Combina valores de um mesmo dia para o mesmo funcionário, somando horas."""
+    if atual is None:
+        return novo
+    if novo is None:
+        return atual
+
+    atual_num = atual if isinstance(atual, (int, float, Decimal)) else None
+    novo_num = novo if isinstance(novo, (int, float, Decimal)) else None
+
+    if atual_num is not None and novo_num is not None:
+        return round(float(Decimal(str(atual_num)) + Decimal(str(novo_num))), 1)
+
+    if isinstance(atual, dict) and isinstance(novo, dict):
+        return atual
+
+    if isinstance(atual, dict) and novo_num is not None:
+        return novo if novo_num > 0 else atual
+
+    if isinstance(novo, dict) and atual_num is not None:
+        return atual if atual_num > 0 else novo
+
+    return novo
 
 
 def _buscar_funcionarios(equipe: str | None) -> list[Funcionario]:
