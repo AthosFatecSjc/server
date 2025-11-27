@@ -24,15 +24,15 @@ services:
     env_file:
       - .env
     user: root
-    command: >
-      sh -c "
-        mkdir -p /app/log &&
-        python manage.py crontab remove &&
-        python manage.py crontab add &&
-        echo '$(date) - CRON inicializado' >> /app/log/cron_buscar_dados_api.log &&
-        service cron start &&
-        tail -f /app/log/cron_buscar_dados_api.log
-      "
     volumes:
       - .:/app
+    command: >
+      sh -c "
+        echo 'Removendo crontab antigo...' &&
+        python manage.py crontab remove || true &&
+        echo 'Adicionando crontab...' &&
+        python manage.py crontab add &&
+        echo 'Cron iniciado em: $(date)' >> /app/log/cron.log &&
+        cron -f
+      "
     restart: always
