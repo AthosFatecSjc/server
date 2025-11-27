@@ -224,7 +224,7 @@ class RouterTests(SimpleTestCase):
 
             _meta = _Meta()
 
-        self.assertIsNone(self.router.db_for_read(OtherModel))
+        self.assertEqual(self.router.db_for_read(OtherModel), "default")
 
     def test_db_for_write_routes_properly(self):
         class FakeModel:
@@ -241,7 +241,7 @@ class RouterTests(SimpleTestCase):
 
             _meta = _Meta()
 
-        self.assertIsNone(self.router.db_for_write(OtherModel))
+        self.assertEqual(self.router.db_for_write(OtherModel), "default")
 
     def test_allow_relation(self):
         class FakeObj:

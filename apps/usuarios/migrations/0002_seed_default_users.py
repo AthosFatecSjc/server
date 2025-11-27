@@ -5,9 +5,14 @@ from django.db import IntegrityError, migrations
 
 PADRAO_LABEL = "Padrão"
 DEFAULT_PASSWORD = os.getenv("DEFAULT_SEED_USER_PASSWORD", "athos123")
+# Mantemos essa migração como no-op para não criar usuários padrão.
+DISABLE_SEED_USERS = True
 
 
 def seed_default_users(apps, schema_editor):
+    if DISABLE_SEED_USERS:
+        return
+
     usuario_model = apps.get_model("usuarios", "Usuario")
     usuarios = [
         {

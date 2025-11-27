@@ -63,35 +63,42 @@
                                    class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-purple-200 text-purple-500 transition hover:border-purple-300 hover:text-purple-600">
                                     <i class="fas fa-pen"></i>
                                 </a>
-                                {% if usuario.ativo %}
-                                    <button type="button"
-                                            class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 transition hover:border-red-300 hover:text-red-600"
-                                            data-status-modal
-                                            data-url="{% url 'usuarios:status' usuario.pk %}"
-                                            data-acao="desativar"
-                                            data-nome="{{ usuario.nome_completo|escape }}"
-                                            data-next="{{ request.get_full_path|escape }}">
-                                        <i class="fas fa-user-slash"></i>
-                                    </button>
+                                {% if request.user.is_authenticated and request.user.pk == usuario.pk %}
+                                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-400"
+                                          title="Você não pode alterar ou excluir o próprio usuário.">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
                                 {% else %}
+                                    {% if usuario.ativo %}
+                                        <button type="button"
+                                                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 transition hover:border-red-300 hover:text-red-600"
+                                                data-status-modal
+                                                data-url="{% url 'usuarios:status' usuario.pk %}"
+                                                data-acao="desativar"
+                                                data-nome="{{ usuario.nome_completo|escape }}"
+                                                data-next="{{ request.get_full_path|escape }}">
+                                            <i class="fas fa-user-slash"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="button"
+                                                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-green-200 text-green-600 transition hover:border-green-300 hover:text-green-700"
+                                                data-status-modal
+                                                data-url="{% url 'usuarios:status' usuario.pk %}"
+                                                data-acao="ativar"
+                                                data-nome="{{ usuario.nome_completo|escape }}"
+                                                data-next="{{ request.get_full_path|escape }}">
+                                            <i class="fas fa-user-check"></i>
+                                        </button>
+                                    {% endif %}
                                     <button type="button"
-                                            class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-green-200 text-green-600 transition hover:border-green-300 hover:text-green-700"
-                                            data-status-modal
-                                            data-url="{% url 'usuarios:status' usuario.pk %}"
-                                            data-acao="ativar"
+                                            class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:border-red-300 hover:text-red-600"
+                                            data-delete-modal
+                                            data-url="{% url 'usuarios:excluir' usuario.pk %}"
                                             data-nome="{{ usuario.nome_completo|escape }}"
                                             data-next="{{ request.get_full_path|escape }}">
-                                        <i class="fas fa-user-check"></i>
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 {% endif %}
-                                <button type="button"
-                                        class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:border-red-300 hover:text-red-600"
-                                        data-delete-modal
-                                        data-url="{% url 'usuarios:excluir' usuario.pk %}"
-                                        data-nome="{{ usuario.nome_completo|escape }}"
-                                        data-next="{{ request.get_full_path|escape }}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
                             </div>
                         </td>
                     </tr>

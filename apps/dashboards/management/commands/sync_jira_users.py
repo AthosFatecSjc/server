@@ -53,7 +53,9 @@ class Command(BaseCommand):
             for task in tasks:
                 assignee_name = task.get("assignee")
                 if assignee_name and assignee_name != "Sem responsável":
-                    assignees.add(assignee_name.strip())
+                    nome_normalizado = self._normalizar_nome(assignee_name)
+                    if nome_normalizado:
+                        assignees.add(nome_normalizado)
                 total_tasks_processadas += 1
         return assignees, total_tasks_processadas
 
@@ -89,20 +91,43 @@ class Command(BaseCommand):
 
         return resumo
 
-    def _registrar_funcionario(self, nome_assignee):
-        funcionario, criado = Funcionario.objects.update_or_create(
-            nome=nome_assignee,
-        )
+    @staticmethod
+    def _normalizar_nome(nome_assignee: str) -> str:
+        """Remove espaços duplicados e normaliza capitalização básica."""
+        if not nome_assignee:
+            return ""
+        return " ".join(nome_assignee.split())
 
-        if criado:
+    def _registrar_funcionario(self, nome_assignee):
+        nome_normalizado = self._normalizar_nome(nome_assignee)
+        if not nome_normalizado:
+            return False
+
+        existente = (
+            Funcionario.objects.filter(nome__iexact=nome_normalizado)
+            .order_by("id")
+            .first()
+        )
+        if existente:
+            if existente.nome != nome_normalizado:
+                Funcionario.objects.filter(id=existente.id).update(
+                    nome=nome_normalizado
+                )
             self.stdout.write(
-                f"  [CRIADO] Funcionário: {funcionario.nome} (ID: {funcionario.id}) com valor/hora padrão."
+                f"  [ATUALIZADO] Funcionário já existente: {existente.nome} (ID: {existente.id})."
             )
-        return criado
+            return False
+
+        funcionario = Funcionario.objects.create(nome=nome_normalizado)
+        self.stdout.write(
+            f"  [CRIADO] Funcionário: {funcionario.nome} (ID: {funcionario.id}) com valor/hora padrão."
+        )
+        return True
 
     def _garantir_placeholder(self, nome_assignee):
+        nome_normalizado = self._normalizar_nome(nome_assignee)
         try:
-            placeholder = garantir_usuario_placeholder(nome_assignee)
+            placeholder = garantir_usuario_placeholder(nome_normalizado)
         except ValueError:
             self.stdout.write(
                 self.style.WARNING(

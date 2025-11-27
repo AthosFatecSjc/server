@@ -148,7 +148,11 @@ class UsuarioDetailView(GerenteRequiredMixin, View):
         return render(
             request,
             self.template_name,
-            {"usuario": usuario},
+            {
+                "usuario": usuario,
+                "is_self": request.user.is_authenticated
+                and request.user.pk == usuario.pk,
+            },
         )
 
 
@@ -157,11 +161,18 @@ class UsuarioStatusToggleView(GerenteRequiredMixin, View):
 
     def post(self, request: HttpRequest, pk: int) -> HttpResponse:
         usuario = get_object_or_404(Usuario, pk=pk)
+        default_redirect = reverse(LISTA_URL_NAME)
+        redirect_url = _resolve_redirect_url(request, default_redirect)
         acao = request.POST.get("acao")
         if acao not in {"ativar", "desativar"}:
             messages.error(request, "Ação inválida para atualização de status.")
-            default_redirect = reverse(LISTA_URL_NAME)
-            redirect_url = _resolve_redirect_url(request, default_redirect)
+            return redirect(redirect_url)
+
+        if request.user.is_authenticated and request.user.pk == usuario.pk:
+            messages.error(
+                request,
+                "Você não pode alterar o status do próprio usuário. Solicite a outro administrador.",
+            )
             return redirect(redirect_url)
 
         novo_status = acao == "ativar"
@@ -172,8 +183,6 @@ class UsuarioStatusToggleView(GerenteRequiredMixin, View):
         else:
             messages.success(request, "Usuário desativado com sucesso.")
 
-        default_redirect = reverse(LISTA_URL_NAME)
-        redirect_url = _resolve_redirect_url(request, default_redirect)
         return redirect(redirect_url)
 
 
